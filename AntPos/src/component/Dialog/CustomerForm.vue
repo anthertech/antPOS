@@ -70,6 +70,7 @@
 <script setup>
 import { ref, computed, inject } from 'vue';
 import { Dialog, createListResource, Button, FormControl, createResource } from 'frappe-ui';
+import emitter from '../../utils/emitter';
 
 const dialogVisible = ref(true);
 const base = inject('base');
@@ -122,14 +123,14 @@ const handleDialogClose = () => {
   dialogVisible.value = false;
 };
 
-const createCustomer = () => {
-  createResource({
+const createCustomer =  createResource ({
     method: 'POST',
-    url: '/api/resource/Customer',
-    auto: true,
+    url: 'frappe.client.insert',
+    // auto: true,
     makeParams() {
       return {
-        data: {
+        doc: {
+          doctype: 'Customer',
           ...customer.value,
           gender: customer.value.gender?.value ?? null,
           customer_group: customer.value.customer_group?.value ?? null,
@@ -138,12 +139,13 @@ const createCustomer = () => {
       };
     },
     onSuccess(data) {
+      emitter.emit('customer-updated');
+      base.customer = data.name;
       handleDialogClose();
     },
     onError(err) {
       console.error('Error:', err);
     },
   });
-};
   
 </script>

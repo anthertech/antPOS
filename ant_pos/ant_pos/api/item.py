@@ -135,23 +135,3 @@ def items(pos_profile, search_value, customer):
 
     return values
 
-@frappe.whitelist()
-def submitDoc(doc, name):
-    print(doc, "docccccccccccccccccccccc", name, "nameeeeeeeeeeeee")
-
-    # Fetch and reload the latest document from the database
-    document = frappe.get_doc(doc, name)
-    document.reload()  # Ensure it has the latest data
-
-    try:
-        frappe.flags.ignore_permissions = True  # Temporarily ignore permissions
-        document.flags.ignore_version = True  # Ignore timestamp mismatch errors
-        document.submit()  # Submit the document
-        frappe.db.commit()  # Ensure changes are committed
-    except frappe.exceptions.TimestampMismatchError:
-        frappe.db.rollback()  # Prevent partial changes
-        frappe.throw("The document was modified by another user. Please refresh and try again.")
-    finally:
-        frappe.flags.ignore_permissions = False  # Reset flag
-
-    return "Document submitted successfully"

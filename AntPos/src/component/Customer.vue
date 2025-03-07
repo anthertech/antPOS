@@ -66,6 +66,15 @@ watch(
     }
   }
 );
+watch(
+  () => base.customer,
+  (newValue) => {
+    if (newValue) {
+      const matchingCustomer = computedOptions.value.find(option => option.value === newValue);
+      selected_customer.value = matchingCustomer || { label: newValue, value: newValue };
+    }
+  }
+);
 
 // Listen to the event to refetch data and set the selected customer
 onMounted(() => {
