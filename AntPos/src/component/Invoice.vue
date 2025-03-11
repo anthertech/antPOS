@@ -300,19 +300,16 @@ const submitInvoice = async () => {
     }
 };
 const createPayments = (invoice) =>{
-    console.log(invoice, "invoice for payment");
-    if (invoice.advances.some((element) => element.allocated_amount > 0)) { 
-        console.log("inside advance payment");
-        
-        invoice.payments.forEach((element) => {
-                if (element.amount > 0) {
-                    console.log(element, "element for payment");
-                    makepayment.fetch({ payments: element, method: 'Save' })
-                }
-            })
 
+    if (invoice.advances.some((element) => element.allocated_amount > 0)) { 
+        for (const element of invoice.payments) {
+            if (element.amount > 0) {
+
+                makepayment.fetch({ payments: element, invoice: invoice, method: 'Submit', change: true });
+            }
+        }
     }
-}
+};
 let advance = createResource({
     url: 'run_doc_method',
     auto: true,
@@ -332,40 +329,32 @@ let advance = createResource({
 let makepayment = createResource({
     url: 'frappe.desk.form.save.savedocs',
     makeParams(params) {
-        console.log(params, "params for payment");
-        console.log(base.invoice, "base.invoice for payment");
-        
         return {
             doc: JSON.stringify({
+                ...params.payments,
                 doctype: 'Payment Entry',
-                posting_date: base.invoice.posting_date,
                 payment_type: 'Receive',
-                mode_of_payment: params.payments.mode_of_payment,
                 party_type: 'Customer',
-                party: base.invoice.customer,
+                party: params.invoice.customer,
                 paid_amount: params.payments.amount,
                 received_amount: params.payments.amount,
-                paid_to:'',
                 references: [
                     {
                         reference_doctype: 'Sales Invoice',
-                        reference_name: base.invoice.name,
-                        due_date: base.invoice.due_date,
+                        reference_name: params.invoice.name,
+                        due_date: params.invoice.due_date,
                         allocated_amount: params.payments.amount
                     }
                 ],
                 target_exchange_rate: 1,
-                company: base.company,
-                cost_center: base.pos_profile.cost_center,
-                branch: base.pos_profile.branch,
+                company: params.invoice.company,
+                cost_center: params.invoice.cost_center,
+                branch: params.invoice.branch,
             }),
             action: params.method
         }
     },
     onSuccess(data) {
-        console.log(data);
-        
-        makepayment.fetch({ payments: data.docs[0], method: 'Submit' })
     }
 });
 
