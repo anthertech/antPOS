@@ -121,8 +121,7 @@
                     v-model="base.invoice.rounded_total"
                 />
             </div>
-            {{ base.advance }}
-            <div v-for="(credit, index) in base.advance" :key="index">
+            <div v-for="(credit, index) in base.invoice.advances" :key="index">
                 <div class="grid grid-cols-3 gap-4 p-2">
                     <FormControl
                         :type="'text'"
@@ -205,73 +204,85 @@
 </template>
 
 <script setup>
-    import { Button, FormControl, createResource , createListResource } from 'frappe-ui'
-    import { inject, onMounted } from 'vue'
+import { Button, FormControl, createResource } from 'frappe-ui'
+import { inject, onMounted , watch } from 'vue'
 
-    let base = inject('base')
+let base = inject('base')
 
-    const addPayments = () => {
-        base.invoice.paid_amount = base.invoice.base_rounded_total
-        base.pos_profile.payments.forEach(element => {
-            if (!base.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment)) {
-                base.invoice.payments.push({
-                    "mode_of_payment": element.mode_of_payment,
-                    "amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
-                    "base_amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
-                })
-            }
-        })
-    }
-
-    const changemode = (index) => {
-        base.invoice.payments.forEach((element, i) => {
-            if (i === index) {
-                element.amount =  base.invoice.base_rounded_total
-            } else {
-                element.amount = 0
-            }
-        })
-        base.invoice.paid_amount = base.invoice.base_rounded_total
-    }
-
-    onMounted(() => {
-        addPayments()
-        customerCredit()
-    })
-
-
-    let save = createResource({
-        url: 'frappe.desk.form.save.savedocs',
-        makeParams(params) {
-            return {
-                doc: JSON.stringify(base.invoice),
-                action: params.action
-            }
-        },
-        onSuccess(data) {
-            base.invoice = data.docs[0]
+const addPayments = () => {
+    console.log("addPayments called");
+    
+    base.invoice.paid_amount = base.invoice.base_rounded_total
+    base.pos_profile.payments.forEach(element => {
+        if (!base.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment)) {
+            base.invoice.payments.push({
+                "mode_of_payment": element.mode_of_payment,
+                "amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
+                "base_amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
+            })
         }
+    })
+console.log(base.invoice, "base.invoice for addPayments");
 
+}
+
+const changemode = (index) => {
+    base.invoice.payments.forEach((element, i) => {
+        if (i === index) {
+            element.amount = base.invoice.base_rounded_total
+        } else {
+            element.amount = 0
+        }
+    })
+    base.invoice.paid_amount = base.invoice.base_rounded_total
+}
+
+onMounted(() => {
+    addPayments()
+})
+
+let save = createResource({
+    url: 'frappe.desk.form.save.savedocs',
+    makeParams(params) {
+        return {
+            doc: JSON.stringify(base.invoice),
+            action: params.action
+        }
+    },
+    onSuccess(data) {
+        base.invoice = data.docs[0]
+    }
+});
+
+const changePaymentAmount = () => {
+    base.invoice.paid_amount = 0;
+
+    base.invoice.payments.forEach((element) => {
+        element.amount = Number(element.amount);
+        base.invoice.paid_amount += element.amount;
     });
 
-    const changePaymentAmount = () => {
-        base.invoice.paid_amount = 0
-        
-        base.invoice.payments.forEach((element) => {
-            base.invoice.paid_amount += Number(element.amount)
-        })
-        base.advance.forEach((element) => {
+    if (Array.isArray(base.invoice.advances)) {
+        base.invoice.advances.forEach((element) => {
             if (element.allocated_amount > 0) {
-                base.invoice.paid_amount += Number(element.allocated_amount)
+                element.allocated_amount = Number(element.allocated_amount);
+                base.invoice.paid_amount += element.allocated_amount;
             }
-        })
-    }; 
+        });
+    }
+};
 
-
-    const submitInvoice = async () => {
-
-        await save.fetch({ action: "Save" })
-        await save.fetch({ action: "Submit" })
+const submitInvoice = async () => {
+    console.log(base.invoice,"submitInvoice called");
+    let invoice = {...base.invoice}
+    console.log(invoice, "invoice for &&&&&&");
+    
+    if (await validatePaymentBeforeSave(base)){
+        
+        await save.fetch({ action: 'Save' })
+        await save.fetch({ action: 'Submit' })
+        createPayments(invoice)
+        console.log("validatePaymentBeforeSave completed");
         base.items = [];
         base.status = '';
         base.invoice = {
@@ -285,47 +296,114 @@
             grand_total: 0,
             base_rounded_total: 0
         };
-        base.advance = [];
-        base.customer   = {}
-    };
-
-    let customerAdvance = createListResource({
-        doctype: 'Payment Entry',
-        fields: ["name", "unallocated_amount"],
-        filters: {
-            unallocated_amount: [">", 0],
-            party_type: "Customer",
-            party: base.customer,
-            company: base.company,
-            docstatus: 1,
-        },
-        onSuccess(data) {
-            data.forEach(element => {
-                element = {
-                    "type": "Advance",
-                    "reference_name": element.name,
-                    "reference_type": "Payment Entry",
-                    "advance_amount": element.unallocated_amount,
-                    "allocated_amount": 0,
-                    "doctype" :"Sales Invoice Advance",
-                    "parentfield" : "advances",
-                    "parenttype" : "Sales Invoice",
-                    "exchange_gain_loss":0,
-                    "name": "new-sales-invoice-advance-rggbcnnldi",
-                    "parent": "new-sales-invoice-spvhmzepim",
-                    "ref_exchange_rate": 1,
-                    "__islocal":1
-
-
+        base.customer = {};
+    }
+};
+const createPayments = (invoice) =>{
+    console.log(invoice, "invoice for payment");
+    if (invoice.advances.some((element) => element.allocated_amount > 0)) { 
+        console.log("inside advance payment");
+        
+        invoice.payments.forEach((element) => {
+                if (element.amount > 0) {
+                    console.log(element, "element for payment");
+                    makepayment.fetch({ payments: element, method: 'Save' })
                 }
-                base.advance.push(element)
-            });
+            })
+
+    }
+}
+let advance = createResource({
+    url: 'run_doc_method',
+    auto: true,
+    makeParams(params) {        
+        return {
+            docs: {...base.invoice,is_pos: false},
+            method: 'set_advances'
         }
+    },
+    onSuccess(data) {
+        console.log(data);
+        base.invoice = {...data.docs[0],is_pos: true}
+        addPayments()
+    }
+});
+
+let makepayment = createResource({
+    url: 'frappe.desk.form.save.savedocs',
+    makeParams(params) {
+        console.log(params, "params for payment");
+        console.log(base.invoice, "base.invoice for payment");
+        
+        return {
+            doc: JSON.stringify({
+                doctype: 'Payment Entry',
+                posting_date: base.invoice.posting_date,
+                payment_type: 'Receive',
+                mode_of_payment: params.payments.mode_of_payment,
+                party_type: 'Customer',
+                party: base.invoice.customer,
+                paid_amount: params.payments.amount,
+                received_amount: params.payments.amount,
+                paid_to:'',
+                references: [
+                    {
+                        reference_doctype: 'Sales Invoice',
+                        reference_name: base.invoice.name,
+                        due_date: base.invoice.due_date,
+                        allocated_amount: params.payments.amount
+                    }
+                ],
+                target_exchange_rate: 1,
+                company: base.company,
+                cost_center: base.pos_profile.cost_center,
+                branch: base.pos_profile.branch,
+            }),
+            action: params.method
+        }
+    },
+    onSuccess(data) {
+        console.log(data);
+        
+        makepayment.fetch({ payments: data.docs[0], method: 'Submit' })
+    }
+});
+
+const validatePaymentBeforeSave = async () => {
+
+    let advance = 0
+    let payment = 0
+    
+    base.invoice.advances.forEach((element) => {
+        advance += Number(element.allocated_amount)
     })
 
-    const customerCredit = () => {
-        base.advance = []
-        customerAdvance.fetch()
+    base.invoice.payments.forEach((element) => {
+        payment += Number(element.amount)
+    })
+
+    if (advance > 0) {
+        if (base.invoice.paid_amount > base.invoice.rounded_total) {
+            console.log("paid amount is greater than rounded total");
+            return false;
+        }
+        base.invoice.payments = []
+        base.invoice.is_pos = false
     }
+
+    return true;
+}
+
+watch(
+    () => {
+        const advances = base?.invoice?.advances;
+        return Array.isArray(advances) ? advances.map(advance => advance.allocated_amount) : [];
+    },
+    (newValues, oldValues) => {
+
+        changePaymentAmount();
+    },
+    { deep: true }
+);
 
 </script>

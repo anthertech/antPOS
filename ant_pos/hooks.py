@@ -116,13 +116,11 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Payment Entry": {
+		"validate": "ant_pos.ant_pos.api.payment_entry.validate",
+	}
+}
 
 # Scheduled Tasks
 # ---------------

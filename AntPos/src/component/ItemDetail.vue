@@ -128,7 +128,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-violet-600 text-yellow-50"
-                    @click="post.fetch({status:'save_new'})"
+                    @click="post.fetch({ action:'Save', status:'save_new' })"
                 >
                     SAVE/NEW
                 </Button>
@@ -140,7 +140,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-green-600 text-yellow-50"
-                    @click="post.fetch({status:'pay'})"
+                    @click="post.fetch({ action:'Save', status:'pay' })"
                 >
                     PAY
                 </Button>
@@ -152,7 +152,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-teal-600 text-yellow-50"
-                    @click="post.fetch({status:'print'})"
+                    @click="post.fetch({ action:'Save', status:'print' })"
                 >
                     PRINT DRAFT
                 </Button>
@@ -174,45 +174,44 @@
     const emitter = inject('emitter');
     
     let post = createResource({
-        url: 'frappe.client.insert',
+        url: 'frappe.desk.form.save.savedocs',
         makeParams(params) {
             base.items.forEach((item) => {
                 item.serial_no=item.selected_serial_no.join('\n');
             });
             status = params.status
-            console.log(base,"kdlkfdkkfdl");
-            
             const currentDate = new Date();
             const formattedDate = currentDate.toISOString().split('T')[0];
             return {
-                doc: {
+                doc: JSON.stringify({
                     doctype: 'Sales Invoice',
                     is_pos:1,
                     pos_profile:base.pos_profile.name,
                     company: base.company,
-                    posting_date:formattedDate,
-                    currency:base.pos_profile.currency,
+                    // posting_date:formattedDate,
+                    // currency:base.pos_profile.currency,
                     conversion_rate:1,
                     selling_price_list:base.pos_profile.selling_price_list,
-                    price_list_currency:base.pos_profile.currency,
-                    plc_conversion_rate:1,
+                    // price_list_currency:base.pos_profile.currency,
+                    // plc_conversion_rate:1,
                     items:base.items,
-                    debit_to:'Debtors - FITPL',
-                    due_date:formattedDate,
+                    // debit_to:'Debtors - FITPL',
+                    // due_date:formattedDate,
                     customer:base.customer,
                     update_stock :1,
-                    cost_center:base.pos_profile.cost_center,
-                    branch:base.pos_profile.branch,
-                    set_warehouse:base.pos_profile.warehouse,
-                }
+                    // cost_center:base.pos_profile.cost_center,
+                    // branch:base.pos_profile.branch,
+                    // set_warehouse:base.pos_profile.warehouse,
+                }),
+                action:params.action,
             };
         },
         onSuccess(data) {             
             if ( status == 'pay'){
+                base.invoice = post.data.docs[0]
                 base.status = 'invoice';
                 console.log(post.data,"invoice");
                 
-                base.invoice = post.data
                 
             }  
 
