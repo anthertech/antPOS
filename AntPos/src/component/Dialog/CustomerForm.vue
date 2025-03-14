@@ -133,7 +133,7 @@ const createCustomer =  createResource ({
     },
     onSuccess(data) {
       console.log(data,"8888888888888888888888888");
-      emitter.emit("customerCreated");
+      emitter.emit("customerCreated",data);
       base.customer = data.name;
       handleDialogClose();
     },

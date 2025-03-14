@@ -6,22 +6,30 @@ export function createToast(options) {
 		...options,
 	})
 }
-export function showToast(title, text, icon, iconClasses = null) {
-	if (!iconClasses) {
-		if (icon == 'check') {
-			iconClasses = 'bg-surface-green-3 text-ink-white rounded-md p-px'
-		} else if (icon == 'alert-circle') {
-			iconClasses = 'bg-yellow-600 text-ink-white rounded-md p-px'
-		} else {
-			iconClasses = 'bg-surface-red-5 text-ink-white rounded-md p-px'
-		}
-	}
-	createToast({
-		title: title,
-		text: htmlToText(text),
-		icon: icon,
-		iconClasses: iconClasses,
-		position: icon == 'check' ? 'bottom-right' : 'top-center',
-		timeout: 5,
-	})
+export function showToast(title, text, icon, bgColor = null, textColor = null, iconClasses = null) {
+    if (!iconClasses) {
+        iconClasses = icon === 'check' 
+            ? 'bg-surface-green-3 text-ink-white rounded-md p-px' 
+            : icon === 'alert-circle' 
+            ? 'bg-yellow-600 text-ink-white rounded-md p-px' 
+            : 'bg-surface-red-5 text-ink-white rounded-md p-px';
+    }
+
+    createToast({
+        title: title,
+        text: htmlToText ? htmlToText(text) : text,
+        icon: icon,
+        iconClasses: iconClasses,
+        position: icon === 'check' ? 'bottom-right' : 'top-center',
+        timeout: 5,
+        style: {
+            backgroundColor: bgColor || 'white',
+            color: textColor || 'black' 
+        },
+    });
+}
+function htmlToText(html) {
+    let div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
 }

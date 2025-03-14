@@ -207,14 +207,13 @@
 import { Button, FormControl, createResource } from 'frappe-ui'
 import { inject, onMounted , watch } from 'vue'
 import { createToast } from '../utils';
-
+import { showToast } from '../utils'
 
 let base = inject('base')
 let errorHandled = false;
 
 
 const addPayments = () => {
-    console.log("addPayments called");
     
     base.invoice.paid_amount = base.invoice.base_rounded_total
     base.pos_profile.payments.forEach(element => {
@@ -226,7 +225,7 @@ const addPayments = () => {
             })
         }
     })
-console.log(base.invoice, "base.invoice for addPayments");
+
 
 }
 
@@ -415,7 +414,7 @@ const validatePaymentBeforeSave = async () => {
 
     if (advance > 0) {
         if (base.invoice.paid_amount > base.invoice.rounded_total) {
-            console.log("paid amount is greater than rounded total");
+            showToast('Warning', 'Paid amount is greater than rounded total', 'alert-circle', '#ffcc00','#ffffff');
             return false;
         }
         base.invoice.payments = []

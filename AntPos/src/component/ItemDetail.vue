@@ -23,7 +23,7 @@
                     />
                 </Button>
             </div>
-            <div class="py-2 pr-3 h-[93%] overflow-y-scroll ">
+            <div class="py-2 pr-3 h-[93%] overflow-y-scroll scrollbar-hide  ">
                 <div class="mb-2">
                     <div class="flex bg-gray-200 w-full py-2 px-3 justify-between rounded text-center ">
                         <div class="w-[18.4%]">
@@ -182,11 +182,14 @@
         url: 'frappe.desk.form.save.savedocs',
         makeParams(params) {
             base.items.forEach((item) => {
+                console.log(item.selected_serial_no);
+                
                 item.serial_no=item.selected_serial_no.join('\n');
             });
             status = params.status
             return {
                 doc: JSON.stringify({
+                    ...base?.invoice,
                     doctype: 'Sales Invoice',
                     is_pos:1,
                     pos_profile:base.pos_profile.name,
@@ -196,6 +199,7 @@
                     items:base.items,
                     customer:base.customer.name,
                     update_stock :1,
+                    
                 }),
                 action:params.action,
             };

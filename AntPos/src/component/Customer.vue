@@ -71,16 +71,28 @@ const computedOptions = computed(() => {
     : [];
 });
 
-const refreshCustomerList = () => {
+const refreshCustomerList = (params) => {
   customerResource.fetch();
+  selectedCustomer.value={
+      mobile_no: params.mobile_no || '',
+      label: params.name || 'Unnamed',
+      value: params.name,
+      name: params.name,
+      customer_group: params.customer_group,
+      territory: params.territory,
+      is_internal_customer: params.is_internal_customer,
+  }
+
+
 };
 
 onMounted(() => {
-  emitter.on("customerCreated", refreshCustomerList);
+  emitter.on("customerCreated"  ,refreshCustomerList);
+
 });
 
 onUnmounted(() => {
-  emitter.off("customerCreated", refreshCustomerList);
+  emitter.off("customerCreated" , refreshCustomerList);
 });
 
 const selectedCustomer = computed({
