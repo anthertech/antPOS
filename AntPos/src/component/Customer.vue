@@ -1,92 +1,93 @@
 <template>
   <div class="w-11/12">
     <Autocomplete
-      ref="autocompleteRef"
       :options="computedOptions"
-      v-model="selected_customer"
-      placeholder="Select person"
-      @update:modelValue="handleCustomer"
+      v-model="selectedCustomer"
+      placeholder="Select Customer"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, inject, watch, nextTick, onMounted } from 'vue';
+import { computed, inject, onMounted, onUnmounted } from 'vue';
+import emitter from '../utils/emitter'; 
 import Autocomplete from './custom_components/Autocomplete.vue';
 import { createListResource } from 'frappe-ui';
-import emitter from '/src/utils/emitter.js'; // Correct import statement
+import { createToast } from '../utils';
 
-const selected_customer = ref('');
-const autocompleteRef = ref(null);
-const { loadComponent } = inject('dynamicComponent');
+
 let base = inject('base');
+let errorHandled = false;
 
-// Define the customer list resource
+
 const customerResource = createListResource({
   doctype: 'Customer',
-  fields: ['name', 'mobile_no'],
+  fields: ['name', 'mobile_no','customer_group','territory','is_internal_customer'],
   filters: {
     disabled: false,
   },
   pageLength: Number.MAX_VALUE * 2,
   auto: true,
+  onSuccess(data,params) {
+    errorHandled = false;
+  },
+  onError(error) {
+    if (!errorHandled) {
+        createToast({
+            title: 'Error',
+            text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+            icon: 'x',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
+        errorHandled = true;
+    }
+    },
   transform: (data) => {
     return data.map((item) => ({
       label: item.name,
       value: item.name,
       mobile_no: item.mobile_no,
+      name: item.name,
+      customer_group: item.customer_group,
+      territory: item.territory,
+      is_internal_customer: item.is_internal_customer,
     }));
   },
 });
 
-// Compute the options for the autocomplete list
 const computedOptions = computed(() => {
   return customerResource?.data
     ? customerResource.data.map((option) => ({
         mobile_no: option.mobile_no || '',
         label: option.label || 'Unnamed',
         value: option.value,
+        name: option.name,
+        customer_group: option.customer_group,
+        territory: option.territory,
+        is_internal_customer: option.is_internal_customer,
       }))
     : [];
 });
 
-// Handle the customer form
-const handleCustomerForm = () => {
-  autocompleteRef.value.closeOptions();
-  nextTick(() => {
-    loadComponent('CustomerForm');
-  });
+const refreshCustomerList = () => {
+  customerResource.fetch();
 };
 
-// Watch for changes in the selected customer
-watch(
-  selected_customer, (newValue, oldValue) => {
-    if (newValue?.value && newValue.value !== oldValue?.value && newValue.value !== '') {
-      base.customer = newValue.value;
-    }
-  }
-);
-watch(
-  () => base.customer,
-  (newValue) => {
-    if (newValue) {
-      const matchingCustomer = computedOptions.value.find(option => option.value === newValue);
-      selected_customer.value = matchingCustomer || { label: newValue, value: newValue };
-    }
-  }
-);
-
-// Listen to the event to refetch data and set the selected customer
 onMounted(() => {
-  emitter.on('customer-created', (customerData) => {
-    customerResource.fetch().then(() => {
-      selected_customer.value = {
-        label: customerData.name,
-        value: customerData.name
-      };
-    }).catch(error => {
-      console.error('Error fetching customer data:', error);
-    });
-  });
+  emitter.on("customerCreated", refreshCustomerList);
 });
+
+onUnmounted(() => {
+  emitter.off("customerCreated", refreshCustomerList);
+});
+
+const selectedCustomer = computed({
+  get: () => base.customer,
+  set: (newVal) => {
+    base.customer = newVal;
+  },
+});
+
 </script>

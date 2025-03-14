@@ -5,7 +5,6 @@
       </template>
       <template #body-content>
         <div class="flex flex-col gap-8">
-          <!-- Company Selection -->
           <FormControl
             type="autocomplete"
             :options="options.company.map(company => ({ label: company, value: company }))"
@@ -17,7 +16,6 @@
             hide-search="true"
           />
 
-          <!-- POS Profile Selection -->
           <FormControl
             type="autocomplete"
             :options="getProfileOptions()"
@@ -30,7 +28,6 @@
             hide-search="true"
           />
 
-          <!-- Mode of Payment -->
           <div v-if="mode_of_payment.length">
             <div class="border-2">
               <div class="p-2 flex justify-between">
@@ -130,7 +127,6 @@
       const posprofile = createResource({
         url: 'ant_pos.ant_pos.api.pos_profile.get_pos_profiles_by_company',
         method: 'GET',
-
         onSuccess(data) {
           if (data && typeof data === 'object') {
               options.company = Object.keys(data);

@@ -194,7 +194,7 @@
                     label="Cancel"
                     :loading="false"
                     :disabled="false"
-                    @click="cancelInvoice"
+                    @click="remove_invoice"
                 >
                     Cancel
                 </Button>
@@ -206,8 +206,12 @@
 <script setup>
 import { Button, FormControl, createResource } from 'frappe-ui'
 import { inject, onMounted , watch } from 'vue'
+import { createToast } from '../utils';
+
 
 let base = inject('base')
+let errorHandled = false;
+
 
 const addPayments = () => {
     console.log("addPayments called");
@@ -250,9 +254,39 @@ let save = createResource({
         }
     },
     onSuccess(data) {
-        base.invoice = data.docs[0]
-    }
+        errorHandled = false;
+        remove_invoice()
+    },
+    onError(error) {
+            if (!errorHandled) {
+                createToast({
+                    title: 'Error',
+                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+                    icon: 'x',
+                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                    position: 'top-center',
+                    timeout: 5,
+                });
+                errorHandled = true;
+            }
+    },
 });
+
+const remove_invoice = () => {
+    base.invoice = {
+        payments: [],
+        paid_amount: 0,
+        rounded_total: 0,
+        net_total: 0,
+        total_taxes_and_charges: 0,
+        total: 0,
+        discount_amount: 0,
+        grand_total: 0,
+        base_rounded_total: 0
+    };
+    base.items = [];
+    base.customer = {};
+};
 
 const changePaymentAmount = () => {
     base.invoice.paid_amount = 0;
@@ -273,39 +307,19 @@ const changePaymentAmount = () => {
 };
 
 const submitInvoice = async () => {
-    console.log(base.invoice,"submitInvoice called");
     let invoice = {...base.invoice}
-    console.log(invoice, "invoice for &&&&&&");
-    
     if (await validatePaymentBeforeSave(base)){
-        
-        await save.fetch({ action: 'Save' })
         await save.fetch({ action: 'Submit' })
         createPayments(invoice)
-        console.log("validatePaymentBeforeSave completed");
-        base.items = [];
-        base.status = '';
-        base.invoice = {
-            payments: [],
-            paid_amount: 0,
-            rounded_total: 0,
-            net_total: 0,
-            total_taxes_and_charges: 0,
-            total: 0,
-            discount_amount: 0,
-            grand_total: 0,
-            base_rounded_total: 0
-        };
-        base.customer = {};
     }
 };
-const createPayments = (invoice) =>{
+const createPayments = async (invoice) =>{
 
     if (invoice.advances.some((element) => element.allocated_amount > 0)) { 
         for (const element of invoice.payments) {
             if (element.amount > 0) {
 
-                makepayment.fetch({ payments: element, invoice: invoice, method: 'Submit', change: true });
+                await makepayment.fetch({ payments: element, invoice: invoice, method: 'Submit', change: true });
             }
         }
     }
@@ -323,7 +337,21 @@ let advance = createResource({
         console.log(data);
         base.invoice = {...data.docs[0],is_pos: true}
         addPayments()
-    }
+        errorHandled = false;
+    },
+    onError(error) {
+            if (!errorHandled) {
+                createToast({
+                    title: 'Error',
+                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+                    icon: 'x',
+                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                    position: 'top-center',
+                    timeout: 5,
+                });
+                errorHandled = true;
+            }
+    },
 });
 
 let makepayment = createResource({
@@ -355,7 +383,21 @@ let makepayment = createResource({
         }
     },
     onSuccess(data) {
-    }
+        errorHandled = false;
+    },
+    onError(error) {
+            if (!errorHandled) {
+                createToast({
+                    title: 'Error',
+                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+                    icon: 'x',
+                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                    position: 'top-center',
+                    timeout: 5,
+                });
+                errorHandled = true;
+            }
+    },
 });
 
 const validatePaymentBeforeSave = async () => {

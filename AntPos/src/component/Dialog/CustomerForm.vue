@@ -6,7 +6,6 @@
 
     <template #body-content>
       <div class="grid grid-cols-2 gap-5 w-full place-items-stretch">
-        <!-- Customer Name -->
         <FormControl
           type="text"
           label="Customer Name"
@@ -14,7 +13,6 @@
           placeholder="Enter Customer Name"
           size="sm"
         />
-        <!-- Mobile Number -->
         <FormControl
           type="text"
           label="Mobile Number"
@@ -22,7 +20,6 @@
           placeholder="Enter Mobile Number"
           size="sm"
         />
-        <!-- Email ID -->
         <FormControl
           type="email"
           label="Email ID"
@@ -30,7 +27,6 @@
           placeholder="Enter Email ID"
           size="sm"
         />
-        <!-- Gender -->
         <FormControl
           type="autocomplete"
           label="Gender"
@@ -39,7 +35,6 @@
           placeholder="Select Gender"
           size="sm"
         />
-        <!-- Customer Group -->
         <FormControl
           type="autocomplete"
           label="Customer Group"
@@ -48,7 +43,6 @@
           placeholder="Select Customer Group"
           size="sm"
         />
-        <!-- Territory -->
         <FormControl
           type="autocomplete"
           label="Territory"
@@ -61,7 +55,7 @@
     </template>
 
     <template #actions>
-      <Button variant="solid" @click="createCustomer">Submit</Button>
+      <Button variant="solid" @click="createCustomer.fetch({})">Submit</Button>
       <Button class="ml-2" @click="handleDialogClose">Close</Button>
     </template>
   </Dialog>
@@ -126,7 +120,6 @@ const handleDialogClose = () => {
 const createCustomer =  createResource ({
     method: 'POST',
     url: 'frappe.client.insert',
-    // auto: true,
     makeParams() {
       return {
         doc: {
@@ -139,7 +132,8 @@ const createCustomer =  createResource ({
       };
     },
     onSuccess(data) {
-      emitter.emit('customer-updated');
+      console.log(data,"8888888888888888888888888");
+      emitter.emit("customerCreated");
       base.customer = data.name;
       handleDialogClose();
     },

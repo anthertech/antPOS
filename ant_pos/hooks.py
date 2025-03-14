@@ -213,3 +213,7 @@ doc_events = {
 # ]
 
 website_route_rules = [{'from_route': '/AntPos/<path:app_path>', 'to_route': 'AntPos'},]
+
+fixtures = [
+       {"dt": "Custom Field", "filters": [["module", "=", "Ant-Pos"]], "prefix": "Ant-Pos_custom_fields"}
+]

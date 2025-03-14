@@ -8,7 +8,7 @@
                     placeholder="Search Items"
                     size="sm"
                     variant="subtle"
-                    @keyup.enter="searchResource.fetch()"
+                    @keyup.enter="fetchSearchResource"
                 >
                     <template #prefix>
                         <FeatherIcon class="w-4" name="search" />
@@ -37,15 +37,16 @@
 <script setup>
 import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
 import { ref, inject, watch } from 'vue';
+import { createToast } from '../utils';
 
-// Reactive variables
 const debounceSearch = ref('');
 const items = ref([]);
 let base = inject('base');
 let lastParams = null;
 const emitter = inject('emitter');
 
-// Search resource with debounce
+let errorHandled = false;
+
 const searchResource = createResource({
     url: 'ant_pos.ant_pos.api.item.scan_barcode',
     method: 'GET',
@@ -56,14 +57,18 @@ const searchResource = createResource({
         };
     },
     validate(params) {
+        if (!base.customer.name) {
+            return 'Customer is required'
+        }
+        
         if (!params.search_value) {
             return 'Search value is required';
         }
-        if (!base.customer) {
-            return 'Please select a customer';
-        }
+
+        
     },
     onSuccess(data) {
+        errorHandled = false;
         if (data.serial_no) {
             data.selected_serial_no = [data.serial_no];
         }
@@ -72,16 +77,23 @@ const searchResource = createResource({
         }
     },
     onError(error) {
-        console.error('Search error:', error);
+        if (!errorHandled) {
+            createToast({
+                title: 'Error',
+                text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                icon: 'x',
+                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                position: 'top-center',
+                timeout: 5,
+            });
+            errorHandled = true;
+        }
     },
 });
 
-// Add items resource
 const addItemsResource = createResource({
     url: 'ant_pos.ant_pos.api.item.items',
     method: 'GET',
-    debounce: 500,
-    initialData: [],
     makeParams(params) {
         return {
             pos_profile: JSON.stringify(base.pos_profile),
@@ -95,9 +107,20 @@ const addItemsResource = createResource({
         }
     },
     onError(error) {
-        console.error('Add items error:', error);
+        if (!errorHandled) {
+            createToast({
+                title: 'Error',
+                text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                icon: 'x',
+                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                position: 'top-center',
+                timeout: 5,
+            });
+            errorHandled = true;
+        }
     },
     onSuccess(data) {
+        errorHandled = false;
         addItem(data);
     },
 });
@@ -114,31 +137,19 @@ const priceListResource = createResource({
             args: JSON.stringify({
                 items: [
                     {
+                        ...params.items,
                         "doctype": "Sales Invoice Item",
                         "name": "new-sales-invoice-item-lrdmbgmbcz",
                         "child_docname": "new-sales-invoice-item-lrdmbgmbcz",
-                        "item_code": params.items.item_code,
-                        "item_group": params.items.item_group,
-                        "brand": params.items.brand,
-                        "qty": params.items.qty,
-                        "stock_qty": params.items.stock_qty,
-                        "uom": params.items.uom,
-                        "stock_uom": params.items.stock_uom,
                         "parenttype": "Sales Invoice",
                         "parent": "new-sales-invoice-owspmikswv",
-                        "pricing_rules": params.items.pricing_rules,
-                        "is_free_item": params.items.is_free_item,
-                        "warehouse": params.items.warehouse,
                         "serial_no": base.items.selected_serial_no,
-                        "batch_no": params.items.batch_no,
-                        "price_list_rate": params.items.price_list_rate,
-                        "conversion_factor": params.items.conversion_factor,
-                        "margin_type": params.items.margin_type,
-                        "margin_rate_or_amount": params.items.margin_rate_or_amount,
                     }
                 ],
+
                 "customer": base.customer.name,
                 "customer_group": base.customer.customer_group,
+                "is_internal_customer": base.customer.is_internal_customer,
                 "territory": base.customer.territory,
                 "currency": base.pos_profile.currency,
                 "conversion_rate": 1,
@@ -153,14 +164,25 @@ const priceListResource = createResource({
                 "is_return": 0,
                 "update_stock": 1,
                 "pos_profile": base.pos_profile.name,
-                "is_internal_customer": base.customer.is_internal_customer,
             })
         };
     },
     onError(error) {
-        console.error('Price list error:', error);
+        if (!errorHandled) {
+            console.error('Price list error:', error);
+            createToast({
+                title: 'Error',
+                text: error.messages[0] || error.messages || 'An error occurred',
+                icon: 'x',
+                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                position: 'top-center',
+                timeout: 5,
+            });
+            errorHandled = true;
+        }
     },
     onSuccess(data) {
+        errorHandled = false;
         if (!lastParams) return;
 
         let updatedItem = base.items.find(item => item.item_code === lastParams.items.item_code);
@@ -182,7 +204,11 @@ const priceListResource = createResource({
     }
 });
 
-// Add item to the list
+const fetchSearchResource = () => {
+    errorHandled = false;
+    searchResource.fetch();
+};
+
 const addItem = (data) => {
     data.doctype = "Sales Invoice Item";
     data.parenttype = "Sales Invoice";
@@ -200,7 +226,6 @@ const addItem = (data) => {
     }
 };
 
-// Check if item already exists and update quantity
 const addItemIfExists = (data) => {
     let found = false;
     if (!base.pos_profile.custom_allow_add_new_items_on_new_line) {
@@ -224,7 +249,6 @@ const addItemIfExists = (data) => {
     return found;
 };
 
-// Add new line item
 const addNewLine = async (data) => {
     await priceListResource.fetch({ items: data });
     base.items.push(data);
@@ -234,7 +258,6 @@ const addChild = (data, value) => {
         data.push(value);
 };
 
-// Calculate total amount
 const calculateAmountTotal = () => {
     let total = 0;
     base.items.forEach((element) => {
@@ -249,6 +272,12 @@ emitter.on('fetchPriceList', (params) => {
     priceListResource.fetch(params);
 });
 
+emitter.on('fetchPriceList', (params) => {
+    priceListResource.fetch(params);
+});
+emitter.on('featchsearchResource'),(params)=>{
+    searchResource.fetch(params)
+}
 emitter.on('calctotal', () => {
     calculateAmountTotal();
 });

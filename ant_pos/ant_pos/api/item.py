@@ -1,7 +1,9 @@
 import frappe
+from frappe import _
 import json
-from frappe import _ 
+from typing import Dict, Any
 from erpnext.stock.get_item_details import get_item_details  
+
 BarcodeScanResult = dict[str, str | None]
 
 
@@ -17,64 +19,85 @@ def _update_item_info(scan_result: dict[str, str | None]) -> dict[str, str | Non
 	return scan_result
 
 @frappe.whitelist()
-def scan_barcode(search_value: str) -> BarcodeScanResult:
-      
-	def set_cache(data: BarcodeScanResult):
-		frappe.cache().set_value(f"ant_pos:barcode_scan:{search_value}", data, expires_in_sec=120)
-            
-	def get_cache() -> BarcodeScanResult | None:
-		if data := frappe.cache().get_value(f"ant_pos:barcode_scan:{search_value}"):
-			return data
-	if scan_data := get_cache():
-		return scan_data
-	# search barcode no
-	barcode_data = frappe.db.get_value(
-		"Item Barcode",
-		{"barcode": search_value},
-		["barcode", "parent as item_code", "uom"],
-		as_dict=True,
-	)
-	if barcode_data:
-		barcode_data.item = frappe.db.get_value('Item',barcode_data.item_code , ['*'], as_dict=1)
-		_update_item_info(barcode_data)
-		set_cache(barcode_data)
-		return barcode_data
-	# search serial no
-	serial_no_data = frappe.db.get_value(
-		"Serial No",
-		search_value,
-		["name as serial_no", "item_code", "batch_no"],
-		as_dict=True,
-	)
-	if serial_no_data:
-		serial_no_data.item = frappe.db.get_value('Item',serial_no_data.item_code , ['*'], as_dict=1)
-		_update_item_info(serial_no_data)
-		set_cache(serial_no_data)
-		return serial_no_data
-	# search batch no
-	batch_no_data = frappe.db.get_value(
-		"Batch",
-		search_value,
-		["name as batch_no", "item as item_code"],
-		as_dict=True,
-	)
-	if batch_no_data:
-		batch_no_data.item = frappe.db.get_value('Item',batch_no_data.item_code , ['*'], as_dict=1)
-		_update_item_info(batch_no_data)
-		set_cache(batch_no_data)
-		return batch_no_data
-	item_code = frappe.db.get_value(
-		"Item",
-		search_value,
-		["name as item_code"],
-		as_dict=True,
-	)
-	if item_code:
-		item_code.item = frappe.db.get_value('Item',item_code.item_code , ['*'], as_dict=1)
-		_update_item_info(item_code)
-		set_cache(item_code)
-		return item_code
-	return {}
+def scan_barcode(search_value: str) -> Dict[str, Any]:
+    """Scans barcode, serial no, batch no, or item code and returns item details with HTTP status codes."""
+
+    def set_cache(data: Dict[str, Any]):
+        """Stores barcode scan data in cache for 2 minutes."""
+        frappe.cache().set_value(f"ant_pos:barcode_scan:{search_value}", data, expires_in_sec=120)
+
+    def get_cache() -> Dict[str, Any] | None:
+        """Retrieves cached barcode scan data."""
+        return frappe.cache().get_value(f"ant_pos:barcode_scan:{search_value}")
+
+    if scan_data := get_cache():
+        frappe.local.response["http_status_code"] = 200  # OK
+        scan_data["message"] = _("Data fetched from cache.")
+        return scan_data
+
+    # Search by barcode
+    barcode_data = frappe.db.get_value(
+        "Item Barcode",
+        {"barcode": search_value},
+        ["barcode", "parent as item_code", "uom"],
+        as_dict=True,
+    )
+    if barcode_data:
+        barcode_data["item"] = frappe.db.get_value("Item", barcode_data["item_code"], ["*"], as_dict=True)
+        _update_item_info(barcode_data)
+        barcode_data["message"] = _("Item found using Barcode.")
+        frappe.local.response["http_status_code"] = 200  # OK
+        set_cache(barcode_data)
+        return barcode_data
+
+    # Search by serial number
+    serial_no_data = frappe.db.get_value(
+        "Serial No",
+        {'name' :search_value ,'status': 'Active'},
+        ["name as serial_no", "item_code", "batch_no"],
+        as_dict=True,
+    )
+    if serial_no_data:
+        serial_no_data["item"] = frappe.db.get_value("Item", serial_no_data["item_code"], ["*"], as_dict=True)
+        _update_item_info(serial_no_data)
+        serial_no_data["message"] = _("Item found using Serial Number.")
+        frappe.local.response["http_status_code"] = 200  # OK
+        set_cache(serial_no_data)
+        return serial_no_data
+
+    # Search by batch number
+    batch_no_data = frappe.db.get_value(
+        "Batch",
+        search_value,
+        ["name as batch_no", "item as item_code"],
+        as_dict=True,
+    )
+    if batch_no_data:
+        batch_no_data["item"] = frappe.db.get_value("Item", batch_no_data["item_code"], ["*"], as_dict=True)
+        _update_item_info(batch_no_data)
+        batch_no_data["message"] = _("Item found using Batch Number.")
+        frappe.local.response["http_status_code"] = 200  # OK
+        set_cache(batch_no_data)
+        return batch_no_data
+
+    # Search by item code
+    item_data = frappe.db.get_value(
+        "Item",
+        search_value,
+        ["name as item_code"],
+        as_dict=True,
+    )
+    if item_data:
+        item_data["item"] = frappe.db.get_value("Item", item_data["item_code"], ["*"], as_dict=True)
+        _update_item_info(item_data)
+        item_data["message"] = _("Item found using Item Code.")
+        frappe.local.response["http_status_code"] = 200  # OK
+        set_cache(item_data)
+        return item_data
+
+    # If nothing is found
+    frappe.local.response["http_status_code"] = 404  # Not Found
+    return "No matching item found. Please check the barcode, serial number, batch number, or item code.",
 
 
 @frappe.whitelist()
@@ -105,7 +128,6 @@ def items(pos_profile, search_value, customer):
 
     if item['has_batch_no']:
         batch_nos = frappe.get_all("Batch", filters={"item": item["item_code"]}, fields=["name as batch_no", "expiry_date"])
-
     items = {
         "item_code": item["item_code"],
         "barcode": search_values.barcode,
@@ -120,7 +142,6 @@ def items(pos_profile, search_value, customer):
         "pos_profile": pos_profile_data.name,
         "cost_center": pos_profile_data.cost_center,
         "tax_category": pos_profile_data.tax_category,
-        "serial_no": serial_nos,
         "batch_no": search_values.batch_no,
         "warehouse": pos_profile_data.warehouse,
         "is_pos": 1
@@ -132,6 +153,8 @@ def items(pos_profile, search_value, customer):
     values["batch_nos"] = batch_nos
     values["selected_serial_no"] = [search_values.serial_no] if item['has_serial_no'] and search_values.serial_no else []
     values["selected_batch_no"] = batch_nos if item['has_batch_no'] and batch_nos else None
+    
+
 
     return values
 

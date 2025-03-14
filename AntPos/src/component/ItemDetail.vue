@@ -105,6 +105,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-orange-600 text-yellow-50"
+                     @click="showHeld = !showHeld"
                 >
                     HELD
                 </Button>
@@ -159,20 +160,24 @@
             </div>
         </div>
     </div>
+    <Held v-model="showHeld" />
 </template>
 
 <script setup>
 
     import Customer from './Customer.vue';
     import { Button, FeatherIcon , FormControl , createResource } from 'frappe-ui';
-    import { inject,watch } from 'vue';
+    import { inject , watch ,ref } from 'vue';
+    import { createToast } from '../utils';
+    import Held from './Dialog/Held.vue';
     import Item from './Item.vue';
 
     const { loadComponent } = inject('dynamicComponent');
     let base = inject('base');
     let status = '';
+    const showHeld = ref(false);
     const emitter = inject('emitter');
-    
+    let errorHandled = false;
     let post = createResource({
         url: 'frappe.desk.form.save.savedocs',
         makeParams(params) {
@@ -180,42 +185,42 @@
                 item.serial_no=item.selected_serial_no.join('\n');
             });
             status = params.status
-            const currentDate = new Date();
-            const formattedDate = currentDate.toISOString().split('T')[0];
             return {
                 doc: JSON.stringify({
                     doctype: 'Sales Invoice',
                     is_pos:1,
                     pos_profile:base.pos_profile.name,
-                    company: base.company,
-                    // posting_date:formattedDate,
-                    // currency:base.pos_profile.currency,
+                    company: base.pos_profile.company,
                     conversion_rate:1,
                     selling_price_list:base.pos_profile.selling_price_list,
-                    // price_list_currency:base.pos_profile.currency,
-                    // plc_conversion_rate:1,
                     items:base.items,
-                    // debit_to:'Debtors - FITPL',
-                    // due_date:formattedDate,
-                    customer:base.customer,
+                    customer:base.customer.name,
                     update_stock :1,
-                    // cost_center:base.pos_profile.cost_center,
-                    // branch:base.pos_profile.branch,
-                    // set_warehouse:base.pos_profile.warehouse,
                 }),
                 action:params.action,
             };
         },
-        onSuccess(data) {             
+        onSuccess(data,params) {
+            errorHandled = false;      
             if ( status == 'pay'){
-                base.invoice = post.data.docs[0]
-                base.status = 'invoice';
-                console.log(post.data,"invoice");
-                
-                
+                base.invoice = data.docs[0]
+
             }  
 
-        }
+        },
+        onError(error) {
+            if (!errorHandled) {
+                createToast({
+                    title: 'Error',
+                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                    icon: 'x',
+                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                    position: 'top-center',
+                    timeout: 5,
+                });
+                errorHandled = true;
+            }
+        },
     });
 
     watch(

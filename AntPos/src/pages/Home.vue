@@ -7,8 +7,27 @@
         <Navbar />
       </div>
       <div class="w-screen h-[94%] flex p-2 gap-4">
-        <ItemSelector v-if="base.status=='' " />
-        <Invoice v-if="base.status=='invoice'"/>
+        <div class="w-[3%] h-full ">
+          <div class="w-full flex flex-col gap-4">
+            <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer">
+              <FeatherIcon name="book" /> 
+              <p class="w-full text-center">
+                <!-- sale -->
+              </p>
+            </div>
+            <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer">
+              <FeatherIcon name="briefcase" />
+              <p class="w-full text-center break-words">
+                <!-- payment -->
+              </p>
+            </div>
+          </div>
+          <div>
+
+          </div>
+        </div>
+        <ItemSelector v-if="!base?.invoice?.status" />
+        <Invoice v-if="base.invoice.status"/>
         <ItemDetail/>
       </div>
     </div>

@@ -1,3 +1,5 @@
+const plugin = require('tailwindcss/plugin')
+
 module.exports = {
   presets: [require('frappe-ui/src/utils/tailwind.config')],
   content: [
@@ -8,5 +10,17 @@ module.exports = {
   theme: {
     extend: {},
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addUtilities }) => {
+      addUtilities({
+        '.scrollbar-hide::-webkit-scrollbar': {
+          display: 'none',
+        },
+        '.scrollbar-hide': {
+          '-ms-overflow-style': 'none', /* IE and Edge */
+          'scrollbar-width': 'none', /* Firefox */
+        },
+      })
+    }),
+  ],
 }
