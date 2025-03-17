@@ -1,5 +1,5 @@
 <template>
-    <Dialog :options="{ size: '3xl' }" v-model="dialogVisible" @close="handleDialogClose" class="rounded-b">
+    <Dialog :options="{ size: '3xl' }" v-model="dialogVisible"  class="rounded-b">
         <template #body-title>
             <p class="text-3xl">Select Invoice</p>
         </template>
@@ -53,6 +53,7 @@ let errorHandled = false;
 
 const handleDialogClose = () => {
     dialogVisible.value = false;
+
 };
 
 const submitInvoice = () => {
@@ -76,10 +77,12 @@ let salesInvoice = createResource({
         base.invoice = { ...data.docs[0], status: null };
         base.items = await addItems(data.docs[0].items);
         base.customer = await get_value.fetch({
-                doctype: "Customer",
-                filters: { "name" : data.docs[0].customer },
-                fieldname: ['name', 'mobile_no','customer_group','territory','is_internal_customer'],
-            });
+            doctype: "Customer",
+            filters: { "name" : data.docs[0].customer },
+            fieldname: ['name', 'mobile_no','customer_group','territory','is_internal_customer'],
+        });
+        searchQuery.value=''
+        handleDialogClose()
     },
     onError(error) {
         createToast({
@@ -93,6 +96,7 @@ let salesInvoice = createResource({
         errorHandled = true;
     }
 });
+
 const addItems = async (items) => {
     
     for (const element of items) {
@@ -233,5 +237,4 @@ async function splitSerialNumbers(serialString = "") {
 		.map(line => line.trim()) 
 		.filter(line => line !== "");
 }
-
 </script>

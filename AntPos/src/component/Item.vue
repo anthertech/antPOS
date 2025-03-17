@@ -225,6 +225,7 @@
 <script setup>
 import { FeatherIcon, FormControl, Autocomplete } from 'frappe-ui';
 import { inject, watch, defineProps, onMounted, onUnmounted } from 'vue';
+import { showToast } from '../utils'
 
 let base = inject('base');
 const emitter = inject('emitter');
@@ -252,12 +253,8 @@ watch(
     () => props.items.batch_no,
     (newBatchNo, oldBatchNo) => {
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
-            console.log('Batch No changed', newBatchNo);
-            
-            // props.items.selected_batch_no = newBatchNo;
             let find = validateitems(props.index);
             if (!find) {
-                console.log("inside find",props.items.serial_no_options );
                 props.items.selected_serial_no = [];
                 props.items.serial_no_options = props.items.serial_no.filter((serial_no) => props.items.selected_batch_no.value && serial_no.batch_no === props.items.selected_batch_no)
                     .map((serial_no) => ({
@@ -311,14 +308,10 @@ const calculateQtyTotal = () => {
 
 const validateQty = (qty) => {
     const availableSerials = props.items.serial_no_options.map(option => option.value);
-        if (props.items.has_serial_no &&qty > availableSerials.length) {
-            console.log(
-                availableSerials.length,
-                'Qty is greater than available serial no'
-            );
-            // Update qty to maximum available serial no count
+        if (props.items.has_serial_no && qty > availableSerials.length) {
+            showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
             props.items.qty = availableSerials.length;
-            return true; // Indicate that the qty is now valid
+            return true;
         }
     return true;
 };
@@ -338,7 +331,6 @@ watch(
     (newValue, oldValue) => {
         if (newValue !== oldValue) {
             if (!validateQty(newValue) ) {
-                // Do nothing here; validateQty has already updated props.items.qty.
                 return;
             }
             if (props.items.has_serial_no) {

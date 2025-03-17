@@ -333,7 +333,6 @@ let advance = createResource({
         }
     },
     onSuccess(data) {
-        console.log(data);
         base.invoice = {...data.docs[0],is_pos: true}
         addPayments()
         errorHandled = false;

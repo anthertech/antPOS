@@ -155,7 +155,7 @@
                     class="bg-teal-600 text-yellow-50"
                     @click="post.fetch({ action:'Save', status:'print' })"
                 >
-                    PRINT DRAFT
+                    SAVE & PRINT
                 </Button>
             </div>
         </div>
@@ -182,8 +182,6 @@
         url: 'frappe.desk.form.save.savedocs',
         makeParams(params) {
             base.items.forEach((item) => {
-                console.log(item.selected_serial_no);
-                
                 item.serial_no=item.selected_serial_no.join('\n');
             });
             status = params.status
@@ -209,7 +207,10 @@
             if ( status == 'pay'){
                 base.invoice = data.docs[0]
 
-            }  
+            }else{
+                remove_invoice()
+
+            }
 
         },
         onError(error) {
@@ -244,4 +245,19 @@
             }
         }
     );
+    const remove_invoice = () => {
+    base.invoice = {
+        payments: [],
+        paid_amount: 0,
+        rounded_total: 0,
+        net_total: 0,
+        total_taxes_and_charges: 0,
+        total: 0,
+        discount_amount: 0,
+        grand_total: 0,
+        base_rounded_total: 0
+    };
+    base.items = [];
+    base.customer = {};
+};
 </script>
