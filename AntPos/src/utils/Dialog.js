@@ -1,13 +1,18 @@
 import { ref } from 'vue';
 
+
 export function useDynamicComponent() {
     const currentComponent = ref(null);
 
     const loadComponent = async (componentName) => {
         try {
             const components = {
+
                 OpenShift: () => import('../component/Dialog/Open-Shift.vue'),
                 CustomerForm: () => import('../component/Dialog/CustomerForm.vue'),
+                Held: () => import('../component/Dialog/Held.vue'),
+                Return: () => import('../component/Dialog/Return.vue')
+            
             };
 
             if (components[componentName]) {

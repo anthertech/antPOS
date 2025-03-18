@@ -3,7 +3,7 @@
 
 import frappe
 from frappe.model.document import Document
-from  ant_pos.ant_pos.utils.employee import is_employee
+from  ant_pos.ant_pos.utils import is_employee
 
 class AntOpeningShift(Document):
 	def validate (self):

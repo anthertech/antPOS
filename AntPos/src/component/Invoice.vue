@@ -168,7 +168,7 @@
                         label="Submit"
                         :loading="false"
                         :disabled="false"
-                        @click="submitInvoice"
+                        @click="submitInvoice()"
                     >
                         Submit
                     </Button>
@@ -180,6 +180,7 @@
                         label="Submit & Print"
                         :loading="false"
                         :disabled="false"
+                        @click="submitInvoice('print')"
                     >
                         Submit & Print
                     </Button>
@@ -254,7 +255,7 @@ let save = createResource({
     },
     onSuccess(data) {
         errorHandled = false;
-        remove_invoice()
+        base.invoice=data.docs[0]
     },
     onError(error) {
             if (!errorHandled) {
@@ -305,12 +306,18 @@ const changePaymentAmount = () => {
     }
 };
 
-const submitInvoice = async () => {
+const submitInvoice = async (action=null) => {
     let invoice = {...base.invoice}
     if (await validatePaymentBeforeSave(base)){
+        await save.fetch({ action: 'Save' })
         await save.fetch({ action: 'Submit' })
+        remove_invoice()
         createPayments(invoice)
+        if (action !=null){
+            createPrint(invoice.name)
+        }
     }
+
 };
 const createPayments = async (invoice) =>{
 
@@ -323,6 +330,30 @@ const createPayments = async (invoice) =>{
         }
     }
 };
+const createPrint = async (name) =>{
+    await baseurl.fetch()
+    if (base.pos_profile.skip_printview){
+
+    }else{
+        window.open(
+            `${baseurl.data}/printview?doctype=Sales+Invoice&name=${
+                name
+            }&format=${encodeURIComponent(base.pos_profile.print_format)}&trigger_print=1&no_letterhead=${base.pos_profile.letter_head ? 1 :0 }
+            &letterhead=${base.pos_profile.letter_head}`,
+            "_blank"
+        );
+    }
+
+}
+const baseurl = createResource({
+        url: 'ant_pos.ant_pos.utils.get_domain_url',
+
+        onSuccess(data) {
+            console.log(data,"ppppppppp");
+            
+            }
+
+    });
 let advance = createResource({
     url: 'run_doc_method',
     auto: true,

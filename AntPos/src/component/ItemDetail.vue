@@ -105,7 +105,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-orange-600 text-yellow-50"
-                     @click="showHeld = !showHeld"
+                    @click="loadComponent('Held')"
                 >
                     HELD
                 </Button>
@@ -116,8 +116,7 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-cyan-600 text-yellow-50"
-                    
+                    class="bg-cyan-600 text-yellow-50"                    
                 >
                     RETURN
                 </Button>
@@ -160,7 +159,6 @@
             </div>
         </div>
     </div>
-    <Held v-model="showHeld" />
 </template>
 
 <script setup>
@@ -171,6 +169,7 @@
     import { createToast } from '../utils';
     import Held from './Dialog/Held.vue';
     import Item from './Item.vue';
+    import Return from './Dialog/Return.vue';
 
     const { loadComponent } = inject('dynamicComponent');
     let base = inject('base');
@@ -202,15 +201,24 @@
                 action:params.action,
             };
         },
-        onSuccess(data,params) {
+        async onSuccess (data) {
             errorHandled = false;      
             if ( status == 'pay'){
                 base.invoice = data.docs[0]
+                return
 
-            }else{
-                remove_invoice()
-
+            }else if (status == 'print'){
+                await baseurl.fetch()
+                window.open(
+                    `${baseurl.data}/printview?doctype=Sales+Invoice&name=${
+                        data.docs[0].name
+                    }&format=${encodeURIComponent(base.pos_profile.print_format)}&trigger_print=1&no_letterhead=${base.pos_profile.letter_head ? 1 :0 }
+                    &letterhead=${base.pos_profile.letter_head}`,
+                    "_blank"
+                );
             }
+            remove_invoice()
+
 
         },
         onError(error) {
@@ -226,6 +234,15 @@
                 errorHandled = true;
             }
         },
+    });
+        const baseurl = createResource({
+        url: 'ant_pos.ant_pos.utils.get_domain_url',
+
+        onSuccess(data) {
+            console.log(data,"ppppppppp");
+            
+            }
+
     });
 
     watch(
