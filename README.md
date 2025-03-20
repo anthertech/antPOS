@@ -24,7 +24,7 @@ To install Ant-POS on your ERPNext setup, follow these steps:
 cd ~/frappe-bench
 
 # Get the Ant-POS app
-bench get-app ant_pos https://github.com/NihalRoshanCK/Ant-pos.git
+bench get-app ant_pos https://github.com/anthertech/antPOS.git
 
 # Install the app on your site
 bench --site yoursite.com install-app ant_pos
