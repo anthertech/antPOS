@@ -113,8 +113,7 @@ def items(pos_profile, search_value, customer):
         search_values = frappe._dict(json.loads(search_value))
     except json.JSONDecodeError:
         frappe.throw(_("Invalid search value format"))
-
-    pos_profile_data = frappe._dict(json.loads(pos_profile))
+    pos_profile_data = frappe.get_doc('POS Profile', pos_profile)
     company = frappe.db.get_value('Company', pos_profile_data.company, ['default_currency', 'name'], as_dict=True)
     customer_doc = frappe.db.get_value('Customer', customer, ['is_internal_customer'], as_dict=True)
     item = search_values.item

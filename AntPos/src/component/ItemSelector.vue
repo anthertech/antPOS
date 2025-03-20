@@ -38,6 +38,7 @@
 import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
 import { ref, inject, watch } from 'vue';
 import { createToast } from '../utils';
+import { showToast } from '../utils'
 
 const debounceSearch = ref('');
 const items = ref([]);
@@ -96,7 +97,7 @@ const addItemsResource = createResource({
     method: 'GET',
     makeParams(params) {
         return {
-            pos_profile: JSON.stringify(base.pos_profile),
+            pos_profile: base.pos_profile.name,
             search_value: params.search_value,
             customer: base.customer.name,
         };
@@ -236,6 +237,8 @@ const addItemIfExists = (data) => {
                 if (data.has_serial_no && data.serial_no) {
                     for (let serial of data.selected_serial_no) {
                         if (element.selected_serial_no.includes(serial)) {
+                            showToast('Warning', 'Serial-no Already added')
+                            
                             return found;
                         }
                     }

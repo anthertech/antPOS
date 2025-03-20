@@ -166,7 +166,7 @@
 
     import Customer from './Customer.vue';
     import { Button, FeatherIcon , FormControl , createResource } from 'frappe-ui';
-    import { inject , watch ,ref } from 'vue';
+    import { inject , watch  } from 'vue';
     import { createToast } from '../utils';
     import Held from './Dialog/Held.vue';
     import Item from './Item.vue';
@@ -175,7 +175,6 @@
     const { loadComponent } = inject('dynamicComponent');
     let base = inject('base');
     let status = '';
-    const showHeld = ref(false);
     const emitter = inject('emitter');
     let errorHandled = false;
     let post = createResource({
