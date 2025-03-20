@@ -59,22 +59,14 @@ const handleDialogClose = () => {
 const submitInvoice = () => {
     salesInvoice.fetch({ name: selectedInvoice.value });
 };
-
-let salesInvoice = createResource({
-    url: 'frappe.desk.form.load.getdoc',
+let runDoCMethod = createResource({
+    url: 'run_doc_method',
     makeParams(params) {
-        return {
-            doctype: "Sales Invoice",
-            name: params.name
-        };
+        return {...params}
+    
     },
     onSuccess: async (data) => {
-        errorHandled = false;  
-        if (!data.docs[0]?.items || !Array.isArray(data.docs[0].items)) {
-            console.error("Invalid or missing items array", data.docs[0]?.items);
-            return;
-        }
-        base.invoice = { ...data.docs[0], status: null };
+        base.invoice = { ...data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" };
         base.items = await addItems(data.docs[0].items);
         base.customer = await get_value.fetch({
             doctype: "Customer",
@@ -83,6 +75,35 @@ let salesInvoice = createResource({
         });
         searchQuery.value=''
         handleDialogClose()
+    },
+    onError(error) {
+        createToast({
+            title: 'Error',
+            text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+            icon: 'x',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
+        errorHandled = true;
+    }
+});
+
+let salesInvoice = createResource({
+    url: 'frappe.model.mapper.make_mapped_doc',
+    makeParams(params) {
+        return {
+            method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_sales_return",
+            source_name: params.name,
+            selected_children:{},
+            args:""
+        };
+    },
+    onSuccess: async (data) => {
+        await runDoCMethod.fetch({ for_validate :true, docs: data , method:'set_missing_values' , args: {"for_validate":true} });
+        console.log(data,"kfekkfkkffkkfkf");
+        errorHandled = false;  
+        // handleDialogClose()
     },
     onError(error) {
         createToast({
@@ -112,7 +133,7 @@ const addItems = async (items) => {
 
             element.serial_no = await getlist.fetch({
                 doctype: "Serial No",
-                filters: { "item_code": element.item_code, "warehouse": element.warehouse },
+                filters: { "item_code": element.item_code},
                 fields: ["name as serial_no", "batch_no"],
                 limit_page_length :Number.MAX_VALUE * 2,
             });
@@ -188,7 +209,7 @@ let get_value = createResource({
 const invoices = createListResource({
     doctype: 'Sales Invoice',
     fields: ['name', 'customer', 'grand_total'],
-    filters: { docstatus: 0 },
+    filters: { docstatus: 1 },
     pageLength: Number.MAX_VALUE * 2,
     auto: true
 });

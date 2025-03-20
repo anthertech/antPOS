@@ -116,7 +116,8 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-cyan-600 text-yellow-50"                    
+                    class="bg-cyan-600 text-yellow-50"
+                    @click="loadComponent('Return')"            
                 >
                     RETURN
                 </Button>
