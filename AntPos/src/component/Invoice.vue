@@ -345,15 +345,7 @@ const createPrint = async (name) =>{
     }
 
 }
-const baseurl = createResource({
-        url: 'ant_pos.ant_pos.utils.get_domain_url',
-
-        onSuccess(data) {
-            console.log(data,"ppppppppp");
-            
-            }
-
-    });
+const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url',});
 let advance = createResource({
     url: 'run_doc_method',
     auto: true,

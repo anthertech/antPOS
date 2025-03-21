@@ -246,6 +246,8 @@ const addItemIfExists = (data) => {
                 addChild(base.items[index].selected_serial_no, data.selected_serial_no[0]);
                 base.items[index].qty += 1;
                 priceListResource.fetch({ items: base.items[index] })
+                debounceSearch.value = '';
+                
             }
         });
     }
@@ -255,6 +257,7 @@ const addItemIfExists = (data) => {
 const addNewLine = async (data) => {
     await priceListResource.fetch({ items: data });
     base.items.push(data);
+    debounceSearch.value = '';
 };
 
 const addChild = (data, value) => {

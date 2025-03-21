@@ -10,7 +10,7 @@
         <div class="w-[3%] h-full ">
           <div class="w-full flex flex-col gap-4">
             <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer">
-              <FeatherIcon name="book" /> 
+              <BeakerIcon class="size-6 text-blue-500" />
               <p class="w-full text-center">
                 <!-- sale -->
               </p>
@@ -37,7 +37,7 @@
     import Navbar from '../component/Navbar.vue';
     import ItemSelector from '../component/ItemSelector.vue';
     import ItemDetail from '../component/ItemDetail.vue';
-
+    import { BeakerIcon } from '@heroicons/vue/24/solid'
     import { FeatherIcon, Autocomplete, createListResource ,Button } from 'frappe-ui';
     import { computed, inject, provide , watch,  } from 'vue';
     import { useDynamicComponent } from '../utils/Dialog';

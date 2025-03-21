@@ -13,7 +13,7 @@
             {{ items.uom }}
         </div>
         <div class="w-[18.4%]">
-            {{ items.rate > 0 ? items.rate.toFixed(2) : 0 }}
+            {{ Number(items.rate).toFixed(2) }}
         </div>
         <div class="w-[18.4%]">
             {{ items.amount ? items.amount.toFixed(2) : '0.00' }}
@@ -248,15 +248,14 @@ const getbatchNo = (batch_nos) => {
     }));
 };
 
-// Watch for changes in batch_no and update serial_no_options
 watch(
     () => props.items.batch_no,
-    (newBatchNo, oldBatchNo) => {
+    (newBatchNo, oldBatchNo) => {        
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
             let find = validateitems(props.index);
-            if (!find) {
+            if (!find && props.items.has_serial_no) {
                 props.items.selected_serial_no = [];
-                props.items.serial_no_options = props.items.serial_no.filter((serial_no) => props.items.selected_batch_no.value && serial_no.batch_no === props.items.selected_batch_no)
+                props.items.serial_no_options = props.items.serial_no.filter((serial_no) => serial_no.batch_no == newBatchNo)
                     .map((serial_no) => ({
                         label: serial_no.serial_no,
                         value: serial_no.serial_no,
@@ -291,7 +290,7 @@ const calculateAmountTotal = () => {
         discount+= element.discount_amount;
         
     });
-    base.item_discount = discount.toFixed(2);
+    base.item_discount = Number(discount).toFixed(2);
     base.total = (total - ((base.additional_discount || 0) )).toFixed(2);
 };
 
@@ -351,12 +350,10 @@ const adjustSerialNumbers = (newQty, oldQty) => {
             .filter((serial_no, index) => index < newQty)
             .map(serial_no => serial_no.value);
     } else if (props.items.selected_serial_no.length < newQty) {
-        // Get serial numbers that are not in selected_serial_no
         let availableSerialNos = props.items.serial_no_options
             .filter(serial_no => !props.items.selected_serial_no.includes(serial_no.value))
             .map(serial_no => serial_no.value);
 
-        // Add the required number of serial numbers to selected_serial_no
         props.items.selected_serial_no = [
             ...props.items.selected_serial_no,
             ...availableSerialNos.slice(0, diff)

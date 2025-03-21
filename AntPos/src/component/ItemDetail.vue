@@ -129,7 +129,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-violet-600 text-yellow-50"
-                    @click="post.fetch({ action:'Save', status:'save_new' })"
+                    @click="sales_invoice.fetch({ action:'Save', status:'save_new' })"
                 >
                     SAVE/NEW
                 </Button>
@@ -141,7 +141,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-green-600 text-yellow-50"
-                    @click="post.fetch({ action:'Save', status:'pay' })"
+                    @click="sales_invoice.fetch({ action:'Save', status:'pay' })"
                 >
                     PAY
                 </Button>
@@ -153,7 +153,7 @@
                     :disabled="false"
                     :link="null"
                     class="bg-teal-600 text-yellow-50"
-                    @click="post.fetch({ action:'Save', status:'print' })"
+                    @click="sales_invoice.fetch({ action:'Save', status:'print' })"
                 >
                     SAVE & PRINT
                 </Button>
@@ -168,20 +168,30 @@
     import { Button, FeatherIcon , FormControl , createResource } from 'frappe-ui';
     import { inject , watch  } from 'vue';
     import { createToast } from '../utils';
-    import Held from './Dialog/Held.vue';
     import Item from './Item.vue';
-    import Return from './Dialog/Return.vue';
 
     const { loadComponent } = inject('dynamicComponent');
     let base = inject('base');
     let status = '';
     const emitter = inject('emitter');
     let errorHandled = false;
-    let post = createResource({
+    let sales_invoice = createResource({
         url: 'frappe.desk.form.save.savedocs',
         makeParams(params) {
             base.items.forEach((item) => {
                 item.serial_no=item.selected_serial_no.join('\n');
+                if (item.has_serial_no && item.selected_serial_no.length !== item.qty) {
+                    createToast({
+                        title: 'Error',
+                        text: 'Serial number is required',
+                        icon: 'x',
+                        iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                        position: 'top-center',
+                        timeout: 5,
+                    });
+                    errorHandled = true;
+                }
+
             });
             status = params.status
             return {
@@ -235,15 +245,8 @@
             }
         },
     });
-        const baseurl = createResource({
-        url: 'ant_pos.ant_pos.utils.get_domain_url',
-
-        onSuccess(data) {
-            console.log(data,"ppppppppp");
-            
-            }
-
-    });
+    
+    const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
 
     watch(
         () => base.items,

@@ -101,7 +101,6 @@ let salesInvoice = createResource({
     },
     onSuccess: async (data) => {
         await runDoCMethod.fetch({ for_validate :true, docs: data , method:'set_missing_values' , args: {"for_validate":true} });
-        console.log(data,"kfekkfkkffkkfkf");
         errorHandled = false;  
         // handleDialogClose()
     },
