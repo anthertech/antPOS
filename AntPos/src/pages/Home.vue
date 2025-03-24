@@ -37,7 +37,6 @@
     import Navbar from '../component/Navbar.vue';
     import ItemSelector from '../component/ItemSelector.vue';
     import ItemDetail from '../component/ItemDetail.vue';
-    import { BeakerIcon } from '@heroicons/vue/24/solid'
     import { FeatherIcon, Autocomplete, createListResource ,Button } from 'frappe-ui';
     import { computed, inject, provide , watch,  } from 'vue';
     import { useDynamicComponent } from '../utils/Dialog';
