@@ -10,7 +10,7 @@
         <div class="w-[3%] h-full ">
           <div class="w-full flex flex-col gap-4">
             <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer">
-              <BeakerIcon class="size-6 text-blue-500" />
+              <FeatherIcon name="briefcase" />
               <p class="w-full text-center">
                 <!-- sale -->
               </p>

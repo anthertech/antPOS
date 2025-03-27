@@ -285,12 +285,15 @@ const calculateAmountTotal = () => {
     let total = 0;
     let discount = 0;
     base.items.forEach((element) => {
-        element.amount = element.qty * element.rate;
-        total += element.amount;
+        element.amount = Math.abs(element.qty) * element.rate;
+        
+        total += element.base_rate * Math.abs(element.qty);
         discount+= element.discount_amount;
         
     });
     base.item_discount = Number(discount).toFixed(2);
+    console.log(base.invoice.additional_discount_percentage,"base.additional_discount_percentage");
+    
     base.total = (total - ((base.additional_discount || 0) )).toFixed(2);
 };
 
@@ -336,7 +339,7 @@ watch(
                 adjustSerialNumbers(newValue, oldValue);
             }
             props.items.rate = rateCalculation(props.items);
-            props.items.amount = props.items.rate * props.items.qty;
+            props.items.amount = props.items.rate * Math.abs(props.items.qty);
             calculateQtyTotal();
     }
     }
@@ -366,7 +369,7 @@ watch(
     (newValue, oldValue) => {
         if (newValue !== oldValue || !oldValue) {
             props.items.rate = rateCalculation(props.items);
-            props.items.amount = props.items.rate* props.items.qty;        
+            props.items.amount = props.items.rate* Math.abs(props.items.qty);        
         }
     }
 );
@@ -390,12 +393,13 @@ base.items.forEach((items) => {
     );
 });
 
-const rateCalculation = (data) => data.price_list_rate - ((data.discount_percentage * data.price_list_rate) / 100);
+const rateCalculation = async () => {
+    props.items.rate = props.items.price_list_rate - ((props.items.discount_percentage * props.items.price_list_rate) / 100);
+}
 
-// Listen for rateCalculated event and update items rate
-onMounted(() => {
-    props.items.rate = rateCalculation(props.items);
-    props.items.amount = props.items.rate * props.items.qty;
+onMounted( async () => {
+    await rateCalculation();
+    props.items.amount = props.items.rate * Math.abs(props.items.qty);
     calculateQtyTotal();
     calculateAmountTotal();
 });

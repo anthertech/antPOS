@@ -194,6 +194,20 @@
 
             });
             status = params.status
+            console.log({
+                    ...base?.invoice,
+                    doctype: 'Sales Invoice',
+                    is_pos:1,
+                    pos_profile:base.pos_profile.name,
+                    company: base.pos_profile.company,
+                    conversion_rate:1,
+                    selling_price_list:base.pos_profile.selling_price_list,
+                    items:base.items,
+                    customer:base.customer.name,
+                    update_stock :1,
+                    
+                },"klkkkkkkk");
+            
             return {
                 doc: JSON.stringify({
                     ...base?.invoice,
@@ -206,6 +220,7 @@
                     items:base.items,
                     customer:base.customer.name,
                     update_stock :1,
+                    base_total: base.total,
                     
                 }),
                 action:params.action,

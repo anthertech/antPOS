@@ -66,7 +66,9 @@ let runDoCMethod = createResource({
     
     },
     onSuccess: async (data) => {
-        base.invoice = { ...data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" };
+        errorHandled = false;
+        
+        base.invoice = await { ...data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" };
         base.items = await addItems(data.docs[0].items);
         base.customer = await get_value.fetch({
             doctype: "Customer",
@@ -88,7 +90,6 @@ let runDoCMethod = createResource({
         errorHandled = true;
     }
 });
-
 let salesInvoice = createResource({
     url: 'frappe.model.mapper.make_mapped_doc',
     makeParams(params) {
@@ -120,6 +121,8 @@ let salesInvoice = createResource({
 const addItems = async (items) => {
     
     for (const element of items) {
+        console.log(element.rate);
+        
         try {
             element.batch_nos = await getlist.fetch({
                 doctype: 'Batch',
