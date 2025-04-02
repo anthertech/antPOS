@@ -1,5 +1,5 @@
 <template>
-  <div class="w-11/12">
+  <div class="w-full">
     <Autocomplete
       :options="computedOptions"
       v-model="selectedCustomer"

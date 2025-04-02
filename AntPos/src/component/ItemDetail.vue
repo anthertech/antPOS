@@ -212,7 +212,7 @@
                 doc: JSON.stringify({
                     ...base?.invoice,
                     doctype: 'Sales Invoice',
-                    is_pos:1,
+                    is_pos: base.invoice.is_return ? base.invoice.is_pos : 1,
                     pos_profile:base.pos_profile.name,
                     company: base.pos_profile.company,
                     conversion_rate:1,
