@@ -14,10 +14,10 @@
                     <div class="flex justify-evenly text-center bg-black-overlay-800 text-white rounded-md p-3 h-[6%]">
                         <div class="w-[4%]">
                             <Checkbox
-                                size="sm"
-                                :value="selectAll"
-                                @change="toggleAllSelection"
-                            />
+     size="sm"
+    :checked="selectAll"
+    @change="toggleAllSelection"
+/>
                         </div>
                         <p class="w-[19%]">Name</p>
                         <p class="w-[19%]">Customer</p>
@@ -32,11 +32,10 @@
                             <div class="flex justify-evenly items-center rounded text-center bg-blue-200 p-2.5 my-2">
                                 <div class="w-[4%] flex justify-center items-center">
                                     <Checkbox
-                                        size="sm"
-                                        :value="invoice.selected"
-                                        :v-model="invoice.selected" 
-                                        @change="toggleSelection(invoice)"
-                                    />
+    size="sm"
+    :value="invoice.selected"
+    @change="toggleSelection(invoice)"
+/>  
                                 </div>
                                 <p class="w-[19%]">{{ invoice.name }}</p>
                                 <p class="w-[19%]">{{ invoice.customer }}</p>
@@ -106,9 +105,10 @@
 </template>
 
 <script setup>
-import { createListResource, TextInput, FormControl, FeatherIcon, Checkbox } from 'frappe-ui';
-import { ref, inject, computed, watch } from 'vue';
-import Customer from './Customer.vue';
+
+    import { createListResource, TextInput, FormControl, FeatherIcon, Checkbox } from 'frappe-ui';
+    import { ref, inject, computed, watch } from 'vue';
+    import Customer from './Customer.vue';
 
 let base = inject('base');
 const searchQuery = ref("");
@@ -168,24 +168,25 @@ const calculateAmountTotal = () => {
     base.paymentAmount = total;
     console.log("Total Amount: ", total);
 };
-
-const toggleSelection = (invoice) => {
-    if (!invoice) {
-        console.error("Invoice is undefined in toggleSelection");
-        return;
-    }
-    invoice.selected = !invoice.selected;
-    selectAll.value = invoices.data.every(inv => inv.selected);
-    calculateAmountTotal();
-};
-
 const toggleAllSelection = (event) => {
+    if (event && event.stopPropagation) {
+        event.stopPropagation(); 
+    }
+
     selectAll.value = event.target.checked;
     invoices.data.forEach(invoice => {
         invoice.selected = selectAll.value;
     });
+
     calculateAmountTotal();
 };
+
+const toggleSelection = (invoice) => {
+    invoice.selected = !invoice.selected;
+    selectAll.value = invoices.data.every(inv => inv.selected); // Update select all checkbox
+    calculateAmountTotal();
+};
+
 
 
 
