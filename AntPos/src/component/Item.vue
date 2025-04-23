@@ -403,8 +403,6 @@ base.items.forEach((items) => {
 const  rateCalculation =  (item) => {
     const rate = item.price_list_rate || item.rate;
     const discount = item.discount_percentage || 0;
-    console.log(rate,"jjkjjjj");
-    
     return rate - (rate * (discount / 100));
 };
 
