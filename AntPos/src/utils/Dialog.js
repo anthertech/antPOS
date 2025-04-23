@@ -11,7 +11,8 @@ export function useDynamicComponent() {
                 OpenShift: () => import('../component/Dialog/Open-Shift.vue'),
                 CustomerForm: () => import('../component/Dialog/CustomerForm.vue'),
                 Held: () => import('../component/Dialog/Held.vue'),
-                Return: () => import('../component/Dialog/Return.vue')
+                Return: () => import('../component/Dialog/Return.vue'),
+                CloseShift:() => import('../component/Dialog/CloseShift.vue')
             
             };
 
@@ -23,6 +24,7 @@ export function useDynamicComponent() {
                 await new Promise((resolve) => setTimeout(resolve, 0));
 
                 const component = await components[componentName]();
+                
                 currentComponent.value = component.default;
             } else {
                 console.error(`Component "${componentName}" not found.`);

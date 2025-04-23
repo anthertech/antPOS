@@ -1,7 +1,7 @@
   <template>
     <div class="w-screen h-screen">
       <div v-if="currentComponent">
-          <component :is="currentComponent" />
+          <component :is="currentComponent"  @switchComponent="loadComponent"  />
       </div>
       <div class="w-screen h-[6%]">
         <Navbar />
@@ -12,13 +12,13 @@
             <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer" @click="changePage('invoice')">
               <FeatherIcon name="briefcase" />
               <p class="w-full text-center">
-                <!-- sale -->
+                sale
               </p>
             </div>
             <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer" @click="changePage('payments')">
               <FeatherIcon name="briefcase" />
               <p class="w-full text-center break-words">
-                <!-- payment -->
+                payment
               </p>
             </div>
           </div>
@@ -43,13 +43,13 @@
     import ItemSelector from '../component/ItemSelector.vue';
     import ItemDetail from '../component/ItemDetail.vue';
     import PaymentSelect from '../component/PaymentSelect.vue';
-    import { FeatherIcon, Autocomplete, createListResource ,Button } from 'frappe-ui';
-    import { computed, inject, provide , watch,  } from 'vue';
+    import { inject, provide ,  } from 'vue';
     import { useDynamicComponent } from '../utils/Dialog';
     import Invoice from '../component/Invoice.vue';
 
     let base = inject('base');
     const { currentComponent, loadComponent } = useDynamicComponent();
+
     loadComponent('OpenShift');
 
     provide('dynamicComponent', { currentComponent, loadComponent });

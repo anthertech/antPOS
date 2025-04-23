@@ -13,33 +13,27 @@
                     </TextInput>
                     <div class="flex justify-evenly text-center bg-black-overlay-800 text-white rounded-md p-3 h-[6%]">
                         <div class="w-[4%]">
-                            <Checkbox
-     size="sm"
-    :checked="selectAll"
-    @change="toggleAllSelection"
-/>
+                            <input name="name" id="id" type="checkbox" :checked="selectAll"
+                            class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleAllSelection" />
                         </div>
                         <p class="w-[19%]">Name</p>
                         <p class="w-[19%]">Customer</p>
                         <p class="w-[19%]">Amount</p>
                         <p class="w-[19%]">Outstanding</p>
                     </div>
-                    <div class="h-[92%] overflow-y-scroll rounded scrollbar-hide">
+                    <div class="h-[92%] overflow-y-scroll rounded scrollbar-hide flex flex-col  gap-3 text-center">
                         <div v-if="filteredInvoices.length === 0" class="flex justify-center items-center h-full">
                             <p class="text-gray-500">No invoices found</p>
                         </div>
-                        <div v-for="invoice in filteredInvoices" :key="invoice.name" class="flex w-full flex-col">
-                            <div class="flex justify-evenly items-center rounded text-center bg-blue-200 p-2.5 my-2">
-                                <div class="w-[4%] flex justify-center items-center">
-                                    <Checkbox
-    size="sm"
-    :value="invoice.selected"
-    @change="toggleSelection(invoice)"
-/>  
+                        <div v-for="invoice in filteredInvoices" :key="invoice.name" class=" w-full ">
+                            <div class="flex justify-evenly items-center rounded text-center bg-blue-200 p-2.5 ">
+                                <div class="w-[4%] ">
+                                    <input name="name" id="id" type="checkbox" :checked="invoice.selected" 
+                                    class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleSelection(invoice)" />
                                 </div>
                                 <p class="w-[19%]">{{ invoice.name }}</p>
                                 <p class="w-[19%]">{{ invoice.customer }}</p>
-                                <p class="w-[19%toggleSelection]">{{ invoice.grand_total }}</p>
+                                <p class="w-[19%]">{{ invoice.grand_total }}</p>
                                 <p class="w-[19%]">{{ invoice.outstanding_amount }}</p>
                             </div>
                         </div>
@@ -48,56 +42,79 @@
             </div>
         </div>
         <div class="w-[35%] h-full">
-            <div class="w-full h-full shadow-2xl p-4 rounded flex flex-col gap-4">
-                <div class="flex flex-col gap-6 h-fit ">
-                    <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3 ">
-                        <p>Payment Total</p>
+            <div class="w-full h-full shadow-2xl p-4 rounded flex flex-col justify-between">
+                <!-- Top content -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-col gap-6 h-fit">
+                        <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
+                            <p>Payment Total</p>
+                        </div>
+                        <FormControl
+                            :type="'number'"
+                            :ref_for="true"
+                            size="sm"
+                            variant="subtle"
+                            placeholder="0"
+                            :disabled="false"
+                            label="Credit To Redeem"
+                            v-model="base.paymentAmount"
+                            @change="calculateAmountTotal"
+                        />
                     </div>
-                    <FormControl
-                        :type="'number'"
-                        :ref_for="true"
-                        size="sm"
-                        variant="subtle"
-                        placeholder="0"
-                        :disabled="false"
-                        label="Credit To Redeem"
-                        v-model="base.paymentAmount"
-                        @change=""
-                    />
-                </div>
-                <div>
-                    <p class="text-2xl font-bold ">
-                        Payment Method
-                    </p>
-                    <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in base.pos_profile.payments" :key="index">
+                    <div>
+                        <p class="text-2xl font-bold">Payment Method</p>
+                        <div
+                            class="grid grid-cols-2 gap-4 p-2 items-center"
+                            v-for="(mode, index) in modes"
+                            :key="index"
+                        >
+                            <FormControl
+                                type="number"
+                                size="sm"
+                                variant="subtle"
+                                placeholder="0"
+                                :disabled="false"
+                                :label="`${mode.mode_of_payment}:`"
+                                v-model="mode.amount"
+                            />
+                            <Button
+                                class="w-full h-full"
+                                :variant="'solid'"
+                                theme="gray"
+                                size="lg"
+                                label="Button"
+                                :loading="false"
+                                :disabled="false"
+                                @click="changemode(index)"
+                            >
+                                {{ mode.mode_of_payment }}
+                            </Button>
+                        </div>
                         <FormControl
                             type="number"
                             size="sm"
                             variant="subtle"
                             placeholder="0"
-                            :disabled="false"
-                            :label="`${mode.mode_of_payment}:`"
+                            :disabled="true"
+                            v-model="base.diff"
+                            label="Difference:"
                         />
-                        <Button
-                            class="w-full h-full"
-                            :variant="'solid'"
-                            theme="gray"
-                            size="lg"
-                            label="Button"
-                            :loading="false"
-                            :disabled="false"
-                        >
-                            {{ mode.mode_of_payment }}
-                        </Button>
                     </div>
-                    <FormControl
-                        type="number"
-                        size="sm"
-                        variant="subtle"
-                        placeholder="0"
-                        :disabled="false"
-                        label="Difference:"
-                    />
+                </div>
+                <div class="text-right">
+                    <Button
+                        class="w-full h-full"
+                        :variant="'solid'"
+                        theme="gray"
+                        size="lg"
+                        label="Button"
+                        :loading="false"
+                        :disabled="!hasSelectedInvoice"
+                        @click="createpayment"
+                    >
+                        Submit
+
+                    </Button>
                 </div>
             </div>
         </div>
@@ -106,88 +123,231 @@
 
 <script setup>
 
-    import { createListResource, TextInput, FormControl, FeatherIcon, Checkbox } from 'frappe-ui';
-    import { ref, inject, computed, watch } from 'vue';
+    import { createListResource, TextInput, FormControl, FeatherIcon, createResource } from 'frappe-ui';
+    import { ref, inject, computed, watch, onBeforeMount } from 'vue';
     import Customer from './Customer.vue';
+    import { createToast } from '../utils';
 
-let base = inject('base');
-const searchQuery = ref("");
-const customerName = ref(base.customer.name);
-const selectAll = ref(false);
 
-const invoices = createListResource({
-    doctype: 'Sales Invoice',
-    fields: ['name', 'customer', 'grand_total', 'outstanding_amount'],
-    filters: { 
-        outstanding_amount: [">", 0],
-        docstatus: 1, 
-        is_return: 0, 
-        set_warehouse: base.pos_profile.warehouse, 
-        customer: customerName.value
-    },
-    
-    transform(data) {
-      for (let d of data) {
-        d.selected= false
-      }
-      return data
-    },
-    pageLength: Number.MAX_VALUE * 2,
-});
+    let base = inject('base');
+    const searchQuery = ref("");
+    const customerName = ref(base.customer.name);
+    const selectAll = ref(false);
+    const modes = ref([]);
+    let errorHandled = false;
 
-const filteredInvoices = computed(() => {
-    if (!invoices.data) {
-        return [];
-    }
-    if (!searchQuery.value) {
-        return invoices.data;
-    }
-    return invoices.data.filter(invoice =>
-        invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        invoice.customer.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-});
-
-watch(
-    () => base.customer,
-    (newValue, oldValue) => {
-        if (oldValue != null && newValue.name !== oldValue.name) {
-            customerName.value = newValue.name;
-            invoices.filters.customer = newValue.name;
-            invoices.fetch();
+    const invoices = createListResource({
+        doctype: 'Sales Invoice',
+        fields: ['name', 'customer', 'grand_total', 'outstanding_amount'],
+        filters: { 
+            outstanding_amount: [">", 0],
+            docstatus: 1, 
+            is_return: 0, 
+            set_warehouse: base.pos_profile.warehouse, 
+            customer: customerName.value
+        },
+        orderBy: 'creation asc',
+        pageLength: Number.MAX_VALUE * 2,
+        transform(data) {
+        for (let d of data) {
+            d.selected= false
         }
-    },
-    { immediate: true }
-);
-
-const calculateAmountTotal = () => {
-    let total = invoices.data.reduce((sum, invoice) => {
-        return invoice.selected ? sum + invoice.grand_total : sum;
-    }, 0);
-
-    base.paymentAmount = total;
-    console.log("Total Amount: ", total);
-};
-const toggleAllSelection = (event) => {
-    if (event && event.stopPropagation) {
-        event.stopPropagation(); 
-    }
-
-    selectAll.value = event.target.checked;
-    invoices.data.forEach(invoice => {
-        invoice.selected = selectAll.value;
+        return data
+        },
+        pageLength: Number.MAX_VALUE * 2,
     });
 
-    calculateAmountTotal();
-};
+    const filteredInvoices = computed(() => {
+        if (!invoices.data || !customerName.value) {
+            return [];
+        }
+        if (!searchQuery.value) {
+            return invoices.data;
+        }
+        return invoices.data.filter(invoice =>
+            invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+            invoice.customer.toLowerCase().includes(searchQuery.value.toLowerCase())
+        );
+    });
+    const hasSelectedInvoice = computed(() => {
+    return invoices.data?.some(inv => inv.selected);
+    });
 
-const toggleSelection = (invoice) => {
-    invoice.selected = !invoice.selected;
-    selectAll.value = invoices.data.every(inv => inv.selected); // Update select all checkbox
-    calculateAmountTotal();
-};
+
+    watch(
+        () => base.customer,
+        (newValue, oldValue) => {
+            if (oldValue != null && newValue.name !== oldValue.name) {
+                customerName.value = newValue.name;
+                invoices.filters.customer = newValue.name;
+                invoices.fetch();
+            }
+        },
+        { immediate: true }
+        ,
+    );
+        watch(
+    () => modes.value.map(mode => mode.amount),
+    (newAmounts) => {
+        const total = newAmounts.reduce((sum, val) => sum + Number(val || 0), 0);
+        base.diff =   Number(base.paymentAmount || 0) - total
+    
+    },
+    { immediate: true }
+    );
+
+    const calculateAmountTotal = () => {
+        let total = invoices.data.reduce((sum, invoice) => {
+            return invoice.selected ? sum + invoice.grand_total : sum;
+        }, 0);
+
+        base.paymentAmount = total;
+    };
+    const toggleAllSelection = (event) => {
+        if (event && event.stopPropagation) {
+            event.stopPropagation(); 
+        }
+
+        selectAll.value = event.target.checked;
+        invoices.data.forEach(invoice => {
+            invoice.selected = selectAll.value;
+        });
+
+        calculateAmountTotal();
+    };
+
+    const toggleSelection = (invoice) => {
+        if (selectAll.value) {
+            selectAll.value = false;
+        }
+        invoice.selected = !invoice.selected;
+        selectAll.value = invoices.data.every(inv => inv.selected);
+        calculateAmountTotal();
+    };
+    const addPayments = () => {
+        
+        base.pos_profile.payments.forEach(element => {
+
+                modes.value.push({
+                    "mode_of_payment": element.mode_of_payment,
+                    "amount": 0.00,
+                    "base_amount": 0.00,
+                })
+        })
+        base.paid_amount=0
+        base.diff=0
+
+        
 
 
+    }
+    const changemode = (index) => {
+        modes.value.forEach((element, i) => {
+            if (i === index) {
 
+                element.amount = base.paymentAmount
+            } else {
+                element.amount = 0
+            }
+        })
+        base.paid_amount =base.paymentAmount 
+    }
+    
+    onBeforeMount(() => {
+        addPayments()
 
+    });
+    const now = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const createpayment = () => {
+        const sortedModes = [...modes.value].sort((a, b) => b.amount - a.amount);
+        const selectedInvoices = filteredInvoices.value.filter(inv => inv.selected);
+        let i = 0;
+
+        while (i < sortedModes.length) {
+            const currentMode = sortedModes[i];
+            let totalToSpend = currentMode.amount;
+            const invoiceDetails = [];
+
+            for (let invoice of selectedInvoices) {
+                if (totalToSpend <= 0) break;
+                if (invoice.outstanding_amount <= 0) continue;
+
+                const allocated = Math.min(totalToSpend, invoice.outstanding_amount);
+                invoice.outstanding_amount -= allocated;
+                totalToSpend -= allocated;
+
+                invoiceDetails.push({
+                    reference_doctype: "Sales Invoice",
+                    reference_name: invoice.name,
+                    allocated_amount: allocated,
+                    outstanding_amount: invoice.outstanding_amount
+                });
+            }
+
+            if ((currentMode.amount - totalToSpend) > 0 && invoiceDetails.length > 0) {
+                save.fetch({
+                    action: 'Submit',
+                    references: invoiceDetails,
+                    mode: currentMode.mode_of_payment,
+                    amount: currentMode.amount - totalToSpend
+                });
+            }
+
+            i++;
+        }
+    }
+
+    
+    let save = createResource({
+        url: 'frappe.desk.form.save.savedocs',
+        makeParams(params) {
+            return {
+                doc: JSON.stringify(
+                    {
+                        doctype:"Payment Entry",
+                        payment_type: "Receive",
+                        posting_date:now(),
+                        party_type:'Customer',
+                        mode_of_payment:params.mode,
+                        party: base.customer.name,
+                        paid_from_account_currency:base.pos_profile.currency,
+                        paid_from:'Debtors - FITPL',
+                        paid_to:"MGR Cash - FITPL",
+                        paid_to_account_currency:base.pos_profile.currency,
+                        paid_amount: params.amount ,
+                        base_paid_amount: params.amount,
+                        received_amount: base.paid_amount,
+                        base_received_amount: base.paid_amount,
+                        references:params.references,
+                        reference_no:base.Ant_Opening_Shift.name
+                    },
+                ),
+                action: params.action
+            }
+        },
+        onSuccess(data) {
+            errorHandled = false;
+        },
+        onError(error) {
+                if (!errorHandled) {
+                    createToast({
+                        title: 'Error',
+                        text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+                        icon: 'x',
+                        iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                        position: 'top-center',
+                        timeout: 5,
+                    });
+                    errorHandled = true;
+                }
+        },
+    });
+   
 </script>

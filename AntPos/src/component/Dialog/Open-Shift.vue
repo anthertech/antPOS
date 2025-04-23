@@ -65,7 +65,7 @@
 
 <script setup>
     import { createResource, Button, Dialog, FormControl } from 'frappe-ui';
-    import { inject, ref, watch, reactive , markRaw } from 'vue';
+    import { inject, ref, watch, reactive  } from 'vue';
 
     const options = reactive({company: [],profile: {},});
     const dialog1 = ref(false);
@@ -134,6 +134,7 @@
           }
         },
       });
+      
       posprofile.fetch();
       dialog1.value = true;
     };
@@ -143,6 +144,7 @@
       auto:true,
 
       onSuccess(data) {
+        
         if (data){
           Object.assign(base, data);         
           dialog1.value=false;
@@ -156,4 +158,5 @@
         mode_of_payment.value = getModeOfPayment();
       }
     });
+
 </script>

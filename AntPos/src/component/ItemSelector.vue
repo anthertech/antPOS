@@ -274,9 +274,6 @@ const calculateAmountTotal = () => {
     base.total = total.toFixed(2);
 };
 
-emitter.on('fetchPriceList', (params) => {
-    priceListResource.fetch(params);
-});
 
 emitter.on('fetchPriceList', (params) => {
     priceListResource.fetch(params);
@@ -292,4 +289,4 @@ watch(() => base.items, () => {
     calculateAmountTotal();
 });
 
-</script>
+</script> 

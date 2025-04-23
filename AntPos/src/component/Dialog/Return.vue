@@ -121,7 +121,6 @@ let salesInvoice = createResource({
 const addItems = async (items) => {
     
     for (const element of items) {
-        console.log(element.rate);
         
         try {
             element.batch_nos = await getlist.fetch({

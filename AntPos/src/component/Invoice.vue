@@ -351,7 +351,7 @@ let advance = createResource({
     auto: true,
     makeParams(params) {        
         return {
-            docs: {...base.invoice,is_pos: false},
+            docs: {...base.invoice,is_pos: false,custom_ant_opening:base.Ant_Opening_Shift.name,},
             method: 'set_advances'
         }
     },
@@ -445,6 +445,7 @@ const validatePaymentBeforeSave = async () => {
 
     return true;
 }
+
 
 watch(
     () => {

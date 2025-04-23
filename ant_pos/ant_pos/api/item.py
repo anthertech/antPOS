@@ -104,8 +104,7 @@ def scan_barcode(search_value: str) -> Dict[str, Any]:
 def items(pos_profile, search_value, customer):
     if not customer:
         frappe.throw(_("Please select the customer"))
-
-    # Check if search_value is empty or not a valid JSON string
+    
     if not search_value:
         frappe.throw(_("Search value is required"))
 
@@ -113,23 +112,35 @@ def items(pos_profile, search_value, customer):
         search_values = frappe._dict(json.loads(search_value))
     except json.JSONDecodeError:
         frappe.throw(_("Invalid search value format"))
-    pos_profile_data = frappe.get_doc('POS Profile', pos_profile)
-    company = frappe.db.get_value('Company', pos_profile_data.company, ['default_currency', 'name'], as_dict=True)
-    customer_doc = frappe.db.get_value('Customer', customer, ['is_internal_customer'], as_dict=True)
-    item = search_values.item
 
-    serial_nos = []
-    batch_nos = []
+    pos_profile_doc = frappe.get_doc('POS Profile', pos_profile)
+    company = frappe.db.get_value('Company', pos_profile_doc.company, ['default_currency', 'name'], as_dict=True)
+    frappe.db.get_value('Customer', customer, ['is_internal_customer'])  # just to validate customer exists
 
-    if item['has_serial_no']:
-        serial_filters = {"item_code": item["item_code"], "warehouse": pos_profile_data.warehouse}
-        serial_nos = frappe.get_all("Serial No", filters=serial_filters, fields=["name as serial_no", "batch_no"])
+    item = search_values.get("item", {})
+    item_code = item.get("item_code")
+    has_serial_no = item.get("has_serial_no")
+    has_batch_no = item.get("has_batch_no")
 
-    if item['has_batch_no']:
-        batch_nos = frappe.get_all("Batch", filters={"item": item["item_code"]}, fields=["name as batch_no", "expiry_date"])
-    items = {
-        "item_code": item["item_code"],
-        "barcode": search_values.barcode,
+    serial_nos, batch_nos = [], []
+
+    if has_serial_no:
+        serial_nos = frappe.get_all(
+            "Serial No",
+            filters={"item_code": item_code, "warehouse": pos_profile_doc.warehouse},
+            fields=["name as serial_no"]
+        )
+
+    if has_batch_no:
+        batch_nos = frappe.get_all(
+            "Batch",
+            filters={"item": item_code},
+            fields=["name as batch_no", "expiry_date"]
+        )
+
+    item_args = {
+        "item_code": item_code,
+        "barcode": search_values.get("barcode"),
         "customer": customer,
         "currency": company.default_currency,
         "price_list": "Standard Selling",
@@ -137,23 +148,44 @@ def items(pos_profile, search_value, customer):
         "company": company.name,
         "ignore_pricing_rule": 0,
         "doctype": "Sales Invoice",
-        "stock_uom": item['stock_uom'],
-        "pos_profile": pos_profile_data.name,
-        "cost_center": pos_profile_data.cost_center,
-        "tax_category": pos_profile_data.tax_category,
-        "batch_no": search_values.batch_no,
-        "warehouse": pos_profile_data.warehouse,
-        "is_pos": 1
+        "stock_uom": item.get("stock_uom"),
+        "pos_profile": pos_profile_doc.name,
+        "cost_center": pos_profile_doc.cost_center,
+        "tax_category": pos_profile_doc.tax_category,
+        "batch_no": search_values.get("batch_no"),
+        "warehouse": pos_profile_doc.warehouse,
+        "is_pos": 1,
     }
 
-    # Fetch item details
-    values = get_item_details(items, doc=None, overwrite_warehouse=False)
-    values["serial_no"] = serial_nos
-    values["batch_nos"] = batch_nos
-    values["selected_serial_no"] = [search_values.serial_no] if item['has_serial_no'] and search_values.serial_no else []
-    values["selected_batch_no"] = batch_nos if item['has_batch_no'] and batch_nos else None
-    
+    item_details = get_item_details(item_args, doc=None, overwrite_warehouse=False)
+    item_details["serial_no"] = serial_nos
+    item_details["batch_nos"] = batch_nos
 
+    selected_serial_no = search_values.get("serial_no")
+    selected_batch_no = search_values.get("batch_no")
 
-    return values
+    item_details["selected_serial_no"] = [selected_serial_no] if has_serial_no and selected_serial_no else []
+    item_details["selected_batch_no"] = selected_batch_no if has_batch_no and selected_batch_no else None
 
+    if has_serial_no and selected_serial_no:
+        available_serials = {s["serial_no"] for s in serial_nos}
+        if selected_serial_no not in available_serials:
+            frappe.throw(_("Serial No {0} not available in warehouse {1}").format(selected_serial_no, pos_profile_doc.warehouse))
+
+    if has_batch_no and selected_batch_no:
+        qty = frappe.db.get_value(
+            "Stock Ledger Entry",
+            filters={
+                "item_code": item_code,
+                "batch_no": selected_batch_no,
+                "warehouse": pos_profile_doc.warehouse
+            },
+            fieldname="sum(actual_qty)"
+        )
+
+        if not qty or qty <= 0:
+            frappe.throw(_("Batch No {0} for item {1} is not available in warehouse {2}").format(
+                selected_batch_no, item_code, pos_profile_doc.warehouse
+            ))
+
+    return item_details

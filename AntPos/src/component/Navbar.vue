@@ -7,7 +7,7 @@
             <div class="flex text-center gap-3  items-center">
                 <img src="" class="w-8 h-8" alt="logo">
                 <p class="text-xl ">
-                    Ant-Pos 
+                    antPOS 
                 </p>
             </div>
             <!-- <div>
@@ -22,36 +22,39 @@
                     :options="[
                         {
                         label: 'Close Shift',
-                        onClick: openCloseShiftDialog,
+                        onClick: () => {
+                            loadComponent('CloseShift')
+                        },
                         icon: () => h(FeatherIcon, { name: 'file-minus' }),
                     },
                     {
                         label: 'Logout',
                         onClick: () => {
-                                    },
-                        icon: () => h(FeatherIcon, { name: 'log-out' }),
+                            logout.fetch();
                         },
+                        icon: () => h(FeatherIcon, { name: 'log-out' }),
+                    },
                     ]"
                     :button="{
                         label: 'Menu',
                     }"
-                />
+                    />
         </div>
     </div>
-    <CloseShift v-model="showCloseShift" />
 </template>
 
 <script setup>
     import { h ,ref, inject } from 'vue'; 
-    import CloseShift from './Dialog/CloseShift.vue';
+    import { Dropdown , FeatherIcon,createResource } from 'frappe-ui'
 
-    const showCloseShift = ref(false);
-
-    const openCloseShiftDialog = () => {
-    showCloseShift.value = true;
-    };
-
+    const { loadComponent } = inject('dynamicComponent');
     const base = inject('base')
+    const logout = createResource({
+        url: 'logout',
+        method: 'GET',
+        onSuccess(data) {
+        window.location.reload();
+        },
+    });
 
-    import { Dropdown , FeatherIcon } from 'frappe-ui'
 </script>
