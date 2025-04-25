@@ -36,7 +36,7 @@ const customerResource = createListResource({
         createToast({
             title: 'Error',
             text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
-            icon: 'x',
+            icon: 'x-circle',
             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
             position: 'top-center',
             timeout: 5,

@@ -9,17 +9,17 @@
       <div class="w-screen h-[94%] flex p-2 gap-4">
         <div class="w-[3%] h-full ">
           <div class="w-full flex flex-col gap-4">
-            <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer" @click="changePage('invoice')">
-              <FeatherIcon name="briefcase" />
-              <p class="w-full text-center">
+            <div class="px-[10%] w-full p-2  shadow-2xl hover:cursor-pointer rounded" @click="changePage('invoice')">
+              <FeatherIcon name="file-text" />
+              <!-- <p class="w-full text-center">
                 sale
-              </p>
+              </p> -->
             </div>
-            <div class="px-[10%] w-full  shadow-2xl hover:cursor-pointer" @click="changePage('payments')">
-              <FeatherIcon name="briefcase" />
-              <p class="w-full text-center break-words">
+            <div class="px-[10%] w-full p-2  shadow-2xl hover:cursor-pointer rounded" @click="changePage('payments')">
+              <FeatherIcon name="credit-card" />
+              <!-- <p class="w-full text-center break-words">
                 payment
-              </p>
+              </p> -->
             </div>
           </div>
           <div>
@@ -43,8 +43,9 @@
     import ItemSelector from '../component/ItemSelector.vue';
     import ItemDetail from '../component/ItemDetail.vue';
     import PaymentSelect from '../component/PaymentSelect.vue';
-    import { inject, provide ,  } from 'vue';
+    import { inject, provide } from 'vue';
     import { useDynamicComponent } from '../utils/Dialog';
+    import { FeatherIcon } from 'frappe-ui ';
     import Invoice from '../component/Invoice.vue';
 
     let base = inject('base');

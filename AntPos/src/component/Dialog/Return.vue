@@ -82,7 +82,7 @@ let runDoCMethod = createResource({
         createToast({
             title: 'Error',
             text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x',
+            icon: 'x-circle',
             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
             position: 'top-center',
             timeout: 5,
@@ -109,7 +109,7 @@ let salesInvoice = createResource({
         createToast({
             title: 'Error',
             text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x',
+            icon: 'x-circle',
             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
             position: 'top-center',
             timeout: 5,
@@ -163,7 +163,7 @@ let getlist = createResource({
         createToast({
             title: 'Error',
             text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x',
+            icon: 'x-circle',
             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
             position: 'top-center',
             timeout: 5,
@@ -197,7 +197,7 @@ let get_value = createResource({
         createToast({
             title: 'Error',
             text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x',
+            icon: 'x-circle',
             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
             position: 'top-center',
             timeout: 5,
