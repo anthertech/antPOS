@@ -28,26 +28,26 @@
             <div class="grid grid-cols-3 w-full gap-4">
                 <div class="p-2">
                     <FormControl
-                    type="text"
-                    :ref_for="true"
-                    size="sm"
-                    variant="subtle"
-                    placeholder="items Code"
-                    :disabled="true"
-                    label="items Code"
-                    v-model="items.item_code"
+                        type="text"
+                        :ref_for="true"
+                        size="sm"
+                        variant="subtle"
+                        placeholder="items Code"
+                        :disabled="true"
+                        label="items Code"
+                        v-model="items.item_code"
                     />
                 </div>
                 <div class="p-2">
                     <FormControl
-                    type="number"
-                    :ref_for="true"
-                    size="sm"
-                    variant="subtle"
-                    placeholder="0"
-                    :disabled="false"
-                    label="QTY"
-                    v-model="items.qty"
+                        type="number"
+                        :ref_for="true"
+                        size="sm"
+                        variant="subtle"
+                        placeholder="0"
+                        :disabled="false"
+                        label="QTY"
+                        v-model="items.qty"
                     />
                 </div>
                 <div class="p-2">
@@ -64,102 +64,102 @@
             </div>
             <div class="p-2">
                 <FormControl
-                type="number"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                :disabled="false"
-                label="Rate"
-                placeholder="0"
-                v-model="items.rate"
+                    type="number"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    :disabled="false"
+                    label="Rate"
+                    placeholder="0"
+                    v-model="items.rate"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="number"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                placeholder="Discount Percentage"
-                :disabled="false"
-                label="Discount Percentage"
-                v-model="items.discount_percentage"
+                    type="number"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    placeholder="Discount Percentage"
+                    :disabled="false"
+                    label="Discount Percentage"
+                    v-model="items.discount_percentage"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="number"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                :disabled="false"
-                label="Discount Amount"
-                placeholder="0"
-                v-model="items.discount_amount"
+                    type="number"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    :disabled="false"
+                    label="Discount Amount"
+                    placeholder="0"
+                    v-model="items.discount_amount"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="text"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                :disabled="false"
-                label="Price List Rate"
-                placeholder="0"
-                v-model="items.price_list_rate"
+                    type="text"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    :disabled="false"
+                    label="Price List Rate"
+                    placeholder="0"
+                    v-model="items.price_list_rate"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="number"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                placeholder="Available QTY"
-                :disabled="false"
-                label="Available QTY"
-                v-model="items.available_qty"
+                    type="number"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    placeholder="Available QTY"
+                    :disabled="false"
+                    label="Available QTY"
+                    v-model="items.available_qty"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="text"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                placeholder="Group"
-                :disabled="true"
-                label="Group"
-                v-model="items.item_group"
+                    type="text"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    placeholder="Group"
+                    :disabled="true"
+                    label="Group"
+                    v-model="items.item_group"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="number"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
-                placeholder="Stock Qty"
-                :disabled="true"
-                label="Stock Qty"
-                v-model="items.stock_qty"
+                    type="number"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    placeholder="Stock Qty"
+                    :disabled="true"
+                    label="Stock Qty"
+                    v-model="items.stock_qty"
                 />
             </div>
             <div class="p-2">
                 <FormControl
-                type="text"
-                :ref_for="true"
-                size="sm"
-                variant="subtle"
+                    type="text"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
                     placeholder="Stock UOM"
                     :disabled="true"
                     label="Stock UOM"
                     v-model="items.stock_uom"
-                    />
-                </div>
-                <div class="p-2">
-                    <FormControl
+                />
+            </div>
+            <div class="p-2">
+                <FormControl
                     type="number"
                     :ref_for="true"
                     size="sm"
@@ -168,56 +168,56 @@
                     :disabled="true"
                     label="Serial No Qty"
                     v-model="items.stock_qty"
-                    />
-                </div>
+                />
+            </div>
             </div>
             <div class="w-full">
                 <div class="p-2">
                     <Autocomplete
-                    :options="items.serial_no_options"
-                    placeholder="Serial No"
-                    :multiple="true"
-                    v-model="items.selected_serial_no"
+                        :options="items.serial_no_options"
+                        placeholder="Serial No"
+                        :multiple="true"
+                        v-model="items.selected_serial_no"
                     />
                 </div>
                 <div class="grid grid-cols-2 w-full gap-4">
                     <div class="p-2">
                         <FormControl
-                        type="number"
-                        :ref_for="true"
-                        size="sm"
-                        variant="subtle"
-                        placeholder="Batch No Available QTY"
-                        :disabled="false"
-                        label="Batch No Available QTY"
-                        v-model="items.stock_qty"
+                            type="number"
+                            :ref_for="true"
+                            size="sm"
+                            variant="subtle"
+                            placeholder="Batch No Available QTY"
+                            :disabled="false"
+                            label="Batch No Available QTY"
+                            v-model="items.stock_qty"
                         />
                     </div>
                     <div class="p-2">
                         <FormControl
-                        type="number"
-                        :ref_for="true"
-                        size="sm"
-                        variant="subtle"
-                        placeholder="Batch No Expire Date"
-                        :disabled="false"
-                        label="Batch No Expire Date"
-                        v-model="items.stock_qty"
+                            type="number"
+                            :ref_for="true"
+                            size="sm"
+                            variant="subtle"
+                            placeholder="Batch No Expire Date"
+                            :disabled="false"
+                            label="Batch No Expire Date"
+                            v-model="items.stock_qty"
                         />
                     </div>
                 </div>
                 <div>
                     <div class="p-2">
                         <Autocomplete
-                        type="select"
-                        :options="getbatchNo(items.batch_nos)"
-                        size="sm"
-                        variant="subtle"
-                        placeholder="Batch No"
-                        :disabled="false"
-                        label="Batch No"
-                        v-model="items.batch_no"
-                        :hideSearch="true"
+                            type="select"
+                            :options="getbatchNo(items.batch_nos)"
+                            size="sm"
+                            variant="subtle"
+                            placeholder="Batch No"
+                            :disabled="false"
+                            label="Batch No"
+                            v-model="items.batch_no"
+                            :hideSearch="true"
                         />
                     </div>
                 </div>

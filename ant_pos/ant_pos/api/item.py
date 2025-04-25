@@ -128,7 +128,7 @@ def items(pos_profile, search_value, customer):
         serial_nos = frappe.get_all(
             "Serial No",
             filters={"item_code": item_code, "warehouse": pos_profile_doc.warehouse},
-            fields=["name as serial_no"]
+            fields=["name as serial_no", "batch_no"]
         )
 
     if has_batch_no:

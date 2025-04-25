@@ -215,6 +215,8 @@ const addItem = (data) => {
     data.parenttype = "Sales Invoice";
     if (!addItemIfExists(data)) {
         if (data.has_batch_no && data.batch_no) {
+            console.log("jjjjjjjjjjjjjjj");
+            
             data.serial_no_options = data.serial_no
                 .filter(serial_no => data.batch_no && serial_no.batch_no === data.batch_no)
                 .map(serial_no => ({
@@ -223,6 +225,7 @@ const addItem = (data) => {
                 }));
             data.use_serial_batch_fields=1;
         }
+        console.log(data,"ooooo")
         addNewLine(data);
     }
 };
