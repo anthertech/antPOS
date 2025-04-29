@@ -1,65 +1,19 @@
   <template>
-    <div class="w-screen h-screen">
+    <div class="w-screen h-screen flex select-none">
       <div v-if="currentComponent">
           <component :is="currentComponent"  @switchComponent="loadComponent"  />
       </div>
-      <div class="w-screen h-[6%]">
-        <Navbar />
-      </div>
-      <div class="w-screen h-[94%] flex p-2 gap-4">
-        <div class="w-[3%] h-full ">
-          <div class="w-full flex flex-col gap-4">
-            <div class="px-[10%] w-full p-2  shadow-2xl hover:cursor-pointer rounded" @click="changePage('invoice')">
-              <FeatherIcon name="file-text" />
-              <!-- <p class="w-full text-center">
-                sale
-              </p> -->
-            </div>
-            <div class="px-[10%] w-full p-2  shadow-2xl hover:cursor-pointer rounded" @click="changePage('payments')">
-              <FeatherIcon name="credit-card" />
-              <!-- <p class="w-full text-center break-words">
-                payment
-              </p> -->
-            </div>
-          </div>
-          <div>
-
-          </div>
-        </div>
-        <div v-if="base.page=='payments'" class="w-[97%] h-full ">
-          <PaymentSelect />
-        </div>
-        <div v-else  class="w-[97%] h-full flex flex-row gap-4">
-          <ItemSelector v-if="!base?.invoice?.status" />
-          <Invoice v-if="base.invoice.status"/>
-          <ItemDetail/>
-        </div>
-      </div>
+      <Sidebar/>
+      <Platform/>
     </div>
   </template>
 
-  <script setup>
-    import Navbar from '../component/Navbar.vue';
-    import ItemSelector from '../component/ItemSelector.vue';
-    import ItemDetail from '../component/ItemDetail.vue';
-    import PaymentSelect from '../component/PaymentSelect.vue';
-    import { inject, provide } from 'vue';
-    import { useDynamicComponent } from '../utils/Dialog';
-    import { FeatherIcon } from 'frappe-ui ';
-    import Invoice from '../component/Invoice.vue';
-
-    let base = inject('base');
-    const { currentComponent, loadComponent } = useDynamicComponent();
-
-    loadComponent('OpenShift');
-
-    provide('dynamicComponent', { currentComponent, loadComponent });
-
-    const changePage = (page) => {
-      base.items = [];
-      base.invoice = {};
-      base.customer = {};
-      base.page = page;
-    };
-  </script>
-
+<script setup>
+  import Sidebar from '../component/Sidebar.vue';
+  import Platform from '../component/Platform.vue';
+  import { provide } from 'vue';
+  import { useDynamicComponent } from '../utils/Dialog';
+  const { currentComponent, loadComponent } = useDynamicComponent();
+  loadComponent('OpenShift');
+  provide('dynamicComponent', { currentComponent, loadComponent });
+</script>

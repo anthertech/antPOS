@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { session } from './data/session'
+import { useSessionStore } from './data/session'
 import { userResource } from '@/data/user'
 
 const routes = [
@@ -21,6 +21,7 @@ let router = createRouter({
 })
 
 router.beforeEach(async (to, from, next) => {
+  const session = useSessionStore()
   let isLoggedIn = session.isLoggedIn
   try {
     await userResource.promise

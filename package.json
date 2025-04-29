@@ -14,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "frappe-ui": "^0.1.122",
-    "mitt": "^3.0.1"
+    "mitt": "^3.0.1",
+    "pinia": "^3.0.2"
   }
 }

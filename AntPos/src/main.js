@@ -1,6 +1,7 @@
 import './index.css'
 
 import { createApp, reactive } from 'vue'
+import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import mitt from 'mitt';
@@ -19,6 +20,8 @@ const app = createApp(App)
 
 const emitter = mitt();
 
+const pinia = createPinia()
+
 setConfig('resourceFetcher', frappeRequest)
 
 app.use(router)
@@ -28,6 +31,7 @@ app.component('Button', Button)
 app.component('Card', Card)
 app.component('Input', Input)
 
+app.use(pinia)
 
 const base = reactive({
   customer: {},

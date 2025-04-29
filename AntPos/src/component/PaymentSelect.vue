@@ -1,82 +1,109 @@
 <template>
-    <div class="w-full h-full flex gap-6 ">
-        <div class="w-[65%] h-full">
-            <div class="w-full h-full shadow-2xl p-4 rounded">
-                <div class="h-[6%]">
-                    <Customer/>
-                </div>
-                <div class="w-full h-[94%] flex flex-col gap-4">
-                    <TextInput type="text" v-model="searchQuery" placeholder="Search">
-                        <template #prefix>
-                            <FeatherIcon class="w-4" name="search" />
-                        </template>
-                    </TextInput>
-                    <div class="flex justify-evenly text-center bg-black-overlay-800 text-white rounded-md p-3 h-[6%]">
-                        <div class="w-[4%]">
-                            <input name="name" id="id" type="checkbox" :checked="selectAll"
-                            class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleAllSelection" />
+    <div class="w-full h-[94%] flex p-2 gap-4">
+        <div class="w-full h-full ">
+            <div class="w-full h-full flex gap-6 ">
+                <div class="w-[65%] h-full">
+                    <div class="w-full h-full shadow-2xl p-4 rounded">
+                        <div class="h-[6%]">
+                            <Customer/>
                         </div>
-                        <p class="w-[19%]">Name</p>
-                        <p class="w-[19%]">Customer</p>
-                        <p class="w-[19%]">Amount</p>
-                        <p class="w-[19%]">Outstanding</p>
-                    </div>
-                    <div class="h-[92%] overflow-y-scroll rounded scrollbar-hide flex flex-col  gap-3 text-center">
-                        <div v-if="filteredInvoices.length === 0" class="flex justify-center items-center h-full">
-                            <p class="text-gray-500">No invoices found</p>
-                        </div>
-                        <div v-for="invoice in filteredInvoices" :key="invoice.name" class=" w-full ">
-                            <div class="flex justify-evenly items-center rounded text-center bg-blue-200 p-2.5 ">
-                                <div class="w-[4%] ">
-                                    <input name="name" id="id" type="checkbox" :checked="invoice.selected" 
-                                    class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleSelection(invoice)" />
+                        <div class="w-full h-[94%] flex flex-col gap-4">
+                            <TextInput type="text" v-model="searchQuery" placeholder="Search">
+                                <template #prefix>
+                                    <FeatherIcon class="w-4" name="search" />
+                                </template>
+                            </TextInput>
+                            <div class="flex justify-evenly text-center bg-black-overlay-800 text-white rounded-md p-3 h-[6%]">
+                                <div class="w-[4%]">
+                                    <input name="name" id="id" type="checkbox" :checked="selectAll"
+                                    class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleAllSelection" />
                                 </div>
-                                <p class="w-[19%]">{{ invoice.name }}</p>
-                                <p class="w-[19%]">{{ invoice.customer }}</p>
-                                <p class="w-[19%]">{{ invoice.grand_total }}</p>
-                                <p class="w-[19%]">{{ invoice.outstanding_amount }}</p>
+                                <p class="w-[19%]">Name</p>
+                                <p class="w-[19%]">Customer</p>
+                                <p class="w-[19%]">Amount</p>
+                                <p class="w-[19%]">Outstanding</p>
+                            </div>
+                            <div class="h-[92%] overflow-y-scroll rounded scrollbar-hide flex flex-col  gap-3 text-center">
+                                <div v-if="filteredInvoices.length === 0" class="flex justify-center items-center h-full">
+                                    <p class="text-gray-500">No invoices found</p>
+                                </div>
+                                <div v-for="invoice in filteredInvoices" :key="invoice.name" class=" w-full ">
+                                    <div class="flex justify-evenly items-center rounded text-center bg-blue-200 p-2.5 ">
+                                        <div class="w-[4%] ">
+                                            <input name="name" id="id" type="checkbox" :checked="invoice.selected" 
+                                            class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleSelection(invoice)" />
+                                        </div>
+                                        <p class="w-[19%]">{{ invoice.name }}</p>
+                                        <p class="w-[19%]">{{ invoice.customer }}</p>
+                                        <p class="w-[19%]">{{ invoice.grand_total }}</p>
+                                        <p class="w-[19%]">{{ invoice.outstanding_amount }}</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="w-[35%] h-full">
-            <div class="w-full h-full shadow-2xl p-4 rounded flex flex-col justify-between">
-                <!-- Top content -->
-                <div class="flex flex-col gap-4">
-                    <div class="flex flex-col gap-6 h-fit">
-                        <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
-                            <p>Payment Total</p>
-                        </div>
-                        <FormControl
-                            :type="'number'"
-                            :ref_for="true"
-                            size="sm"
-                            variant="subtle"
-                            placeholder="0"
-                            :disabled="false"
-                            label="Credit To Redeem"
-                            v-model="base.paymentAmount"
-                            @change="calculateAmountTotal"
-                        />
-                    </div>
-                    <div>
-                        <p class="text-2xl font-bold">Payment Method</p>
-                        <div
-                            class="grid grid-cols-2 gap-4 p-2 items-center"
-                            v-for="(mode, index) in modes"
-                            :key="index"
-                        >
-                            <FormControl
-                                type="number"
+                <div class="w-[35%] h-full">
+                    <div class="w-full h-full shadow-2xl p-4 rounded flex flex-col justify-between">
+    
+                        <div class="flex flex-col gap-4">
+                            <div class="flex flex-col gap-6 h-fit">
+                                <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
+                                    <p>Payment Total</p>
+                                </div>
+                                <FormControl
+                                :type="'number'"
+                                :ref_for="true"
                                 size="sm"
                                 variant="subtle"
                                 placeholder="0"
                                 :disabled="false"
-                                :label="`${mode.mode_of_payment}:`"
-                                v-model="mode.amount"
-                            />
+                                label="Credit To Redeem"
+                                v-model="base.paymentAmount"
+                                @change="calculateAmountTotal"
+                                />
+                            </div>
+                            <div>
+                                <p class="text-2xl font-bold">Payment Method</p>
+                                <div
+                                    class="grid grid-cols-2 gap-4 p-2 items-center"
+                                    v-for="(mode, index) in modes"
+                                    :key="index"
+                                >
+                                    <FormControl
+                                        type="number"
+                                        size="sm"
+                                        variant="subtle"
+                                        placeholder="0"
+                                        :disabled="false"
+                                        :label="`${mode.mode_of_payment}:`"
+                                        v-model="mode.amount"
+                                    />
+                                    <Button
+                                        class="w-full h-full"
+                                        :variant="'solid'"
+                                        theme="gray"
+                                        size="lg"
+                                        label="Button"
+                                        :loading="false"
+                                        :disabled="false"
+                                        @click="changemode(index)"
+                                    >
+                                        {{ mode.mode_of_payment }}
+                                    </Button>
+                                </div>
+                                <FormControl
+                                    type="number"
+                                    size="sm"
+                                    variant="subtle"
+                                    placeholder="0"
+                                    :disabled="true"
+                                    v-model="base.diff"
+                                    label="Difference:"
+                                />
+                            </div>
+                        </div>
+                        <div class="text-right">
                             <Button
                                 class="w-full h-full"
                                 :variant="'solid'"
@@ -84,37 +111,14 @@
                                 size="lg"
                                 label="Button"
                                 :loading="false"
-                                :disabled="false"
-                                @click="changemode(index)"
+                                :disabled="!hasSelectedInvoice"
+                                @click="createpayment"
                             >
-                                {{ mode.mode_of_payment }}
+                                Submit
+                            
                             </Button>
                         </div>
-                        <FormControl
-                            type="number"
-                            size="sm"
-                            variant="subtle"
-                            placeholder="0"
-                            :disabled="true"
-                            v-model="base.diff"
-                            label="Difference:"
-                        />
                     </div>
-                </div>
-                <div class="text-right">
-                    <Button
-                        class="w-full h-full"
-                        :variant="'solid'"
-                        theme="gray"
-                        size="lg"
-                        label="Button"
-                        :loading="false"
-                        :disabled="!hasSelectedInvoice"
-                        @click="createpayment"
-                    >
-                        Submit
-
-                    </Button>
                 </div>
             </div>
         </div>
@@ -123,19 +127,19 @@
 
 <script setup>
 
-    import { createListResource, TextInput, FormControl, FeatherIcon, createResource } from 'frappe-ui';
-    import { ref, inject, computed, watch, onBeforeMount } from 'vue';
-    import Customer from './Customer.vue';
-    import { createToast } from '../utils';
+import { createListResource, TextInput, FormControl, FeatherIcon, createResource } from 'frappe-ui';
+import { ref, inject, computed, watch, onBeforeMount } from 'vue';
+import Customer from './Customer.vue';
+import { createToast } from '../utils';
 
 
-    let base = inject('base');
-    const searchQuery = ref("");
-    const customerName = ref(base.customer.name);
-    const selectAll = ref(false);
+let base = inject('base');
+const searchQuery = ref("");
+const customerName = ref(base.customer.name);
+const selectAll = ref(false);
     const modes = ref([]);
     let errorHandled = false;
-
+    
     const invoices = createListResource({
         doctype: 'Sales Invoice',
         fields: ['name', 'customer', 'grand_total', 'outstanding_amount'],
@@ -149,10 +153,10 @@
         orderBy: 'creation asc',
         pageLength: Number.MAX_VALUE * 2,
         transform(data) {
-        for (let d of data) {
-            d.selected= false
-        }
-        return data
+            for (let d of data) {
+                d.selected= false
+            }
+            return data
         },
         pageLength: Number.MAX_VALUE * 2,
     });
