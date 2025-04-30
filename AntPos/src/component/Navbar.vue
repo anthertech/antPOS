@@ -20,44 +20,15 @@
                 <div>
                     {{base?.Ant_Opening_Shift?.pos_profile}}
                 </div>
-                <Dropdown
-                :options="[
-                    {
-                        label: 'Close Shift',
-                        onClick: () => {
-                            loadComponent('CloseShift')
-                        },
-                        icon: () => h(FeatherIcon, { name: 'file-minus' }),
-                    },
-                    {
-                        label: 'Logout',
-                        onClick: () => {
-                            logout.fetch();
-                        },
-                        icon: () => h(FeatherIcon, { name: 'log-out' }),
-                    },
-                    ]"
-                    :button="{
-                        label: 'Menu',
-                    }"
-                    />
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-    import { h ,ref, inject } from 'vue'; 
-    import { Dropdown , FeatherIcon,createResource } from 'frappe-ui'
+    import {inject } from 'vue'; 
+    import {createResource } from 'frappe-ui'
 
-    const { loadComponent } = inject('dynamicComponent');
     const base = inject('base')
-    const logout = createResource({
-        url: 'logout',
-        method: 'GET',
-        onSuccess(data) {
-        window.location.reload();
-        },
-    });
 
 </script>

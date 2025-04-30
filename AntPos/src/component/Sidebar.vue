@@ -48,7 +48,7 @@
             <div 
                 class="w-full shadow-lg p-1  flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg  transition-all duration-200"
                 :class="{'bg-gray-100': base.page === 'payments'}"
-                @click="emitter.emit('updatePage', 'payments')"
+                @click="emitter.emit('updatePage', 'salesinvoice')"
             >
                 <FeatherIcon name="file-text" class="w-5 h-5 text-gray-600" />
                 <p class="text-gray-700 font-medium">Sales Invoice</p>
@@ -62,28 +62,43 @@
 </template>
 
 <script setup>
-    import { FeatherIcon, Dropdown } from 'frappe-ui';
-    import { inject, ref, computed } from 'vue';
+    import { FeatherIcon, Dropdown, createResource } from 'frappe-ui';
+    import { inject, ref, h, computed } from 'vue';
     import { usersStore } from '../data/users';
     let base = inject('base');
     const emitter = inject('emitter');
     const sidebarStore = ref({"isExpanded":true})
+    const { loadComponent } = inject('dynamicComponent');
     const users = usersStore()
     const currentUser = computed(() => users.getUser())
+    const logout = createResource({
+        url: 'logout',
+        method: 'GET',
+        onSuccess(data) {
+        window.location.reload();
+        },
+    });
     const option=[
     {
       label: 'Close Shift',
+      icon: () => h(FeatherIcon, { name: 'file-minus' }),
       onClick: () => {
+        loadComponent('CloseShift')
                   },
     },
     {
       label: 'Settings',
+      icon: () => h(FeatherIcon, { name: 'settings' }),
       onClick: () => {
+        
                   },
     },
+    
     {
       label: 'Logout',
+      icon: () => h(FeatherIcon, { name: 'log-out' }),
       onClick: () => {
+        logout.fetch();
                   },
     },
 ]
