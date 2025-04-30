@@ -1,7 +1,7 @@
 <template>
     <div class="w-[90%] h-full">
         <Navbar />
-        <component :is="componentMap[base.page=='payments' ? 'PaymentSelect' : 'Pos']" />
+        <component :is="componentMap[currentComponent]" />
     </div>
 </template>
 
@@ -9,24 +9,29 @@
   import Navbar from '../component/Navbar.vue';
   import PaymentSelect from '../component/PaymentSelect.vue';
   import Pos from '../component/Pos.vue';
-  import { inject } from 'vue';
+  import SalesInvoice from './SalesInvoice.vue';
+  import { computed, inject } from 'vue';
 
+  const base = inject('base');
   const emitter = inject('emitter');
-  let base = inject('base');
 
+  const componentMap = {
+    PaymentSelect,
+    Pos,
+    SalesInvoice
+  };
 
-  const changePage = (page) => {
+  const currentComponent = computed(() => {
+    if (base.page === 'payments') return 'PaymentSelect';
+    if (base.page === 'salesinvoice') return 'SalesInvoice';
+    return 'Pos';
+  });
+
+  emitter.on('updatePage', (page) => {
     base.items = [];
     base.invoice = {};
     base.customer = {};
     base.page = page;
-  };
-  const componentMap = {
-    PaymentSelect,
-    Pos
-  };
-  emitter.on('updatePage', (page) => {
-    changePage(page)
   });
 
 </script>
