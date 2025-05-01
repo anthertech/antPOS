@@ -1,58 +1,46 @@
-Ant-POS
+# Ant-POS
 
-Ant-POS is a modern, efficient, and flexible Point of Sale (POS) system built on Frappe and ERPNext. Designed to work seamlessly across all Frappe versions, it leverages Frappe's built-in APIs and validation mechanisms to ensure smooth performance, accurate error handling, and a superior user experience.
+<!-- Ant-POS is a modern POS system built on Frappe/ERPNext with dynamic features and clean UI -->
 
-Features
+## Features
 
-Supports All Frappe Versions: Developed to be compatible with all versions of Frappe and ERPNext.
+<!-- Compatible with Frappe versions 14 & 15 -->
+<!-- Built using Frappe UI components for native integration -->
+<!-- Creates Sales Invoices directly to avoid POS Closing dependency -->
+<!-- Allows dynamic field configuration for flexible POS layouts -->
+<!-- Integrates with Frappe APIs for real-time validation and smooth operations -->
+<!-- Mobile support with Ionic coming soon -->
 
-Built with Frappe UI: Uses vanilla Frappe UI components for a seamless and efficient interface.
+## Installation
 
-Direct Sales Invoice Creation: Allows users to create a straight Sales Invoice instead of a POS Invoice, preventing stock and sales from being dependent on POS Closing.
-
-Dynamic Field Configuration: Users can configure fields dynamically within the document and view them in the POS interface.
-
-Frappe API Integration: Utilizes Frappe’s inbuilt APIs for real-time updates, validation, and error handling.
-
-Mobile Compatibility (Upcoming): Future updates will include Ionic integration for a more mobile-friendly experience.
-
-Installation
-
-To install Ant-POS on your ERPNext setup, follow these steps:
-
-# Navigate to your Frappe bench directory
+<!-- Navigate to the bench directory -->
 cd ~/frappe-bench
 
-# Get the Ant-POS app
+<!-- Clone the Ant-POS app -->
 bench get-app ant_pos https://github.com/anthertech/antPOS.git
 
-# Install the app on your site
+<!-- Install Ant-POS on the desired site -->
 bench --site yoursite.com install-app ant_pos
 
-Usage
+## Usage
 
-Open the POS module in your ERPNext dashboard.
+<!-- Open the POS module from ERPNext dashboard -->
+<!-- Configure dynamic settings for POS -->
+<!-- Create Sales Invoices directly without using POS Closing -->
+<!-- Regular updates will bring more enhancements -->
 
-Configure your settings and dynamic fields as needed.
+## Future Enhancements
 
-Start making Sales Invoices without relying on POS Closing.
+<!-- Mobile interface using Ionic for better UX -->
+<!-- Advanced customization for POS settings -->
+<!-- Improved performance with optimized queries and async processing -->
 
-Stay updated with the latest features as we enhance the system.
+## Contributions
 
-Future Enhancements
+<!-- Contributions are welcome – issues and PRs can be submitted via GitHub -->
 
-Mobile-Friendly Interface: Adding Ionic framework for better usability on mobile devices.
+## License
 
-Advanced Customization: More flexible settings to customize the POS experience.
+<!-- MIT License: Open-source and free to use -->
 
-Performance Improvements: Optimized queries and background processing for a faster checkout process.
-
-Contributions
-
-We welcome contributions! Feel free to submit issues or pull requests via our GitHub repository.
-
-License
-
-Ant-POS is released under the MIT License.
-
-For more details, visit our official repository or contact us for support!
+<!-- Visit the GitHub repo or contact for more help -->
