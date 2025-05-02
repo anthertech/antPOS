@@ -19,6 +19,12 @@ export const useSessionStore = defineStore('antpos-session', () => {
 
   const login = createResource({
     url: 'login',
+    makeParams({ email, password }) {
+      return {
+        usr: email,
+        pwd: password,
+      }
+    },
     onError() {
       throw new Error('Invalid email or password')
     },
