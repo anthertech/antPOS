@@ -1,4 +1,4 @@
-# Copyright (c) 2024, Nihal Roshan and Contributors
+# Copyright (c) 2024, Anther Technologies Pvt. Ltd. and Contributors
 # See license.txt
 
 # import frappe

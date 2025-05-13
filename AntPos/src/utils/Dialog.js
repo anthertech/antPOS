@@ -1,4 +1,5 @@
 import { ref } from 'vue';
+import Settings from '../component/Dialog/Settings.vue';
 
 
 export function useDynamicComponent() {
@@ -12,7 +13,8 @@ export function useDynamicComponent() {
                 CustomerForm: () => import('../component/Dialog/CustomerForm.vue'),
                 Held: () => import('../component/Dialog/Held.vue'),
                 Return: () => import('../component/Dialog/Return.vue'),
-                CloseShift:() => import('../component/Dialog/CloseShift.vue')
+                CloseShift:() => import('../component/Dialog/CloseShift.vue'),
+                Settings:() => import('../component/Dialog/Settings.vue')
             
             };
 

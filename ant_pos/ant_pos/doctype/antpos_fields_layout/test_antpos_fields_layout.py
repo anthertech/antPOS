@@ -5,5 +5,5 @@
 from frappe.tests.utils import FrappeTestCase
 
 
-class TestAntClosingShift(FrappeTestCase):
+class TestAntposFieldsLayout(FrappeTestCase):
 	pass

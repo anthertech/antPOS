@@ -90,7 +90,7 @@
       label: 'Settings',
       icon: () => h(FeatherIcon, { name: 'settings' }),
       onClick: () => {
-        
+        loadComponent('Settings')
                   },
     },
     

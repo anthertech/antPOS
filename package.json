@@ -13,8 +13,14 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "frappe-ui": "^0.1.122",
+    "frappe-ui": "^0.1.139",
     "mitt": "^3.0.1",
     "pinia": "^3.0.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.3",
+    "@vitejs/plugin-vue-jsx": "^4.1.2",
+    "vite": "^6.3.5",
+    "vite-plugin-pwa": "^1.0.0"
   }
 }

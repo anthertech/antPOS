@@ -1,7 +1,7 @@
 [project]
 name = "ant_pos"
 authors = [
-    { name = "Nihal Roshan", email = "nihalroshan55@gmail.com"}
+    { name = "Anther Technologies Pvt. Ltd.", email = "nihalroshan55@gmail.com"}
 ]
 description = "pos application"
 requires-python = ">=3.10"
