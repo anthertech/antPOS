@@ -1,34 +1,42 @@
 <template>
     <div class="w-full h-[6%]">
-
-        <div class="bg-gray-300 w-full h-full flex items-center justify-between p-4 rounder-full">
-            <!-- <div class="flex gap-4 items-center">
-                <div>
-                    <FeatherIcon name="menu" class="w-5 h-5"/>
-                </div>
-                <div class="flex text-center gap-3  items-center">
-                    <img src="" class="w-8 h-8" alt="logo">
-                    <p class="text-xl ">
-                        antPOS 
-                    </p>
-                </div>
-            </div> -->
-            <div>
-                breadcrumbs
-            </div>
-            <div class="flex  float-right gap-4">
-                <div>
-                    {{base?.Ant_Opening_Shift?.pos_profile}}
-                </div>
-            </div>
+      <div class="bg-gray-300 w-full h-full flex items-center justify-between p-4 ">
+        <div>
+          breadcrumbs
         </div>
+        <div class="flex float-right gap-4">
+          <div>
+            <Switch
+                v-if="base?.pos_profile?.custom_create_sales_order"    
+                size="sm"
+                label="Sales Order"
+                :disabled="false"
+                v-model="createSalesOrder"
+            />
+          </div>
+          <div>
+            {{ base?.Ant_Opening_Shift?.pos_profile }}
+          </div>
+        </div>
+      </div>
     </div>
-</template>
-
-<script setup>
-    import {inject } from 'vue'; 
-    import {createResource } from 'frappe-ui'
-
-    const base = inject('base')
-
-</script>
+  </template>
+  
+  <script setup>
+    import { inject, computed } from 'vue';
+    import { Switch } from 'frappe-ui';
+    
+    const base = inject('base');
+    // Computed property for v-model
+    const createSalesOrder = computed({
+    get() {
+        return base?.pos_profile?.custom_set_sales_order === 1;
+    },
+    set(value) {
+        if (base && base.pos_profile) {
+        base.pos_profile.custom_set_sales_order = value ? 1 : 0;
+        }
+    },
+    });
+  </script>
+  

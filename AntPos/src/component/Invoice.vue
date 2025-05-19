@@ -1,5 +1,5 @@
 <template>
-    <div class="w-1/2 shadow-2xl pt-2 px-2 rounded">
+    <div class="w-1/2 shadow-2xl pt-2 px-2 rounded ">
         <div class="h-[85%] w-full">
             <div class="grid grid-cols-2 gap-4 p-2">
                 <FormControl
@@ -36,7 +36,7 @@
             </div>
             <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in base.pos_profile.payments" :key="index">
                 <FormControl
-                    v-if="base.invoice?.payments && base.invoice.payments[index]"
+                    v-if="base.invoice?.payments?.length"
                     type="number"
                     size="sm"
                     variant="subtle"
@@ -156,12 +156,22 @@
                     />
                 </div>
             </div>
+            <div>
+                <DatePicker
+                    v-if="base.pos_profile.custom_set_sales_order"
+                    size="md"
+                    v-model="deliveryDate"
+                    variant="subtle"
+                    placeholder="Delivery Date"
+                    :disabled="false"
+                />
+            </div>
         </div>
-        <div class="h-[15%] w-full mt-2">
-            <div class="h-1/2">
-                <div class="flex gap-8 h-full">
+        <div class="h-[14%] w-full mt-2 flex flex-col gap-2 ">
+            <div class="h-1/2 ">
+                <div class="flex gap-8 h-full mb-3 justify-center items-center">
                     <Button
-                        class="w-1/2 h-full"
+                        class="w-1/2 h-[90%]"
                         :variant="'solid'"
                         theme="gray"
                         size="lg"
@@ -173,7 +183,7 @@
                         Submit
                     </Button>
                     <Button
-                        class="w-1/2 h-full"
+                        class="w-1/2  h-[90%]"
                         :variant="'solid'"
                         theme="gray"
                         size="lg"
@@ -188,14 +198,14 @@
             </div>
             <div class="h-1/2">
                 <Button
-                    class="w-full"
-                    :variant="'solid'"
-                    theme="gray"
+                    class="w-full h-[90%]"
+                    :variant="'ghost'"
                     size="lg"
                     label="Cancel"
                     :loading="false"
                     :disabled="false"
                     @click="remove_invoice"
+                    theme="red"
                 >
                     Cancel
                 </Button>
@@ -205,14 +215,14 @@
 </template>
 
 <script setup>
-import { Button, FormControl, createResource } from 'frappe-ui'
-import { inject, onMounted , watch } from 'vue'
+import { Button, FormControl, createResource, DatePicker  } from 'frappe-ui'
+import { ref, inject, onMounted , watch, computed } from 'vue'
 import { createToast } from '../utils';
 import { showToast } from '../utils'
 
 let base = inject('base')
 let errorHandled = false;
-
+let doc = ref({})
 
 const addPayments = () => {
     
@@ -241,40 +251,56 @@ const changemode = (index) => {
     base.invoice.paid_amount = base.invoice.base_rounded_total
 }
 
+const deliveryDate = computed({
+    get() {
+        if (!base.invoice.delivery_date) {
+            const today = new Date().toISOString().split('T')[0];
+            base.invoice.delivery_date = today; 
+        }
+        return base.invoice.delivery_date;
+    },
+    set(value) {
+        base.invoice.delivery_date = value;
+    }
+});
 onMounted(() => {
     addPayments()
 })
 
-let save = createResource({
+const createSaveResource = createResource({
     url: 'frappe.desk.form.save.savedocs',
     makeParams(params) {
         return {
-            doc: JSON.stringify(base.invoice),
+            doc: JSON.stringify(params.doc),
             action: params.action
-        }
+        };
     },
     onSuccess(data) {
+        console.log(doc.value.doc, "params passed to onSuccess");
+
         errorHandled = false;
-        base.invoice=data.docs[0]
+        doc.value.doc = data.docs[0];
     },
     onError(error) {
-            if (!errorHandled) {
-                createToast({
-                    title: 'Error',
-                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
-                    icon: 'x-circle',
-                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                    position: 'top-center',
-                    timeout: 5,
-                });
-                errorHandled = true;
-            }
-    },
+        if (!errorHandled) {
+            createToast({
+                title: 'Error',
+                text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+                icon: 'x-circle',
+                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                position: 'top-center',
+                timeout: 5,
+            });
+            errorHandled = true;
+        }
+    }
 });
 
 const remove_invoice = () => {
     base.invoice = {
         payments: [],
+        advances: [],
+        items: [],
         paid_amount: 0,
         rounded_total: 0,
         net_total: 0,
@@ -282,7 +308,8 @@ const remove_invoice = () => {
         total: 0,
         discount_amount: 0,
         grand_total: 0,
-        base_rounded_total: 0
+        base_rounded_total: 0,
+        delivery_date: '',
     };
     base.items = [];
     base.customer = {};
@@ -306,19 +333,50 @@ const changePaymentAmount = () => {
     }
 };
 
-const submitInvoice = async (action=null) => {
-    let invoice = {...base.invoice}
-    if (await validatePaymentBeforeSave(base)){
-        await save.fetch({ action: 'Save' })
-        await save.fetch({ action: 'Submit' })
-        remove_invoice()
-        createPayments(invoice)
-        if (action !=null){
-            createPrint(invoice.name)
+const saveAndSubmit = async (doc) => {
+    await createSaveResource.fetch({ action: 'Save', doc });
+    await createSaveResource.fetch({ action: 'Submit', doc });
+}
+
+const submitInvoice = async (action = null) => {
+    let invoice = { ...base.invoice };
+
+    if (await validatePaymentBeforeSave(base)) {
+        if (base?.pos_profile?.custom_set_sales_order) {
+            
+
+            const salesOrder = {
+                ...base.invoice,
+                doctype: 'Sales Order',
+                name: '',
+                naming_series: ''
+            };
+
+            doc.value = { doc: salesOrder };
+            await saveAndSubmit(doc);
+    
+            
+            const orderName = doc.value.doc.name;
+
+            base.invoice.items.forEach((item, index) => {
+                item.so_detail = doc.value.doc.items?.[index]?.name || "";
+                item.sales_order = orderName;
+            });
+        }
+        doc.value = {
+              doc: base.invoice
+            }
+        saveAndSubmit(doc)
+
+        remove_invoice();
+        createPayments(invoice);
+        showToast('Invoice submitted successfully', 'check-circle', 'green');
+        if (action !== null) {
+            createPrint(invoice.name);
         }
     }
-
 };
+
 const createPayments = async (invoice) =>{
 
     if (invoice.advances.some((element) => element.allocated_amount > 0)) { 

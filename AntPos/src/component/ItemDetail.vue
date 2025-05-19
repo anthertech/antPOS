@@ -104,7 +104,7 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-orange-600 text-yellow-50"
+                    theme="blue"
                     @click="loadComponent('Held')"
                 >
                     HELD
@@ -116,7 +116,7 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-cyan-600 text-yellow-50"
+                    theme="red"
                     @click="loadComponent('Return')"            
                 >
                     RETURN
@@ -128,7 +128,8 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-violet-600 text-yellow-50"
+                    :variant="'solid'"
+                    theme="gray"
                     @click="sales_invoice.fetch({ action:'Save', status:'save_new' })"
                 >
                     SAVE/NEW
@@ -140,7 +141,7 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-green-600 text-yellow-50"
+                    theme="green"
                     @click="sales_invoice.fetch({ action:'Save', status:'pay' })"
                 >
                     PAY
@@ -152,7 +153,8 @@
                     :loadingText="null"
                     :disabled="false"
                     :link="null"
-                    class="bg-teal-600 text-yellow-50"
+                    :variant="'solid'"
+                    theme="gray"
                     @click="sales_invoice.fetch({ action:'Save', status:'print' })"
                 >
                     SAVE & PRINT

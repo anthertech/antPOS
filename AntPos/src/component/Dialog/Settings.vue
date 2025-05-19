@@ -21,6 +21,4 @@
     const selectedInvoice = ref(null);
     const searchQuery = ref("");
     let errorHandled = false;
-
-    
 </script>

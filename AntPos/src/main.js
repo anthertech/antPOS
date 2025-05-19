@@ -36,6 +36,7 @@ app.use(pinia)
 const base = reactive({
   customer: {},
   Ant_Opening_Shift:{},
+  pos_profile:{},
   items:[],
   invoice:{},
   page:'',

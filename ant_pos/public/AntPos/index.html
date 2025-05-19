@@ -5,11 +5,9 @@
     <link rel="icon" href="/assets/ant_pos/AntPos/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ant-Pos</title>
-    <script type="module" crossorigin src="/assets/ant_pos/AntPos/assets/index.a8baa778.js"></script>
-    <link rel="modulepreload" href="/assets/ant_pos/AntPos/assets/vendor.b4911ff9.js">
-    <link rel="stylesheet" href="/assets/ant_pos/AntPos/assets/vendor.1875b906.css">
-    <link rel="stylesheet" href="/assets/ant_pos/AntPos/assets/index.0e902960.css">
-  </head>
+    <script type="module" crossorigin src="/assets/ant_pos/AntPos/assets/index-d44faf16.js"></script>
+    <link rel="stylesheet" href="/assets/ant_pos/AntPos/assets/index-16bfb1d3.css">
+  <link rel="manifest" href="/assets/ant_pos/AntPos/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/assets/ant_pos/AntPos/registerSW.js"></script></head>
   <body>
     <div id="app"></div>
     <div id="modals"></div>
@@ -19,5 +17,12 @@
       window.csrf_token = '{{ frappe.session.csrf_token }}'
     </script>
     
-  </body>
+  
+          <script>
+              {% for key in boot %}
+              window["{{ key }}"] = {{ boot[key] | tojson }};
+              {% endfor %}
+          </script>
+          </body>
+          
 </html>

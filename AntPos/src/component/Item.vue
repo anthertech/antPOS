@@ -207,18 +207,30 @@
                     </div>
                 </div>
                 <div>
-                    <div class="p-2">
-                        <Autocomplete
-                            type="select"
-                            :options="getbatchNo(items.batch_nos)"
-                            size="sm"
-                            variant="subtle"
-                            placeholder="Batch No"
-                            :disabled="false"
-                            label="Batch No"
-                            v-model="items.batch_no"
-                            :hideSearch="true"
-                        />
+                    <div class="p-2 flex gap-4">
+                        <div class="w-1/2">
+                            <Autocomplete
+                                type="select"
+                                :options="getbatchNo(items.batch_nos)"
+                                size="sm"
+                                variant="subtle"
+                                placeholder="Batch No"
+                                :disabled="false"
+                                label="Batch No"
+                                v-model="items.batch_no"
+                                :hideSearch="true"
+                            />
+                        </div>
+                        <div class="flex items-end">
+                            <DatePicker
+                                v-if="base.pos_profile.custom_set_sales_order"
+                                size="md"
+                                v-model="deliveryDate"
+                                variant="subtle"
+                                placeholder="Delivery Date"
+                                :disabled="false"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -226,8 +238,8 @@
     </div>
 </template>
 <script setup>
-import { FeatherIcon, FormControl, Autocomplete } from 'frappe-ui';
-import { inject, watch, defineProps, onMounted, onUnmounted } from 'vue';
+import { FeatherIcon, FormControl, Autocomplete, DatePicker } from 'frappe-ui';
+import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vue';
 import { showToast } from '../utils'
 
 let base = inject('base');
@@ -291,8 +303,9 @@ const calculateAmountTotal = () => {
     let discount = 0;
     base.items.forEach((element) => {
         element.amount = Math.abs(element.qty) * element.rate;
+        console.log(element.rate , Math.abs(element.qty));
         
-        total += element.base_rate * Math.abs(element.qty);
+        total += element.rate * Math.abs(element.qty);
         discount+= element.discount_amount;
         
     });
@@ -405,9 +418,15 @@ const  rateCalculation =  (item) => {
     const discount = item.discount_percentage || 0;
     return rate - (rate * (discount / 100));
 };
-
+const deliveryDate = computed({
+    get() {
+        return props.items.delivery_date || new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    },
+    set(value) {
+        props.items.delivery_date = value;
+    }
+});
 onMounted( async () => {
-    
     props.items.rate = rateCalculation(props.items);
     props.items.amount = props.items.rate * Math.abs(props.items.qty);
     calculateQtyTotal();
