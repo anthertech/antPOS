@@ -303,8 +303,6 @@ const calculateAmountTotal = () => {
     let discount = 0;
     base.items.forEach((element) => {
         element.amount = Math.abs(element.qty) * element.rate;
-        console.log(element.rate , Math.abs(element.qty));
-        
         total += element.rate * Math.abs(element.qty);
         discount+= element.discount_amount;
         
@@ -327,19 +325,14 @@ const calculateQtyTotal = () => {
 };
 
 const validateQty = (qty) => {
-
+    console.log("kkkkkkkkkkkkkkkk");
+    
     const availableSerials = props.items.serial_no_options.map(option => option.value);
         if (props.items.has_serial_no && qty > availableSerials.length) {
             showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
             props.items.qty = availableSerials.length;
             return true;
         }
-        if (props.items.selected_serial_no.length < qty) {
-            showToast('Warning', 'Qty is less than selected serial no', 'alert-circle', '#ffcc00','#ffffff')
-            props.items.qty = props.items.selected_serial_no.length;
-        }
-        
-    
     return true;
 };
 
@@ -360,8 +353,6 @@ watch(
                 return;
             }
             if (props.items.has_serial_no) {
-                console.log('serial no');
-                
                 adjustSerialNumbers(newValue, oldValue);
             }
             emitter.emit('fetchPriceList', props);
@@ -375,23 +366,36 @@ watch(
 );
 
 const adjustSerialNumbers = (newQty, oldQty) => {
-    
-    let diff = Math.abs(newQty - oldQty);
+    if (!props.items.has_serial_no) return;
 
-    if (props.items.selected_serial_no.length > newQty) {
-        props.items.selected_serial_no = props.items.serial_no_options
-            .filter((serial_no, index) => index < newQty)
-            .map(serial_no => serial_no.value);
-    } else if (props.items.selected_serial_no.length < newQty) {
-        let availableSerialNos = props.items.serial_no_options
-            .filter(serial_no => !props.items.selected_serial_no.includes(serial_no.value))
-            .map(serial_no => serial_no.value);
+    const selected = props.items.selected_serial_no;
+    const options = props.items.serial_no_options;
+    const selectedLength = selected.length;
 
-        props.items.selected_serial_no = [
-            ...props.items.selected_serial_no,
-            ...availableSerialNos.slice(0, diff)
-        ];
+    if (selectedLength === newQty) return;
+
+    // If reducing quantity
+    if (selectedLength > newQty) {
+        props.items.selected_serial_no = selected.slice(0, newQty);
     }
+    // If increasing quantity
+    else if (selectedLength < newQty) {
+        const selectedValues = new Set(selected.map(sn => sn.value));
+        const needed = newQty - selectedLength;
+
+        const additional = [];
+        for (let i = 0; i < options.length && additional.length < needed; i++) {
+            const opt = options[i];
+            if (!selectedValues.has(opt.value)) {
+                additional.push(opt);
+            }
+        }
+
+        props.items.selected_serial_no = [...selected, ...additional];
+    }
+
+    // Ensure the qty is aligned with the actual selected_serial_no length
+    props.qty = props.items.selected_serial_no.length;
 };
 
 watch(
@@ -442,6 +446,7 @@ onMounted( async () => {
     calculateQtyTotal();
     calculateAmountTotal();
     validateQty(props.items.qty);
+    adjustSerialNumbers(props.items.qty, props.items.qty);
 });
 
 onUnmounted(() => {
