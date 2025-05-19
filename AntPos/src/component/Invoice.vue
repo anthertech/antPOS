@@ -334,8 +334,8 @@ const changePaymentAmount = () => {
 };
 
 const saveAndSubmit = async (doc) => {
-    await createSaveResource.fetch({ action: 'Save', doc });
-    await createSaveResource.fetch({ action: 'Submit', doc });
+    await createSaveResource.fetch({ action: 'Save', doc:doc.value.doc });
+    await createSaveResource.fetch({ action: 'Submit', doc:doc.value.doc });
 }
 
 const submitInvoice = async (action = null) => {
@@ -363,9 +363,12 @@ const submitInvoice = async (action = null) => {
                 item.sales_order = orderName;
             });
         }
+
         doc.value = {
               doc: base.invoice
             }
+        console.log(doc.value.doc, "params passed to saveAndSubmit");
+        
         saveAndSubmit(doc)
 
         remove_invoice();

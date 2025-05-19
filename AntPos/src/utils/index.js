@@ -1,7 +1,7 @@
 import { toast } from 'frappe-ui'
 
 export function createToast(options) {
-	toast({
+	toast.create({
 		position: 'bottom-right',
 		...options,
 	})
