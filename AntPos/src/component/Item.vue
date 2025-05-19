@@ -327,12 +327,19 @@ const calculateQtyTotal = () => {
 };
 
 const validateQty = (qty) => {
+
     const availableSerials = props.items.serial_no_options.map(option => option.value);
         if (props.items.has_serial_no && qty > availableSerials.length) {
             showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
             props.items.qty = availableSerials.length;
             return true;
         }
+        if (props.items.selected_serial_no.length < qty) {
+            showToast('Warning', 'Qty is less than selected serial no', 'alert-circle', '#ffcc00','#ffffff')
+            props.items.qty = props.items.selected_serial_no.length;
+        }
+        
+    
     return true;
 };
 
@@ -353,6 +360,8 @@ watch(
                 return;
             }
             if (props.items.has_serial_no) {
+                console.log('serial no');
+                
                 adjustSerialNumbers(newValue, oldValue);
             }
             emitter.emit('fetchPriceList', props);
@@ -366,6 +375,7 @@ watch(
 );
 
 const adjustSerialNumbers = (newQty, oldQty) => {
+    
     let diff = Math.abs(newQty - oldQty);
 
     if (props.items.selected_serial_no.length > newQty) {
@@ -431,6 +441,7 @@ onMounted( async () => {
     props.items.amount = props.items.rate * Math.abs(props.items.qty);
     calculateQtyTotal();
     calculateAmountTotal();
+    validateQty(props.items.qty);
 });
 
 onUnmounted(() => {
