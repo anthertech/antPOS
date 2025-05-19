@@ -9,18 +9,18 @@
     "copy-html-entry": "cp ../ant_pos/public/AntPos/index.html ../ant_pos/www/AntPos.html"
   },
   "dependencies": {
-    "feather-icons": "^4.28.0",
-    "frappe-ui": "^0.1.54",
-    "vue": "^3.5.13",
-    "vue-router": "^4.2.2"
+    "feather-icons": "^4.29.1",
+    "frappe-ui": "^0.1.60",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.2.3",
-    "@vitejs/plugin-vue-jsx": "^3.0.1",
-    "autoprefixer": "^10.4.14",
-    "postcss": "^8.4.5",
-    "tailwindcss": "^3.4.15",
-    "vite": "^4.4.9",
-    "vite-plugin-pwa": "^0.15.0"
+    "@vitejs/plugin-vue": "^5.0.4",
+    "@vitejs/plugin-vue-jsx": "^3.1.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.4",
+    "vite": "^5.2.9",
+    "vite-plugin-pwa": "^0.18.3"
   }
 }

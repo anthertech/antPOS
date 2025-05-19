@@ -12,7 +12,7 @@ export default defineConfig({
       lucideIcons: true,
       jinjaBootData: true,
       buildConfig: {
-        indexHtmlPath: '../ant_pos/www/ant_pos.html', // adjust path if needed
+        indexHtmlPath: '../ant_pos/www/ant_pos.html',
         emptyOutDir: true,
         sourcemap: true,
       },
