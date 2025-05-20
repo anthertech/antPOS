@@ -299,18 +299,7 @@ const validateitems = (place) => {
 };
 
 const calculateAmountTotal = () => {
-    let total = 0;
-    let discount = 0;
-    base.items.forEach((element) => {
-        element.amount = Math.abs(element.qty) * element.rate;
-        total += element.rate * Math.abs(element.qty);
-        discount+= element.discount_amount;
-        
-    });
-    base.item_discount = Number(discount).toFixed(2);
-    
-    
-    base.total = (total - ((base.additional_discount || 0) )).toFixed(2);
+    props.items.amount = Math.abs(props.items.qty) * props.items.rate
 };
 
 const calculateQtyTotal = () => {
@@ -325,8 +314,6 @@ const calculateQtyTotal = () => {
 };
 
 const validateQty = (qty) => {
-    console.log("kkkkkkkkkkkkkkkk");
-    
     const availableSerials = props.items.serial_no_options.map(option => option.value);
         if (props.items.has_serial_no && qty > availableSerials.length) {
             showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
@@ -447,6 +434,7 @@ onMounted( async () => {
     calculateAmountTotal();
     validateQty(props.items.qty);
     adjustSerialNumbers(props.items.qty, props.items.qty);
+    emitter.emit('calctotal');
 });
 
 onUnmounted(() => {
