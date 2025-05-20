@@ -276,7 +276,6 @@ const createSaveResource = createResource({
         };
     },
     onSuccess(data) {
-        console.log(doc.value.doc, "params passed to onSuccess");
 
         errorHandled = false;
         doc.value.doc = data.docs[0];
@@ -367,7 +366,6 @@ const submitInvoice = async (action = null) => {
         doc.value = {
               doc: base.invoice
             }
-        console.log(doc.value.doc, "params passed to saveAndSubmit");
         
         saveAndSubmit(doc)
 
