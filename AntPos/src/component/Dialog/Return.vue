@@ -210,7 +210,7 @@ let get_value = createResource({
 const invoices = createListResource({
     doctype: 'Sales Invoice',
     fields: ['name', 'customer', 'grand_total'],
-    filters: { docstatus: 1,set_warehouse: base.pos_profile.warehouse },
+    filters: { docstatus: 1, pos_profile: base.pos_profile.name, is_return: 0 },
     pageLength: Number.MAX_VALUE * 2,
     auto: true
 });
