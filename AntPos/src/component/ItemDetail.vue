@@ -23,8 +23,8 @@
                     />
                 </Button>
             </div>
-            <div class="py-2 pr-3 h-[93%] overflow-y-scroll scrollbar-hide  ">
-                <div class="mb-2">
+            <div class="py-2  h-[93%] overflow-y-scroll scrollbar-hide flex flex-col items-center w-full ">
+                <div class="mb-2 w-full flex flex-col items-center">
                     <div class="flex bg-gray-200 w-full py-2 px-3 justify-between rounded text-center ">
                         <div class="w-[18.4%]">
                             Item Code
@@ -65,6 +65,18 @@
                     v-model="base.total_qty"
                 />
                 <FormControl
+                    v-if="base.pos_profile.custom_use_percentage_discount"
+                    :type="'number'"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    placeholder="0"
+                    :disabled="false"
+                    label="Additional Discount (%)"
+                    v-model="base.additional_discount"
+                />
+                <FormControl
+                    v-else
                     :type="'number'"
                     :ref_for="true"
                     size="sm"
@@ -201,16 +213,27 @@
                     ...base?.invoice,
                     doctype: 'Sales Invoice',
                     is_pos: base.invoice.is_return ? base.invoice.is_pos : 1,
-                    pos_profile:base.pos_profile.name,
+                    pos_profile: base.pos_profile.name,
                     company: base.pos_profile.company,
-                    conversion_rate:1,
-                    selling_price_list:base.pos_profile.selling_price_list,
-                    items:base.items,
-                    customer:base.customer.name,
-                    update_stock :1,
+                    conversion_rate: 1,
+                    selling_price_list: base.pos_profile.selling_price_list,
+                    items: base.items,
+                    customer: base.customer.name,
+                    update_stock: 1,
+
+                    ...(base.additional_discount > 0 && {
+                        apply_discount_on: base.pos_profile.apply_discount_on
+                    }),
+
+                    ...(base.additional_discount > 0
+                        ? base.pos_profile.custom_use_percentage_discount
+                            ? { additional_discount_percentage: parseFloat(base.additional_discount) }
+                            : { discount_amount: parseFloat(base.additional_discount) }
+                        : {}
+                    ),
+
                     base_total: base.total,
-                    custom_ant_opening:base.Ant_Opening_Shift.name,
-                    
+                    custom_ant_opening: base.Ant_Opening_Shift.name,
                 }),
                 action:params.action,
             };
@@ -283,5 +306,6 @@
     };
     base.items = [];
     base.customer = {};
+    base.discount_amount=0;
 };
 </script>
