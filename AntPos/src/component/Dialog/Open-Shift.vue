@@ -13,7 +13,6 @@
             placeholder="Select Company"
             label="Company"
             v-model="autocompleteValue"
-            hide-search="true"
           />
 
           <FormControl
@@ -25,7 +24,6 @@
             :disabled="!autocompleteValue"
             label="POS Profile"
             v-model="autocompleteProfileValue"
-            hide-search="true"
           />
 
           <div v-if="mode_of_payment.length">
