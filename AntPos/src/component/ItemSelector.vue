@@ -265,15 +265,28 @@ const addChild = (data, value) => {
 };
 
 const calculateAmountTotal = () => {
+    
     let total = 0;
-    base.items.forEach((element) => {
-        element.amount = element.qty * element.rate;
-        total += element.amount;
-    });
-    total = total - base.additional_discount;
-    base.total = total.toFixed(2);
-};
+    let discount_amount = 0
 
+    base.items.forEach((item) => {
+        total += Number(item.amount)
+    })
+
+    if (base.pos_profile.custom_use_percentage_discount ) {
+        discount_amount =(Number(base.additional_discount || 0) / 100) * Number(total);
+        total =  total - Number(discount_amount);
+    } 
+    else {
+        
+        discount_amount = Number(total) - Number(base.additional_discount || 0) ;
+        total -= Number(discount_amount);
+
+    }
+    
+    base.total = total.toFixed(2);
+    
+};
 
 emitter.on('fetchPriceList', (params) => {
     priceListResource.fetch(params);
