@@ -66,7 +66,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0"
-                    :disabled="false"
+                    :disabled="true"
                     label="Net Total"
                     v-model="base.invoice.net_total"
                 />
@@ -76,7 +76,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0"
-                    :disabled="false"
+                    :disabled="true"
                     label="Tax and Charges"
                     v-model="base.invoice.total_taxes_and_charges"
                 />
@@ -86,7 +86,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0"
-                    :disabled="false"
+                    :disabled="true"
                     label="Total Amount"
                     v-model="base.invoice.total"
                 />
@@ -96,7 +96,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0"
-                    :disabled="false"
+                    :disabled="true"
                     label="Discount Amount"
                     v-model="base.invoice.discount_amount"
                 />
@@ -106,7 +106,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0"
-                    :disabled="false"
+                    :disabled="true"
                     label="Grand Total"
                     v-model="base.invoice.grand_total"
                 />
@@ -116,7 +116,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0"
-                    :disabled="false"
+                    :disabled="true"
                     label="Rounded Total"
                     v-model="base.invoice.rounded_total"
                 />
