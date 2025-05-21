@@ -15,7 +15,17 @@
             />
           </div>
           <div>
-            {{ base?.Ant_Opening_Shift?.pos_profile }}
+            <Button
+              :variant="'outline'"
+              :ref_for="true"
+              theme="blue"
+              size="sm"
+              :loadingText="null"
+              :link="null"
+            >
+              {{ base?.Ant_Opening_Shift?.pos_profile }}
+
+            </Button>
           </div>
         </div>
       </div>
@@ -24,7 +34,7 @@
   
   <script setup>
     import { inject, computed } from 'vue';
-    import { Switch } from 'frappe-ui';
+    import { Switch,Button } from 'frappe-ui';
     
     const base = inject('base');
     // Computed property for v-model
