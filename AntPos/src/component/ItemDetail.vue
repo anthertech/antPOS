@@ -46,7 +46,7 @@
                         </div>
                     </div>
                 </div>
-                <div v-for="(item, key) in base.items" :key="key" class="flex flex-col justify-between mb-2 ">
+                <div v-for="(item, key) in base.items" :key="key" class="flex flex-col justify-between mb-2 w-full ">
                     <Item :items="item" :index="key"  />                   
                 </div>
             </div>
