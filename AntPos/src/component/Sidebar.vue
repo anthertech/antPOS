@@ -11,7 +11,7 @@
             :class="props.collapse ? 'w-full' : 'w-44 rounded-lg hover:bg-gray-100'"
           >
             <img
-              src="https://www.anther.tech/files/anthr1-lg.png"
+              :src="brand.logo || '/assets/ant_pos/antPOS.png'"
               alt="Brand Logo"
               class="object-cover transition-all duration-300 ease-in-out"
               :class="props.collapse ? 'h-7 w-full' : 'h-10 w-10'"
@@ -20,7 +20,7 @@
               v-show="!props.collapse"
               class="flex flex-1 flex-col text-left ml-3 transition-all duration-300 ease-in-out"
             >
-              <div class="text-lg font-semibold text-gray-900">antPOS</div>
+              <div class="text-lg font-semibold text-gray-900">{{ brand.name ? brand.name : 'antPOS'}}</div>
               <div class="mt-1 text-sm text-gray-600">
                 {{ currentUser.full_name }}
               </div>
@@ -38,7 +38,7 @@
             :class="props.collapse ? 'w-full' : 'w-44 rounded-lg hover:bg-gray-100'"
           >
           <img
-              src="https://www.anther.tech/files/anthr1-lg.png"
+              :src="brand.logo || '/assets/ant_pos/antPOS.png'"
               alt="Brand Logo"
               class="object-cover transition-all duration-300 ease-in-out"
               :class="props.collapse ? 'h-7 w-full' : 'h-10 w-10'"
@@ -49,21 +49,23 @@
   
       <div class="w-full flex flex-col gap-3 mt-6">
         <div
-            class="w-full shadow-lg p-1 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
+            class="w-full  p-2  gap-3  hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
             :class="[
-                { 'bg-gray-100': base.page === 'salesinvoice' },
+                { 'bg-gray-100': base.page === 'invoice' },
                 props.collapse ? 'justify-center' : ''
             ]"
             @click="emitter.emit('updatePage', 'invoice')"
         >
-          <FeatherIcon name="monitor" class="w-5 h-5 text-gray-600" />
-          <p v-show="!props.collapse" class="text-gray-700 font-medium">POS</p>
+          <div class="flex items-center gap-4 w-full">
+            <FeatherIcon name="monitor" class="w-5 h-5 text-gray-600" />
+            <p v-show="!props.collapse" class="text-gray-700 font-medium">POS</p>
+          </div>
         </div>
   
         <div
-            class="w-full shadow-lg p-1 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
+            class="w-full  p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
             :class="[
-                { 'bg-gray-100': base.page === 'salesinvoice' },
+                { 'bg-gray-100': base.page === 'payments' },
                 props.collapse ? 'justify-center' : ''
             ]"
             @click="emitter.emit('updatePage', 'payments')"
@@ -73,7 +75,7 @@
         </div>
   
         <div
-            class="w-full shadow-lg p-1 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
+            class="w-full p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
             :class="[
                 { 'bg-gray-100': base.page === 'salesinvoice' },
                 props.collapse ? 'justify-center' : ''
@@ -85,24 +87,28 @@
         </div>
       </div>
   
-      <div
-        class="mt-auto w-full flex hover:cursor-pointer transition-all duration-500 ease-in-out"
+      <Button
+        class="mt-auto w-full flex hover:cursor-pointer transition-all duration-500 ease-in-out "
         :class="props.collapse ? 'justify-end' : ''"
         
         @click="emitter.emit('trigger_collapse')"
       >
+      <div class="flex justify-center items-center">
         <FeatherIcon
           :name="!props.collapse ? 'chevrons-left' : 'chevrons-right'"
           class="h-5 w-5"
         />
         <span v-show="!props.collapse">Collapse</span>
       </div>
+      </Button>
     </div>
   </template>
 <script setup>
     import { FeatherIcon, Dropdown, createResource } from 'frappe-ui';
     import { inject, ref, h, computed , defineProps} from 'vue';
+    import { getSettings } from '../stores/settings'
     import { usersStore } from '../data/users';
+    const { settings, brand } = getSettings()
     let base = inject('base');
     const emitter = inject('emitter');
     const sidebarStore = ref({"isExpanded":true})
