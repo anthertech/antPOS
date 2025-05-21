@@ -194,10 +194,9 @@
         makeParams(params) {
             base.items.forEach((item) => {
                 
-                item.serial_no = item.selected_serial_no
-                                    .filter(sn => sn.value === serial_no.value)
-                                    .map(sn => sn.value) // extract the string value
-                                    .join('\n');
+                item.serial_no = item.selected_serial_no.map(serial => serial.value);
+
+                item.serial_no = item.serial_no.join('\n')
                 if (item.has_serial_no && item.selected_serial_no.length !== item.qty) {
                     createToast({
                         title: 'Error',
