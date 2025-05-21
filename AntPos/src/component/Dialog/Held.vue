@@ -109,6 +109,8 @@ const addItems = async (items) => {
             });
 
             element.selected_serial_no = await splitSerialNumbers(element.serial_no);
+            element.has_serial_no = element.selected_serial_no.length > 0
+            element.selected_serial_no = element.selected_serial_no.map(serial => ({ label: serial, value: serial }));
 
             element.serial_no = await getlist.fetch({
                 doctype: "Serial No",
@@ -188,6 +190,7 @@ let get_value = createResource({
 const invoices = createListResource({
     doctype: 'Sales Invoice',
     fields: ['name', 'customer', 'grand_total'],
+    orderBy: 'creation desc',
     filters: { docstatus: 0, pos_profile: base.pos_profile.name, },
     pageLength: Number.MAX_VALUE * 2,
     auto: true
