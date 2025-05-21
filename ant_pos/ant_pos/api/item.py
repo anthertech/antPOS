@@ -104,7 +104,7 @@ def scan_barcode(search_value: str) -> Dict[str, Any]:
 def items(pos_profile, search_value, customer):
     if not customer:
         frappe.throw(_("Please select the customer"))
-    
+
     if not search_value:
         frappe.throw(_("Search value is required"))
 
@@ -114,16 +114,22 @@ def items(pos_profile, search_value, customer):
         frappe.throw(_("Invalid search value format"))
 
     pos_profile_doc = frappe.get_doc('POS Profile', pos_profile)
-    company = frappe.db.get_value('Company', pos_profile_doc.company, ['default_currency', 'name'], as_dict=True)
-    frappe.db.get_value('Customer', customer, ['is_internal_customer'])  # just to validate customer exists
+
+    # Validate customer exists (no need to store result)
+    frappe.db.get_value('Customer', customer, ['is_internal_customer'])
 
     item = search_values.get("item", {})
     item_code = item.get("item_code")
     has_serial_no = item.get("has_serial_no")
     has_batch_no = item.get("has_batch_no")
 
-    serial_nos, batch_nos = [], []
+    selected_batch_no = search_values.get("batch_no")
+    selected_serial_no = search_values.get("serial_no")
 
+    serial_nos = []
+    batch_nos = []
+
+    # If either serial or batch info is needed, fetch serials with batch info
     if has_serial_no:
         serial_nos = frappe.get_all(
             "Serial No",
@@ -131,12 +137,40 @@ def items(pos_profile, search_value, customer):
             fields=["name as serial_no", "batch_no"]
         )
 
+    # If batch info is needed
     if has_batch_no:
         batch_nos = frappe.get_all(
             "Batch",
             filters={"item": item_code},
             fields=["name as batch_no", "expiry_date"]
         )
+
+    # Condition 1: Check if batch exists but no matching serial no in that batch
+    if has_serial_no and has_batch_no and selected_batch_no:
+        serials_for_batch = any(s["batch_no"] == selected_batch_no for s in serial_nos)
+        if not serials_for_batch:
+            frappe.throw(_("No serial numbers found in warehouse {0} for batch {1}").format(
+                pos_profile_doc.warehouse, selected_batch_no
+            ))
+
+    # Condition 2: No batch with stock exists
+    if has_batch_no and not selected_batch_no:
+        batches_with_qty = frappe.db.sql("""
+            SELECT sle.batch_no
+            FROM `tabStock Ledger Entry` sle
+            WHERE sle.item_code = %s
+              AND sle.warehouse = %s
+              AND sle.batch_no IS NOT NULL
+            GROUP BY sle.batch_no
+            HAVING SUM(sle.actual_qty) > 0
+        """, (item_code, pos_profile_doc.warehouse), as_dict=True)
+
+        if not batches_with_qty:
+            frappe.throw(_("No batch with available stock found for item {0} in warehouse {1}").format(
+                item_code, pos_profile_doc.warehouse
+            ))
+
+    company = frappe.db.get_value('Company', pos_profile_doc.company, ['default_currency', 'name'], as_dict=True)
 
     item_args = {
         "item_code": item_code,
@@ -152,36 +186,35 @@ def items(pos_profile, search_value, customer):
         "pos_profile": pos_profile_doc.name,
         "cost_center": pos_profile_doc.cost_center,
         "tax_category": pos_profile_doc.tax_category,
-        "batch_no": search_values.get("batch_no"),
+        "batch_no": selected_batch_no,
         "warehouse": pos_profile_doc.warehouse,
         "is_pos": 1,
     }
 
     item_details = get_item_details(item_args, doc=None, overwrite_warehouse=False)
+
+    # Assign fetched serial/batch lists
     item_details["serial_no"] = serial_nos
     item_details["batch_nos"] = batch_nos
 
-    selected_serial_no = search_values.get("serial_no")
-    selected_batch_no = search_values.get("batch_no")
-
+    # Selected serial/batch
     item_details["selected_serial_no"] = [selected_serial_no] if has_serial_no and selected_serial_no else []
     item_details["selected_batch_no"] = selected_batch_no if has_batch_no and selected_batch_no else None
 
+    # Check if selected serial is valid
     if has_serial_no and selected_serial_no:
         available_serials = {s["serial_no"] for s in serial_nos}
         if selected_serial_no not in available_serials:
-            frappe.throw(_("Serial No {0} not available in warehouse {1}").format(selected_serial_no, pos_profile_doc.warehouse))
+            frappe.throw(_("Serial No {0} not available in warehouse {1}").format(
+                selected_serial_no, pos_profile_doc.warehouse
+            ))
 
+    # Check if selected batch has stock
     if has_batch_no and selected_batch_no:
-        qty = frappe.db.get_value(
-            "Stock Ledger Entry",
-            filters={
-                "item_code": item_code,
-                "batch_no": selected_batch_no,
-                "warehouse": pos_profile_doc.warehouse
-            },
-            fieldname="sum(actual_qty)"
-        )
+        qty = frappe.db.sql("""
+            SELECT SUM(actual_qty) FROM `tabStock Ledger Entry`
+            WHERE item_code = %s AND batch_no = %s AND warehouse = %s
+        """, (item_code, selected_batch_no, pos_profile_doc.warehouse))[0][0]
 
         if not qty or qty <= 0:
             frappe.throw(_("Batch No {0} for item {1} is not available in warehouse {2}").format(
