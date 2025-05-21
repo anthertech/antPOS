@@ -232,7 +232,7 @@ const addItemIfExists = (data) => {
     if (!base.pos_profile.custom_allow_add_new_items_on_new_line) {
         base.items.forEach((element, index) => {
             if (data.item_code === element.item_code &&
-                ((data.has_batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
+                ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
                     found = true;
                 if (data.has_serial_no && data.serial_no) {
                     for (let serial of data.selected_serial_no) {
@@ -278,12 +278,9 @@ const calculateAmountTotal = () => {
         total =  total - Number(discount_amount);
     } 
     else {
-        
         discount_amount = Number(total) - Number(base.additional_discount || 0) ;
         total -= Number(discount_amount);
-
     }
-    
     base.total = total.toFixed(2);
     
 };
