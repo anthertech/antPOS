@@ -267,7 +267,7 @@ watch(
     () => props.items.batch_no,
     (newBatchNo, oldBatchNo) => {        
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
-            let find = validateitems(props.index);
+            let find = validateitems();
             if (!find && props.items.has_serial_no) {
                 props.items.selected_serial_no = [];
                 props.items.serial_no_options = props.items.serial_no.filter((serial_no) => serial_no.batch_no == newBatchNo)
@@ -282,20 +282,32 @@ watch(
     }
 );
 
-const validateitems = (place) => {
+const validateitems = () => {
     if (!base.pos_profile.custom_allow_add_new_item_on_new_line) {
         let find = false;
         for (let index = 0; index < base.items.length; index++) {
-            if (place !== index && base.items[place].item_code === base.items[index].item_code &&
-                ((base.items[place].has_batch_no && base.items[index].batch_no === base.items[index].batch_no) || !base.items[place].has_batch_no)) {
-                base.items[index].qty += base.items[place].qty;
-                base.items.splice(place, 1);
-                find = true;
-                return find;
+            if (props.index !== index && base.items[props.index].item_code === base.items[index].item_code &&
+                ((base.items[props.index].has_batch_no && base.items[props.index].batch_no === base.items[index].batch_no) || 
+                !base.items[props.index].has_batch_no)) { 
+                    base.items.selected_serial_no= mergeSerial_no(base.items[props.index].selected_serial_no,base.items[index].selected_serial_no)
+                    base.items.splice(props.index, 1);
+                    find = true;
+                    return find;
             }
         }
         return find;
     }
+};
+
+const mergeSerial_no = (left, right) => {
+
+  const leftValues = left.map(sn => sn.value);
+  
+  const rightValues = right.map(sn => sn.value);
+
+  const mergedValues = [...new Set([...leftValues, ...rightValues])];
+
+  return mergedValues.map(serial => ({ label: serial, value: serial }));
 };
 
 const calculateAmountTotal = () => {
@@ -314,19 +326,21 @@ const calculateQtyTotal = () => {
 };
 
 const validateQty = (qty) => {
-    const availableSerials = props.items.serial_no_options.map(option => option.value);
-        if (props.items.has_serial_no && qty > availableSerials.length) {
-            showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
-            props.items.qty = availableSerials.length;
-            return true;
-        }
-    return true;
+    if (props.items.serial_no_options){
+        const availableSerials = props.items.serial_no_options.map(option => option.value);
+            if (props.items.has_serial_no && qty > availableSerials.length) {
+                showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
+                props.items.qty = availableSerials.length;
+                return true;
+            }
+        return true;
+    }
 };
 
 watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
-        if (props.items.has_serial_no && newSerial !== oldSerial) {
+        if (props.items.serial_no_options && newSerial !== oldSerial) {
             props.items.qty = newSerial.length;
         }
     }
@@ -336,10 +350,13 @@ watch(
     () => props.items.qty,
     (newValue, oldValue) => {
         if (newValue !== oldValue) {
+            
             if (!validateQty(newValue) ) {
+                
                 return;
             }
-            if (props.items.has_serial_no) {
+            if (props.items.serial_no_options) {
+                
                 adjustSerialNumbers(newValue, oldValue);
             }
             emitter.emit('fetchPriceList', props);
@@ -353,8 +370,9 @@ watch(
 );
 
 const adjustSerialNumbers = (newQty, oldQty) => {
-    if (!props.items.has_serial_no) return;
 
+    if (!props.items.has_serial_no || !props.items.serial_no_options ) return;
+    
     const selected = props.items.selected_serial_no;
     const options = props.items.serial_no_options;
     const selectedLength = selected.length;
@@ -436,7 +454,7 @@ onMounted( async () => {
     adjustSerialNumbers(props.items.qty, props.items.qty);
     emitter.emit('calctotal');
 });
-
+ 
 onUnmounted(() => {
     calculateAmountTotal();
     calculateQtyTotal();
