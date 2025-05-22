@@ -312,6 +312,7 @@ const mergeSerial_no = (left, right) => {
 
 const calculateAmountTotal = () => {
     props.items.amount = Math.abs(props.items.qty) * props.items.rate
+    emitter.emit('calctotal');
 };
 
 const calculateQtyTotal = () => {
