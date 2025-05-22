@@ -278,8 +278,8 @@ const calculateAmountTotal = () => {
         total =  total - Number(discount_amount);
     } 
     else {
-        discount_amount = Number(total) - Number(base.additional_discount || 0) ;
-        total -= Number(discount_amount);
+        
+       total = Number(total) - Number(base.additional_discount || 0) ;
     }
     base.total = total.toFixed(2);
     
