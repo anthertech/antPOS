@@ -242,7 +242,9 @@ const addItemIfExists = (data) => {
             if (data.item_code === element.item_code &&
                 ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
                     found = true;
-                if (data.has_serial_no && data.serial_no ) {
+                    console.log(data,"99999999999");
+                    
+                if (data.has_serial_no && data.serial_no && data.selected_serial_no ) {
                     for (let serial of data.selected_serial_no) {
                         let selected = element.selected_serial_no.map(serial=>serial.value)
                         if (selected.includes(serial)) {
