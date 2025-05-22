@@ -242,9 +242,9 @@ const addItemIfExists = (data) => {
             if (data.item_code === element.item_code &&
                 ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
                     found = true;
-                    console.log(data,"99999999999");
-                    
-                if (data.has_serial_no && data.serial_no && data.selected_serial_no ) {
+                
+                if (data.has_serial_no && data.serial_no ) {
+
                     for (let serial of data.selected_serial_no) {
                         let selected = element.selected_serial_no.map(serial=>serial.value)
                         if (selected.includes(serial)) {
@@ -253,8 +253,13 @@ const addItemIfExists = (data) => {
                             return found;
                         }
                     }
+                    element.selected_serial_no.push({label:data.serial_no,value:data.serial_no})
                 }
-                addChild(base.items[index].selected_serial_no, data.selected_serial_no[0]);
+                if (element.serial_no  && !data.serial_no) {
+                    showToast('warning', 'Batch with serial already entered')
+
+                    return found
+                }
                 base.items[index].qty += 1;
                 priceListResource.fetch({ items: base.items[index] })
                 debounceSearch.value = '';
@@ -269,10 +274,6 @@ const addNewLine = async (data) => {
     await priceListResource.fetch({ items: data });
     base.items.push(data);
     debounceSearch.value = '';
-};
-
-const addChild = (data, value) => {
-        data.push(value);
 };
 
 const calculateAmountTotal = () => {

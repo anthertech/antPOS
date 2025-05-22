@@ -111,6 +111,7 @@ const addItems = async (items) => {
             element.selected_serial_no = await splitSerialNumbers(element.serial_no);
             element.has_serial_no = element.selected_serial_no.length > 0
             element.selected_serial_no = element.selected_serial_no.map(serial => ({ label: serial, value: serial }));
+            
 
             element.serial_no = await getlist.fetch({
                 doctype: "Serial No",
@@ -126,7 +127,8 @@ const addItems = async (items) => {
             console.error("Error fetching batch or serial numbers:", error);
         }
     }
-
+    console.log(items);
+    
     return items
 };
 
