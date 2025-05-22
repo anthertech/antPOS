@@ -124,6 +124,14 @@ const addItemsResource = createResource({
         errorHandled = false;
         addItem(data);
     },
+    transform(data){
+        if (data.serial_no && data.serial_no.length > 0 ){
+            data.selected_serial_no = data.selected_serial_no.map(serial=>({
+                label:serial,
+                value:serial
+            }))
+        }
+    }
 });
 
 const priceListResource = createResource({
