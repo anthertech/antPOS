@@ -283,8 +283,8 @@ const createSaveResource = createResource({
     onError(error) {
         if (!errorHandled) {
             createToast({
-                title: 'Error',
-                text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+                title: 'error',
+                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
                 icon: 'x-circle',
                 iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                 position: 'top-center',
@@ -371,7 +371,7 @@ const submitInvoice = async (action = null) => {
 
         remove_invoice();
         createPayments(invoice);
-        showToast('Invoice submitted successfully', 'check-circle', 'green');
+        showToast('success','Invoice submitted successfully', 'check-circle', 'green');
         if (action !== null) {
             createPrint(invoice.name);
         }
@@ -422,8 +422,8 @@ let advance = createResource({
     onError(error) {
             if (!errorHandled) {
                 createToast({
-                    title: 'Error',
-                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+                    title: 'error',
+                    message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
                     icon: 'x-circle',
                     iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                     position: 'top-center',
@@ -468,8 +468,8 @@ let makepayment = createResource({
     onError(error) {
             if (!errorHandled) {
                 createToast({
-                    title: 'Error',
-                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+                    title: 'error',
+                    message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
                     icon: 'x-circle',
                     iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                     position: 'top-center',
@@ -495,7 +495,7 @@ const validatePaymentBeforeSave = async () => {
 
     if (advance > 0) {
         if (base.invoice.paid_amount > base.invoice.rounded_total) {
-            showToast('Warning', 'Paid amount is greater than rounded total', 'alert-circle', '#ffcc00','#ffffff');
+            showToast('warning', 'Paid amount is greater than rounded total', 'alert-circle', '#ffcc00','#ffffff');
             return false;
         }
         base.invoice.payments = []

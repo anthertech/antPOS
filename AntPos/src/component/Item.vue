@@ -329,7 +329,7 @@ const validateQty = (qty) => {
     if (props.items.serial_no_options){
         const availableSerials = props.items.serial_no_options.map(option => option.value);
             if (props.items.has_serial_no && qty > availableSerials.length) {
-                showToast('Warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
+                showToast('warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
                 props.items.qty = availableSerials.length;
                 return true;
             }

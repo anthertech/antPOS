@@ -80,8 +80,8 @@ const searchResource = createResource({
     onError(error) {
         if (!errorHandled) {
             createToast({
-                title: 'Error',
-                text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                title: 'error',
+                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
                 icon: 'x-circle',
                 iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                 position: 'top-center',
@@ -110,8 +110,8 @@ const addItemsResource = createResource({
     onError(error) {
         if (!errorHandled) {
             createToast({
-                title: 'Error',
-                text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                title: 'error',
+                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
                 icon: 'x-circle',
                 iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                 position: 'top-center',
@@ -172,8 +172,8 @@ const priceListResource = createResource({
         if (!errorHandled) {
             console.error('Price list error:', error);
             createToast({
-                title: 'Error',
-                text: error.messages[0] || error.messages || 'An error occurred',
+                title: 'error',
+                message: error.messages[0] || error.messages || 'An error occurred',
                 icon: 'x-circle',
                 iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                 position: 'top-center',
@@ -237,7 +237,7 @@ const addItemIfExists = (data) => {
                 if (data.has_serial_no && data.serial_no) {
                     for (let serial of data.selected_serial_no) {
                         if (element.selected_serial_no.includes(serial)) {
-                            showToast('Warning', 'Serial-no Already added')
+                            showToast('warning', 'Serial-no Already added')
                             
                             return found;
                         }

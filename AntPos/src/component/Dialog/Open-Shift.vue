@@ -17,7 +17,7 @@
 
           <FormControl
             type="autocomplete"
-            :options="getProfileOptions()"
+            :options="getProfileOptions"
             size="sm"
             variant="subtle"
             placeholder="Select POS Profile"

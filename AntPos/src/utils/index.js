@@ -17,7 +17,7 @@ export function showToast(title, text, icon, bgColor = null, textColor = null, i
 
     createToast({
         title: title,
-        text: htmlToText ? htmlToText(text) : text,
+        message: htmlToText ? htmlToText(text) : text,
         icon: icon,
         iconClasses: iconClasses,
         position: icon === 'check' ? 'bottom-right' : 'top-center',

@@ -194,14 +194,13 @@
         makeParams(params) {
             base.items.forEach((item) => {
                 
-                item.serial_no = item.selected_serial_no.map(serial => serial.value);
-
+                item.serial_no = item.selected_serial_no.map(serial => serial);
                 item.serial_no = item.serial_no.join('\n')
+
                 if (item.has_serial_no && item.selected_serial_no.length !== item.qty) {
                     createToast({
-                        title: 'Error',
-                        text: 'Serial number is required',
-                        
+                        title: 'error',
+                        message: 'Serial number is required',
                         iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                         position: 'top-center',
                         timeout: 5,
@@ -264,8 +263,8 @@
         onError(error) {
             if (!errorHandled) {
                 createToast({
-                    title: 'Error',
-                    text: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                    title: 'error',
+                    message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
                     icon: 'x-circle',
                     iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
                     position: 'top-center',
