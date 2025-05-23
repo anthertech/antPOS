@@ -121,6 +121,7 @@ const addItemsResource = createResource({
         }
     },
     onSuccess(data) {
+
         errorHandled = false;
         addItem(data);
     },
@@ -131,6 +132,16 @@ const addItemsResource = createResource({
                 value:serial
             }))
         }
+        let  date=null
+        let qty=0
+        if (data.batch_no && data.batch_no.length > 0 && data.has_batch_no) {
+            const batch = data.batch_nos.find(b => b.batch_no ===data.selected_batch_no);
+            qty = batch ? batch.stock_qty : 0;
+            date = batch ? batch.expiry_date : null;
+            
+        }
+        data.stock_qty = qty;
+        data.expiry_date = date;
     }
 });
 
@@ -298,6 +309,7 @@ const calculateAmountTotal = () => {
 };
 
 emitter.on('fetchPriceList', (params) => {
+       
     priceListResource.fetch(params);
 });
 emitter.on('featchsearchResource'),(params)=>{

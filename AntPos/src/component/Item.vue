@@ -263,6 +263,7 @@ const getbatchNo = (batch_nos) => {
     }));
 };
 
+
 watch(
     () => props.items.batch_no,
     (newBatchNo, oldBatchNo) => {        
@@ -278,6 +279,9 @@ watch(
             }
             emitter.emit('fetchPriceList', props);
 
+            const batch = props.items.batch_nos.find(b => b.batch_no ===newBatchNo);
+            props.items.stock_qty = batch ? batch.stock_qty : 0;
+            props.items.expiry_date = batch ? batch.expiry_date : null;
         }
     }
 );
@@ -359,9 +363,8 @@ watch(
             if (props.items.serial_no_options) {
                 
                 adjustSerialNumbers(newValue, oldValue);
-            }
+            }       
             emitter.emit('fetchPriceList', props);
-
             props.items.rate = rateCalculation(props.items);
             props.items.amount = props.items.rate * Math.abs(props.items.qty);
             calculateQtyTotal();

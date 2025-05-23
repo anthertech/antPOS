@@ -3,6 +3,8 @@ from frappe import _
 import json
 from typing import Dict, Any
 from erpnext.stock.get_item_details import get_item_details  
+from frappe.utils import flt
+
 
 BarcodeScanResult = dict[str, str | None]
 
@@ -115,8 +117,6 @@ def items(pos_profile, search_value, customer):
 
     pos_profile_doc = frappe.get_doc('POS Profile', pos_profile)
 
-    # Validate customer exists (no need to store result)
-    frappe.db.get_value('Customer', customer, ['is_internal_customer'])
 
     item = search_values.get("item", {})
     item_code = item.get("item_code")
@@ -139,11 +139,20 @@ def items(pos_profile, search_value, customer):
 
     # If batch info is needed
     if has_batch_no:
-        batch_nos = frappe.get_all(
-            "Batch",
-            filters={"item": item_code},
-            fields=["name as batch_no", "expiry_date"]
-        )
+        batch_nos = frappe.db.sql("""
+            SELECT 
+                b.name AS batch_no,
+                b.expiry_date,
+                IFNULL(SUM(sle.actual_qty), 0) AS stock_qty
+            FROM `tabBatch` b
+            LEFT JOIN `tabStock Ledger Entry` sle 
+                ON sle.batch_no = b.name 
+                AND sle.item_code = %s 
+                AND sle.warehouse = %s
+            WHERE b.item = %s
+            GROUP BY b.name, b.expiry_date
+        """, (item_code, pos_profile_doc.warehouse, item_code), as_dict=True)
+
 
     # Condition 1: Check if batch exists but no matching serial no in that batch
     if has_serial_no and has_batch_no and selected_batch_no:
@@ -208,17 +217,6 @@ def items(pos_profile, search_value, customer):
             frappe.throw(_("Serial No {0} not available in warehouse {1}").format(
                 selected_serial_no, pos_profile_doc.warehouse
             ))
-
-
-    # Get total stock quantity for this item in the warehouse
-    total_stock_qty = frappe.db.get_value(
-        "Bin",
-        {"item_code": item_code, "warehouse": pos_profile_doc.warehouse},
-        "actual_qty"
-    ) or 0
-    # Add total stock qty to the result
-    item_details["stock_qty"] = total_stock_qty
-
 
 
     # Check if selected batch has stock
