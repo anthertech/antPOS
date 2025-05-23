@@ -57,7 +57,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="UOM"
-                    :disabled="false"
+                    :disabled="true"
                     label="UOM"
                     v-model="items.uom"
                 />
@@ -68,7 +68,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    :disabled="false"
+                    :disabled="base.pos_profile.custom_edit_rate"
                     label="Rate"
                     placeholder="0"
                     v-model="items.rate"
@@ -92,7 +92,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    :disabled="false"
+                    :disabled="true"
                     label="Discount Amount"
                     placeholder="0"
                     v-model="items.discount_amount"
@@ -108,18 +108,6 @@
                     label="Price List Rate"
                     placeholder="0"
                     v-model="items.price_list_rate"
-                />
-            </div>
-            <div class="p-2">
-                <FormControl
-                    type="number"
-                    :ref_for="true"
-                    size="sm"
-                    variant="subtle"
-                    placeholder="Available QTY"
-                    :disabled="false"
-                    label="Available QTY"
-                    v-model="items.available_qty"
                 />
             </div>
             <div class="p-2">
@@ -167,9 +155,21 @@
                     placeholder="Serial No Qty"
                     :disabled="true"
                     label="Serial No Qty"
-                    v-model="items.stock_qty"
+                    v-model="items.serial_no_options.length"
                 />
             </div>
+            <div class="flex items-center">
+                <DatePicker
+                    v-if="base.pos_profile.custom_set_sales_order"
+                    size="sm"
+                    variant="subtle"
+                    label="Delivery Date"
+                    placeholder="Delivery Date"
+                    :disabled="false"
+                    v-model="deliveryDate"
+                    :unique="true"
+                    />
+                </div>
             </div>
             <div class="w-full">
                 <div class="p-2">
@@ -208,7 +208,7 @@
                 </div>
                 <div>
                     <div class="p-2 flex gap-4">
-                        <div class="w-1/2">
+                        <div class="w-full">
                             <Autocomplete
                                 type="select"
                                 :options="getbatchNo(items.batch_nos)"
@@ -219,16 +219,6 @@
                                 label="Batch No"
                                 v-model="items.batch_no"
                                 :hideSearch="true"
-                            />
-                        </div>
-                        <div class="flex items-end">
-                            <DatePicker
-                                v-if="base.pos_profile.custom_set_sales_order"
-                                size="md"
-                                v-model="deliveryDate"
-                                variant="subtle"
-                                placeholder="Delivery Date"
-                                :disabled="false"
                             />
                         </div>
                     </div>
@@ -342,6 +332,7 @@ watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
         if (props.items.serial_no_options && newSerial !== oldSerial) {
+            console.log(props.items.selected_serial_no);
             props.items.qty = newSerial.length;
         }
     }
@@ -409,16 +400,8 @@ watch(
     (newValue, oldValue) => {
         if (newValue !== oldValue || !oldValue) {
             props.items.rate = rateCalculation(props.items);
-            props.items.amount = props.items.rate* Math.abs(props.items.qty);        
-        }
-    }
-);
-
-watch(
-    () => props.items.discount_amount,
-    (newValue, oldValue) => {
-        if (newValue !== oldValue || !oldValue) {
-            props.items.discount_percentage = (props.items.discount_amount / props.items.price_list_rate) * 100;
+            props.items.amount = props.items.rate* Math.abs(props.items.qty); 
+            props.items.discount_amount= props.items.price_list_rate - props.items.rate 
         }
     }
 );

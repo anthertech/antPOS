@@ -256,7 +256,7 @@ const addItemIfExists = (data) => {
                     element.selected_serial_no.push({label:data.serial_no,value:data.serial_no})
                 }
                 if (element.serial_no  && !data.serial_no) {
-                    showToast('warning', 'Batch with serial already entered')
+                    showToast('warning', 'Batch already entered')
 
                     return found
                 }
@@ -280,9 +280,11 @@ const calculateAmountTotal = () => {
     
     let total = 0;
     let discount_amount = 0
+    let item_discount = 0
 
     base.items.forEach((item) => {
         total += Number(item.amount)
+        item_discount = Number( (item.price_list_rate * item.qty) - item.amount )
     })
 
     if (base.pos_profile.custom_use_percentage_discount ) {
@@ -294,7 +296,9 @@ const calculateAmountTotal = () => {
        total = Number(total) - Number(base.additional_discount || 0) ;
     }
     base.total = total.toFixed(2);
+    console.log(item_discount,"*******************8");
     
+    base.item_discount= item_discount.toFixed(2);
 };
 
 emitter.on('fetchPriceList', (params) => {
