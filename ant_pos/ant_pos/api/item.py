@@ -209,6 +209,18 @@ def items(pos_profile, search_value, customer):
                 selected_serial_no, pos_profile_doc.warehouse
             ))
 
+
+    # Get total stock quantity for this item in the warehouse
+    total_stock_qty = frappe.db.get_value(
+        "Bin",
+        {"item_code": item_code, "warehouse": pos_profile_doc.warehouse},
+        "actual_qty"
+    ) or 0
+    # Add total stock qty to the result
+    item_details["stock_qty"] = total_stock_qty
+
+
+
     # Check if selected batch has stock
     if has_batch_no and selected_batch_no:
         qty = frappe.db.sql("""
