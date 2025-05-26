@@ -57,6 +57,7 @@ const handleDialogClose = () => {
 };
 
 const submitInvoice = () => {
+    base.items=[]
     salesInvoice.fetch({ name: selectedInvoice.value });
 };
 let runDoCMethod = createResource({
@@ -103,7 +104,6 @@ let salesInvoice = createResource({
     onSuccess: async (data) => {
         await runDoCMethod.fetch({ for_validate :true, docs: data , method:'set_missing_values' , args: {"for_validate":true} });
         errorHandled = false;  
-        // handleDialogClose()
     },
     onError(error) {
         createToast({
