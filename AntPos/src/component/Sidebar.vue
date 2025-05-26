@@ -49,21 +49,19 @@
   
       <div class="w-full flex flex-col gap-3 mt-6">
         <div
-            class="w-full  p-2  gap-3  hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
+            class="w-full p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
             :class="[
                 { 'bg-gray-100': base.page != 'payments' },
                 props.collapse ? 'justify-center' : ''
             ]"
             @click="emitter.emit('updatePage', 'invoice')"
         >
-          <div class="flex items-center gap-4 w-full">
             <FeatherIcon name="monitor" class="w-5 h-5 text-gray-600" />
             <p v-show="!props.collapse" class="text-gray-700 font-medium">POS</p>
-          </div>
         </div>
   
         <div
-            class="w-full  p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
+            class="w-full p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
             :class="[
                 { 'bg-gray-100': base.page === 'payments' },
                 props.collapse ? 'justify-center' : ''
