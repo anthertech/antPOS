@@ -366,6 +366,7 @@ watch(
             props.items.rate = rateCalculation(props.items);
             props.items.amount = props.items.rate * Math.abs(props.items.qty);
             calculateQtyTotal();
+            discountCalculation();
     }
 
     }
@@ -409,12 +410,16 @@ watch(
     () => props.items.discount_percentage,
     (newValue, oldValue) => {
         if (newValue !== oldValue || !oldValue) {
-            props.items.rate = rateCalculation(props.items);
-            props.items.amount = props.items.rate* Math.abs(props.items.qty); 
-            props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty) 
+            discountCalculation();
         }
     }
 );
+
+const discountCalculation = () => {
+    props.items.rate = rateCalculation(props.items);
+    props.items.amount = props.items.rate* Math.abs(props.items.qty); 
+    props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty) 
+}
 
 base.items.forEach((items) => {
     watch(
