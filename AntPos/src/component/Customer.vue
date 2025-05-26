@@ -71,8 +71,8 @@ const computedOptions = computed(() => {
     : [];
 });
 
-const refreshCustomerList = (params) => {
-  customerResource.fetch();
+const refreshCustomerList = async (params) => {
+  await customerResource.fetch();
   selectedCustomer.value={
       mobile_no: params.mobile_no || '',
       label: params.name || 'Unnamed',
@@ -82,8 +82,6 @@ const refreshCustomerList = (params) => {
       territory: params.territory,
       is_internal_customer: params.is_internal_customer,
   }
-
-
 };
 
 onMounted(() => {

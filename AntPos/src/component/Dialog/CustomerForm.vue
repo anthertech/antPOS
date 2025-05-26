@@ -133,7 +133,6 @@ const createCustomer =  createResource ({
     },
     onSuccess(data) {
       emitter.emit("customerCreated",data);
-      base.customer = data.name;
       handleDialogClose();
     },
     onError(err) {
