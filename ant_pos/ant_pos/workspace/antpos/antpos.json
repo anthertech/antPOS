@@ -1,0 +1,36 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"J2EWUAxqUk\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\">antPOS</span>\",\"col\":12}},{\"id\":\"8OsCxUA1yu\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"antPOS\",\"col\":3}}]",
+ "creation": "2025-05-26 12:36:58.450571",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "color-review-points",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "antPOS",
+ "links": [],
+ "modified": "2025-05-26 12:42:02.597836",
+ "modified_by": "Administrator",
+ "module": "Ant-Pos",
+ "name": "antPOS",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "roles": [],
+ "sequence_id": 2.0,
+ "shortcuts": [
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "antPOS",
+   "type": "URL",
+   "url": "/AntPos"
+  }
+ ],
+ "title": "antPOS"
+}
