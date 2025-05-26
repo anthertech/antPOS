@@ -126,9 +126,7 @@ const addItems = async (items) => {
         } catch (error) {
             console.error("Error fetching batch or serial numbers:", error);
         }
-    }
-    console.log(items);
-    
+    }    
     return items
 };
 

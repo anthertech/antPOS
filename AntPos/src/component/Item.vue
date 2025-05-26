@@ -155,7 +155,7 @@
                     placeholder="Serial No Qty"
                     :disabled="true"
                     label="Serial No Qty"
-                    v-model="items.serial_no_options.length"
+                    v-model="serialNoQty"
                 />
             </div>
             <div class="flex items-center">
@@ -228,7 +228,7 @@
     </div>
 </template>
 <script setup>
-import { FeatherIcon, FormControl, Autocomplete, DatePicker } from 'frappe-ui';
+import { FeatherIcon, FormControl, Autocomplete, DatePicker, dayjsLocal } from 'frappe-ui';
 import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vue';
 import { showToast } from '../utils'
 
@@ -253,6 +253,7 @@ const getbatchNo = (batch_nos) => {
     }));
 };
 
+const serialNoQty = computed(() => props.items?.serial_no_options?.length || 0);
 
 watch(
     () => props.items.batch_no,
@@ -336,7 +337,6 @@ watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
         if (props.items.serial_no_options && newSerial !== oldSerial) {
-            console.log(props.items.selected_serial_no);
             props.items.qty = newSerial.length;
         }
     }
@@ -425,13 +425,18 @@ const  rateCalculation =  (item) => {
     return rate - (rate * (discount / 100));
 };
 const deliveryDate = computed({
-    get() {
-        return props.items.delivery_date || new Date().toISOString().split('T')[0]; // Format as YYYY-MM-DD
-    },
-    set(value) {
-        props.items.delivery_date = value;
+  get() {
+    if (!base.invoice.delivery_date) {
+      const today = dayjsLocal().format('YYYY-MM-DD')
+      base.invoice.delivery_date = today
     }
-});
+    return base.invoice.delivery_date
+  },
+  set(value) {
+    base.invoice.delivery_date = value
+  }
+})
+
 onMounted( async () => {
     props.items.rate = rateCalculation(props.items);
     props.items.amount = props.items.rate * Math.abs(props.items.qty);

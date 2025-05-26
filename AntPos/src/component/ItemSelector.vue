@@ -307,7 +307,6 @@ const calculateAmountTotal = () => {
        total = Number(total) - Number(base.additional_discount || 0) ;
     }
     base.total = total.toFixed(2);
-    console.log(item_discount,"*******************8");
     
     base.item_discount= item_discount.toFixed(2);
 };
