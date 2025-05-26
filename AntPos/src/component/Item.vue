@@ -68,7 +68,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    :disabled="base.pos_profile.custom_edit_rate"
+                    :disabled="!base.pos_profile.custom_edit_rate"
                     label="Rate"
                     placeholder="0"
                     v-model="items.rate"
@@ -104,7 +104,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    :disabled="false"
+                    :disabled="true"
                     label="Price List Rate"
                     placeholder="0"
                     v-model="items.price_list_rate"
@@ -278,7 +278,7 @@ watch(
 );
 
 const validateitems = () => {
-    if (!base.pos_profile.custom_allow_add_new_item_on_new_line) {
+    if (!base.pos_profile.custom_new_items_on_new_line) {
         let find = false;
         for (let index = 0; index < base.items.length; index++) {
             if (props.index !== index && base.items[props.index].item_code === base.items[index].item_code &&
@@ -341,7 +341,14 @@ watch(
         }
     }
 );
-
+watch(
+    () => props.items.price_list_rate,
+    (newSerial, oldSerial) => {
+        if (props.items.price_list_rate && newSerial !== oldSerial) {
+            props.items.rate = props.items.price_list_rate ;
+        }
+    }
+);
 watch(
     () => props.items.qty,
     (newValue, oldValue) => {
@@ -404,7 +411,7 @@ watch(
         if (newValue !== oldValue || !oldValue) {
             props.items.rate = rateCalculation(props.items);
             props.items.amount = props.items.rate* Math.abs(props.items.qty); 
-            props.items.discount_amount= props.items.price_list_rate - props.items.rate 
+            props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty) 
         }
     }
 );

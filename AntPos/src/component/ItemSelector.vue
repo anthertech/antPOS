@@ -248,7 +248,7 @@ const addItem = (data) => {
 
 const addItemIfExists = (data) => {
     let found = false;
-    if (!base.pos_profile.custom_allow_add_new_items_on_new_line) {
+    if (!base.pos_profile.custom_new_items_on_new_line) {
         base.items.forEach((element, index) => {
             if (data.item_code === element.item_code &&
                 ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
