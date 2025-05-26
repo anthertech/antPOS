@@ -295,7 +295,7 @@ const calculateAmountTotal = () => {
 
     base.items.forEach((item) => {
         total += Number(item.amount)
-        item_discount = Number( (item.price_list_rate * item.qty) - item.amount )
+        item_discount += Number( (item.price_list_rate * item.qty) - item.amount )
     })
 
     if (base.pos_profile.custom_use_percentage_discount ) {
