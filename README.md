@@ -46,7 +46,12 @@ bench --site yoursite.com install-app ant_pos
 ```
 
 ```bash
-# Step 4: Build site assets (recommended after installing a new app)
+# Step 4: Migrate your site (replace 'yoursite.com' with your actual site name)
+bench --site yoursite.com migrate 
+```
+
+```bash
+# Step 5: Build site assets (recommended after installing a new app)
 bench --site yoursite.com build
 ```
 
