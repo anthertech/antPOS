@@ -86,6 +86,7 @@
       </div>
   
       <Button
+        :varient="'solid'"
         class="mt-auto w-full flex hover:cursor-pointer transition-all duration-500 ease-in-out "
         :class="props.collapse ? 'justify-end' : ''"
         
@@ -102,7 +103,7 @@
     </div>
   </template>
 <script setup>
-    import { FeatherIcon, Dropdown, createResource } from 'frappe-ui';
+    import { FeatherIcon, Dropdown, createResource,Button } from 'frappe-ui';
     import { inject, ref, h, computed , defineProps} from 'vue';
     import { getSettings } from '../stores/settings'
     import { usersStore } from '../data/users';

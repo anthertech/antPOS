@@ -10,12 +10,12 @@
                 <div class="flex h-full flex-col gap-8 p-8 text-ink-gray-9">
                     <h2 class="flex gap-2 text-xl font-semibold leading-none h-5">
                         {{ 'General' }}
-                        <!-- <Badge
+                        <Badge
                         v-if="settings.isDirty"
-                        :label="__('Not Saved')"
+                        :label="'Not Saved'"
                         variant="subtle"
                         theme="orange"
-                        /> -->
+                        />
                     </h2>
                     <div v-if="settings.doc" class="flex-1 flex flex-col gap-8 overflow-y-auto">
                         <div class="flex w-full">

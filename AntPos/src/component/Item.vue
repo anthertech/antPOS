@@ -1,6 +1,5 @@
 <template>
     <div>
-
         <div :class="['flex bg-gray-200 w-full py-2 px-3 justify-between hover:cursor-pointer text-center' ,items.open ? 'rounded-t-2xl' : 'rounded']">
             <div class="flex items-center h-[100%] rounded hover:bg-gray-300" @click="items.open = !items.open">
                 <FeatherIcon :name="items.open ? 'chevron-up' : 'chevron-down'" class="w-5 h-5" />

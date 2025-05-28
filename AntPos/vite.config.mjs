@@ -12,8 +12,8 @@ export default defineConfig({
       lucideIcons: true,
       jinjaBootData: true,
       buildConfig: {
-        indexHtmlPath: '../ant_pos/www/ant_pos.html',
-        outDir: '../ant_pos/public/AntPos',
+        indexHtmlPath: '../ant_pos/www/antPOS.html',
+        outDir: '../ant_pos/public/antPOS',
         emptyOutDir: true,
         sourcemap: true,
       },
@@ -26,9 +26,9 @@ export default defineConfig({
         enabled: true,
       },
       manifest: {
-        name: 'AntPos',
-        short_name: 'AntPos',
-        start_url: '/ant_pos',
+        name: 'antPOS',
+        short_name: 'antPOS',
+        start_url: '/antPOS',
         display: 'standalone',
         description: 'POS system powered by Frappe',
         icons: [

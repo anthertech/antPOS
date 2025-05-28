@@ -16,7 +16,7 @@ const routes = [
 ]
 
 let router = createRouter({
-  history: createWebHistory('/AntPos'),
+  history: createWebHistory('/antPOS'),
   routes,
 })
 

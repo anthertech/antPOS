@@ -212,7 +212,7 @@ doc_events = {
 # 	"ant_pos.auth.validate"
 # ]
 
-website_route_rules = [{'from_route': '/AntPos/<path:app_path>', 'to_route': 'AntPos'},]
+website_route_rules = [{'from_route': '/antPOS/<path:app_path>', 'to_route': 'antPOS'},]
 
 fixtures = [
        {"dt": "Custom Field", "filters": [["module", "=", "Ant-Pos"]], "prefix": "Ant-Pos_custom_fields"},

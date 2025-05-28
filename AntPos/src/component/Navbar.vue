@@ -15,17 +15,16 @@
             />
           </div>
           <div>
-            <Button
-              :variant="'outline'"
+            <Badge
+              :variant="'subtle'"
               :ref_for="true"
+              :class="'text-xs font-semibold'"
               theme="blue"
-              size="sm"
-              :loadingText="null"
-              :link="null"
+              size="lg"
             >
               {{ base?.Ant_Opening_Shift?.pos_profile }}
 
-            </Button>
+            </Badge>
           </div>
         </div>
       </div>
@@ -34,7 +33,7 @@
   
   <script setup>
     import { inject, computed } from 'vue';
-    import { Switch,Button } from 'frappe-ui';
+    import { Switch,Button, Badge } from 'frappe-ui';
     
     const base = inject('base');
     // Computed property for v-model
