@@ -4,6 +4,7 @@ import json
 from typing import Dict, Any
 from erpnext.stock.get_item_details import get_item_details  
 from frappe.utils import flt
+from datetime import datetime
 
 
 BarcodeScanResult = dict[str, str | None]
@@ -151,8 +152,8 @@ def items(pos_profile, search_value, customer):
                 AND sle.warehouse = %s
             WHERE b.item = %s
             GROUP BY b.name, b.expiry_date
+            HAVING stock_qty > 0
         """, (item_code, pos_profile_doc.warehouse, item_code), as_dict=True)
-
 
     # Condition 1: Check if batch exists but no matching serial no in that batch
     if has_serial_no and has_batch_no and selected_batch_no:
