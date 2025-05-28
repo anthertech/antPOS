@@ -192,18 +192,18 @@
                             v-model="items.stock_qty"
                         />
                     </div>
-                    <div class="p-2">
-                        <FormControl
-                            type="number"
-                            :ref_for="true"
+                        <div class="p-2">
+                       
+                        <DatePicker
                             size="sm"
                             variant="subtle"
-                            placeholder="Batch No Expire Date"
+                            label="Expiry Date"
+                            placeholder="Expiry Date"
                             :disabled="false"
-                            label="Batch No Expire Date"
-                            v-model="items.stock_qty"
+                            v-model="items.expiry_date"
                         />
-                    </div>
+                </div>
+
                 </div>
                 <div>
                     <div class="p-2 flex gap-4">
@@ -272,6 +272,7 @@ watch(
             const batch = props.items.batch_nos.find(b => b.batch_no ===newBatchNo);
             props.items.stock_qty = batch ? batch.stock_qty : 0;
             props.items.expiry_date = batch ? batch.expiry_date : null;
+            
         }
     }
 );
