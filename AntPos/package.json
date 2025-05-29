@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "vite build --base=/assets/ant_pos/AntPos/ && yarn copy-html-entry",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../ant_pos/public/AntPos/index.html ../ant_pos/www/AntPos.html"
+    "copy-html-entry": "cp ../ant_pos/public/antPOS/index.html ../ant_pos/www/antPOS.html"
   },
   "dependencies": {
     "feather-icons": "^4.29.1",

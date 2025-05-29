@@ -33,25 +33,25 @@ export default defineConfig({
         description: 'POS system powered by Frappe',
         icons: [
           {
-            src: '/assets/ant_pos/manifest/manifest-icon-192.maskable.png',
+            src: '/assets/antPOS/manifest/manifest-icon-192.maskable.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/assets/ant_pos/manifest/manifest-icon-192.maskable.png',
+            src: '/assets/antPOS/manifest/manifest-icon-192.maskable.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'maskable',
           },
           {
-            src: '/assets/ant_pos/manifest/manifest-icon-512.maskable.png',
+            src: '/assets/antPOS/manifest/manifest-icon-512.maskable.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/assets/ant_pos/manifest/manifest-icon-512.maskable.png',
+            src: '/assets/antPOS/manifest/manifest-icon-512.maskable.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
