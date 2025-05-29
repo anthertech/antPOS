@@ -5,7 +5,7 @@
                 <FeatherIcon :name="items.open ? 'chevron-up' : 'chevron-down'" class="w-5 h-5" />
             </div>
             <div class="w-[18.4%]">
-                {{ items.item_code }}
+                {{ items.item_code }} 
             </div>
             <div class="w-[18.4%]">
                 {{ items.qty }}
@@ -353,6 +353,8 @@ watch(
     () => props.items.qty,
     (newValue, oldValue) => {
         if (newValue !== oldValue) {
+            console.log('Qty changed from', oldValue, 'to', newValue);
+            
             
             if (!validateQty(newValue) ) {
                 

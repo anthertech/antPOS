@@ -232,6 +232,7 @@ const fetchSearchResource = () => {
 const addItem = (data) => {
     data.doctype = "Sales Invoice Item";
     data.parenttype = "Sales Invoice";
+    data.id= Date.now() + Math.random()
     if (!addItemIfExists(data)) {
         if (data.has_batch_no && data.batch_no) {
             data.serial_no_options = data.serial_no

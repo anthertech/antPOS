@@ -14,14 +14,23 @@
   import Platform from '../component/Platform.vue';
   import { provide, ref, inject } from 'vue';
   import { useDynamicComponent } from '../utils/Dialog';
+  import { usePageMeta } from 'frappe-ui';
+  import emitter from '../utils/emitter';
+  import  { getSettings } from '../stores/settings';
 
   const collapse=ref(true)
   const { currentComponent, loadComponent } = useDynamicComponent();
-  const emitter = inject('emitter');
+  const { brand } = getSettings()
+  
+  loadComponent('OpenShift');
+  provide('dynamicComponent', { currentComponent, loadComponent });
+  
+  usePageMeta(() => {
+    return {
+      icon: brand.favicon ? brand.favicon : '/assets/ant_pos/antPOS.png',
+    }
+  })
   emitter.on('trigger_collapse', () => {
     collapse.value =!collapse.value
   });
-  loadComponent('OpenShift');
-  provide('dynamicComponent', { currentComponent, loadComponent });
-
 </script>
