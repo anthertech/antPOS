@@ -282,7 +282,7 @@ const validateitems = () => {
         let find = false;
         for (let index = 0; index < base.items.length; index++) {
             if (props.index !== index && base.items[props.index].item_code === base.items[index].item_code &&
-                ((base.items[props.index].has_batch_no && base.items[props.index].batch_no === base.items[index].batch_no) || 
+                ((base.items[props.index].has_batch_no && base.items[props.index].batch_no === base.items[index].batch_no && !base.items[props.index].is_return) || 
                 !base.items[props.index].has_batch_no)) { 
                     base.items.selected_serial_no= mergeSerial_no(base.items[props.index].selected_serial_no,base.items[index].selected_serial_no)
                     base.items.splice(props.index, 1);

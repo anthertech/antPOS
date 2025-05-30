@@ -146,6 +146,7 @@ const addItems = async (items) => {
             console.error("Error fetching batch or serial numbers:", error);
         }
         element.id = Date.now() + Math.random();
+        element.is_return = 1;
     }
     
     return items
