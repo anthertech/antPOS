@@ -147,8 +147,6 @@ const addItems = async (items) => {
         }
         element.id = Date.now() + Math.random();
     }
-    console.log(items,"iiiiiiiiiiiiiiiiiiiiiiii");
-    
     
     return items
 };
@@ -214,6 +212,7 @@ const invoices = createListResource({
     doctype: 'Sales Invoice',
     fields: ['name', 'customer', 'grand_total'],
     orderBy: 'creation desc',
+    cache: [invoice => invoice.name],
     filters: { docstatus: 1, pos_profile: base.pos_profile.name, is_return: 0 },
     pageLength: Number.MAX_VALUE * 2,
     auto: true

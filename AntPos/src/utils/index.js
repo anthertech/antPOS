@@ -2,7 +2,7 @@ import { toast } from 'frappe-ui'
 
 export function createToast(options) {
 	toast.create({
-		position: 'bottom-right',
+		position: 'top-center',
 		...options,
 	})
 }
@@ -20,7 +20,6 @@ export function showToast(title, text, icon, bgColor = null, textColor = null, i
         message: htmlToText ? htmlToText(text) : text,
         icon: icon,
         iconClasses: iconClasses,
-        position: icon === 'check' ? 'bottom-right' : 'top-center',
         timeout: 5,
         style: {
             backgroundColor: bgColor || 'white',

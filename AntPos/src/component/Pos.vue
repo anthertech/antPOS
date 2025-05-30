@@ -1,6 +1,6 @@
 <template>
     <div class="w-full h-[94%] flex p-2 gap-4">
-        <div class="w-full h-full flex flex-row gap-4">
+        <div class="w-full h-full flex flex-col md:flex-row gap-4">
             <component :is="componentMap[base?.invoice?.status ? 'Invoice' : 'ItemSelector']" />
             <ItemDetail />
         </div>

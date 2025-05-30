@@ -1,5 +1,8 @@
 <template>
-    <div class=" h-full" :class="props.collapse ? 'w-[90%]' : ' w-[97%]' ">
+<div
+  class="w-full h-full"
+  :class="props.collapse ? 'xl:w-[97%]' : 'xl:w-[90%]'"
+>
         <Navbar />
         <component :is="componentMap[currentComponent]" />
     </div>
@@ -10,7 +13,9 @@
   import PaymentSelect from '../component/PaymentSelect.vue';
   import Pos from '../component/Pos.vue';
   import SalesInvoice from './SalesInvoice.vue';
+  import emitter from '../utils/emitter';
   import { computed, inject, defineProps } from 'vue';
+  
   
   const props = defineProps({
         collapse: {
@@ -19,7 +24,6 @@
         },
   });
   const base = inject('base');
-  const emitter = inject('emitter');
 
   const componentMap = {
     PaymentSelect,

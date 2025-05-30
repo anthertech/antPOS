@@ -1,8 +1,18 @@
 <template>
     <div class="w-full h-[6%]">
       <div class="bg-gray-300 w-full h-full flex items-center justify-between p-4 ">
-        <div>
-          breadcrumbs
+        <div class="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="lg"
+            @click="$emit('toggleSidebar')"
+            class="bg-gray-300 hover:bg-gray-400 rounded-full p-1.5 xl:hidden block "
+          >
+            <FeatherIcon name="menu" class="w-4 h-4" />
+          </Button>
+          <div>
+            breadcrumbs
+          </div>
         </div>
         <div class="flex float-right gap-4">
           <div>
@@ -33,7 +43,7 @@
   
   <script setup>
     import { inject, computed } from 'vue';
-    import { Switch,Button, Badge } from 'frappe-ui';
+    import { Switch, Badge, FeatherIcon } from 'frappe-ui';
     
     const base = inject('base');
     // Computed property for v-model

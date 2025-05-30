@@ -1,5 +1,5 @@
 <template>
-    <div class="w-1/2 h-full flex flex-col gap-2">
+    <div class="md:w-1/2 w-full h-full flex flex-col gap-2">
         <div class="h-[80%] w-full rounded-lg shadow-2xl px-2 pt-2">
             <div class="flex gap-4 h-[5%]">
                 <Customer />

@@ -1,5 +1,5 @@
 <template>
-    <div class="w-1/2 shadow-2xl pt-2 px-2 rounded">
+    <div class="md:w-1/2 w-full shadow-2xl pt-2 px-2 rounded">
         <div>
             <div>
                 <FormControl

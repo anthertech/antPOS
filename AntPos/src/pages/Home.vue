@@ -1,12 +1,12 @@
-  <template>
-    <div class="w-screen h-screen flex select-none">
-      <div v-if="currentComponent">
-          <component :is="currentComponent"  @switchComponent="loadComponent"  />
-      </div>
-      <Sidebar :collapse="collapse"/>
-      <Platform/>
+<template>
+  <div class="w-screen h-screen flex select-none">
+    <div v-if="currentComponent">
+        <component :is="currentComponent"  @switchComponent="loadComponent"  />
     </div>
-  </template>
+    <Sidebar :collapse="collapse"/>
+    <Platform :collapse="collapse"/>
+  </div>
+</template>
 
 <script setup>
 
@@ -31,6 +31,8 @@
     }
   })
   emitter.on('trigger_collapse', () => {
+    console.log('Collapse triggered');
+    
     collapse.value =!collapse.value
   });
 </script>

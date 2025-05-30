@@ -1,14 +1,15 @@
 <template>
     <div
-      class="h-full pb-4 px-3 bg-white shadow-lg flex flex-col items-center transition-all duration-300 ease-in-out"
+      class="h-full pb-4  bg-white shadow-lg  flex-col items-center transition-all duration-300 ease-in-out hidden xl:flex"
       :class="props.collapse ? 'w-[3%]' : 'w-[10%]'"
     >
-      <Dropdown :options="option">
+      <Dropdown :options="option" :class="props.collapse ? '' :'adjust w-full' " >
         <template #default>
           <button
             v-if="!props.collapse"
             class="flex h-14 items-center pb-2 mt-1 duration-150 ease-in-out justify-center "
-            :class="props.collapse ? 'w-full' : 'w-44 rounded-lg hover:bg-gray-100'"
+            :class="props.collapse ? 'w-full ' : 'w-full  hover:bg-gray-100'"
+
           >
             <img
               :src="brand.logo || '/assets/ant_pos/antPOS.png'"
@@ -89,7 +90,6 @@
         :varient="'solid'"
         class="mt-auto w-full flex hover:cursor-pointer transition-all duration-500 ease-in-out "
         :class="props.collapse ? 'justify-end' : ''"
-        
         @click="emitter.emit('trigger_collapse')"
       >
       <div class="flex justify-center items-center">
@@ -103,13 +103,13 @@
     </div>
   </template>
 <script setup>
-    import { FeatherIcon, Dropdown, createResource,Button } from 'frappe-ui';
+    import { FeatherIcon, Dropdown, createResource, Button } from 'frappe-ui';
     import { inject, ref, h, computed , defineProps} from 'vue';
     import { getSettings } from '../stores/settings'
     import { usersStore } from '../data/users';
+    import emitter from '../utils/emitter';
     const { settings, brand } = getSettings()
     let base = inject('base');
-    const emitter = inject('emitter');
     const sidebarStore = ref({"isExpanded":true})
     const { loadComponent } = inject('dynamicComponent');
     const users = usersStore()
@@ -152,3 +152,8 @@
     },
 ]
 </script>
+<style scoped>
+.adjust ::v-deep > div > div >div {
+  width: 100%;
+}
+</style>
