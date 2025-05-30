@@ -11,7 +11,7 @@
   "is_hidden": 0,
   "label": "antPOS",
   "links": [],
-  "modified": "2025-05-26 12:42:02.597836",
+  "modified": "2025-05-29 13:02:38.499787",
   "module": "Ant-Pos",
   "name": "antPOS",
   "number_cards": [],
@@ -36,7 +36,7 @@
     "restrict_to_domain": null,
     "stats_filter": null,
     "type": "URL",
-    "url": "/AntPos"
+    "url": "/antPOS"
    }
   ],
   "title": "antPOS"
