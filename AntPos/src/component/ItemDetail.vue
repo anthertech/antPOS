@@ -226,21 +226,11 @@
                     items: base.items,
                     customer: base.customer.name,
                     update_stock: 1,
-                    additional_discount_percentage: base.additional_discount_percentage, 
-                    discount_amount: base.discount_amount,
-                    // ...(base.additional_discount > 0 && {
-                    //     apply_discount_on: base.pos_profile.apply_discount_on
-                    // }),
-
-                    // ...(base.additional_discount > 0
-                    //     ? base.pos_profile.custom_use_percentage_discount
-                    //         ? { additional_discount_percentage: parseFloat(base.additional_discount) }
-                    //         : { discount_amount: parseFloat(base.additional_discount) }
-                    //     : {}
-                    // ),
-
+                    additional_discount_percentage: Number(base.additional_discount_percentage), 
+                    discount_amount: Number(base.discount_amount),
                     base_total: base.total,
                     custom_ant_opening: base.Ant_Opening_Shift.name,
+                    apply_discount_on: base.pos_profile.apply_discount_on,
                 }),
                 action:params.action,
             };
