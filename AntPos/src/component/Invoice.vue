@@ -34,9 +34,9 @@
                     :value="base.invoice.paid_amount - base.invoice.rounded_total"
                 />
             </div>
-            <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in base.pos_profile.payments" :key="index">
+            <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in base?.pos_profile?.payments" :key="index">
                 <FormControl
-                    v-if="base.invoice?.payments?.length"
+                    v-if="base.invoice?.payments?.[index] && base.invoice?.payments?.[index].amount !== undefined"
                     type="number"
                     size="sm"
                     variant="subtle"
@@ -236,6 +236,7 @@ const addPayments = () => {
             })
         }
     })
+    
 
 
 }
@@ -518,65 +519,5 @@ watch(
     },
     { deep: true }
 );
-
-// const salesResource = createListResource({
-//   doctype: 'Sales Person',
-//   fields: ['name'],
-//   filters: {
-//     enabled: false,
-//   },
-//   pageLength: Number.MAX_VALUE * 2,
-//   auto: true,
-//   onSuccess(data) {
-//     errorHandled = false;
-//   },
-//   onError(error) {
-//     if (!errorHandled) {
-//         createToast({
-//             title: 'error',
-//             message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
-//             icon: 'x-circle',
-//             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-//             position: 'top-center',
-//             timeout: 5,
-//         });
-//         errorHandled = true;
-//     }
-//     },
-// });
-
-// const patnerResource = createListResource({
-//   doctype: 'Sales Partner',
-//   fields: ['name'],
-//   filters: {
-//     enabled: false,
-//   },
-//   pageLength: Number.MAX_VALUE * 2,
-//   auto: true,
-//   onSuccess(data) {
-//     errorHandled = false;
-//   },
-//   onError(error) {
-//     if (!errorHandled) {
-//         createToast({
-//             title: 'error',
-//             message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
-//             icon: 'x-circle',
-//             iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-//             position: 'top-center',
-//             timeout: 5,
-//         });
-//         errorHandled = true;
-//     }
-//     },
-// });
-// const computedSalesOptions = computed(() => {
-//   return salesResource?.data
-//     ? salesResource.data.map((option) => ({
-//         label: option.name,
-//         value: option.name
-//       }))
-//     : [];
-// });
 
 </script>

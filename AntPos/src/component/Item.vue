@@ -307,7 +307,7 @@ const mergeSerial_no = (left, right) => {
 
 const calculateAmountTotal = () => {
     props.items.amount = Math.abs(props.items.qty) * props.items.rate
-    emitter.emit('calctotal');
+    
 };
 
 const calculateQtyTotal = () => {
@@ -322,22 +322,24 @@ const calculateQtyTotal = () => {
 };
 
 const validateQty = (qty) => {
-    if (props.items.serial_no_options){
+    if (props.items.serial_no_options) {
         const availableSerials = props.items.serial_no_options.map(option => option.value);
             if (props.items.has_serial_no && qty > availableSerials.length) {
                 showToast('warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
-                props.items.qty = availableSerials.length;
-                return true;
+                props.items.qty = base.is_return ?  -Math.abs(availableSerials.length) : availableSerials.length ;
             }
-        return true;
+        updatePriceListRate()
     }
+    return ;
 };
 
 watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
         if (props.items.serial_no_options && newSerial !== oldSerial) {
-            props.items.qty = newSerial.length;
+            // props.items.qty = base.is_return ?  -Math.abs(newSerial.length) : newSerial.length;
+            // props.items.qty = -Math.abs(newSerial.length);
+            
         }
     }
 );
@@ -353,43 +355,41 @@ watch(
     () => props.items.qty,
     (newValue, oldValue) => {
         if (newValue !== oldValue) {
-            console.log('Qty changed from', oldValue, 'to', newValue);
-            
-            
-            if (!validateQty(newValue) ) {
-                
-                return;
-            }
-            if (props.items.serial_no_options) {
-                
-                adjustSerialNumbers(newValue, oldValue);
-            }       
-            emitter.emit('fetchPriceList', props);
-            props.items.rate = rateCalculation(props.items);
-            props.items.amount = props.items.rate * Math.abs(props.items.qty);
-            calculateQtyTotal();
-            discountCalculation();
+            validateQty(newValue)    
+            adjustSerialNumbers(newValue, oldValue);
     }
 
     }
 );
+const updatePriceListRate = () => {
+    emitter.emit('fetchPriceList', props);
+    props.items.rate = rateCalculation(props.items);
+    props.items.amount = props.items.rate * Math.abs(props.items.qty);
+    calculateQtyTotal();
+    discountCalculation();
+};
 
 const adjustSerialNumbers = (newQty, oldQty) => {
 
     if (!props.items.has_serial_no || !props.items.serial_no_options ) return;
     
+    
     const selected = props.items.selected_serial_no;
     const options = props.items.serial_no_options;
     const selectedLength = selected.length;
-
+    
+    
+    
     if (selectedLength === newQty) return;
 
     // If reducing quantity
-    if (selectedLength > newQty) {
+    if (Math.abs(selectedLength) > Math.abs(newQty)) {
         props.items.selected_serial_no = selected.slice(0, newQty);
+
     }
     // If increasing quantity
-    else if (selectedLength < newQty) {
+    else if (Math.abs(selectedLength) < Math.abs(newQty)) {
+        
         const selectedValues = new Set(selected.map(sn => sn.value));
         const needed = newQty - selectedLength;
 
@@ -451,14 +451,26 @@ const deliveryDate = computed({
   }
 })
 
-onMounted( async () => {
+watch(
+    () => props.items.rate,
+    (newValue, oldValue) => {
+        if (newValue !== oldValue) {
+            calculateRateTotal();
+
+        }
+    }
+);
+const calculateRateTotal = () => {
     props.items.rate = rateCalculation(props.items);
-    props.items.amount = props.items.rate * Math.abs(props.items.qty);
-    calculateQtyTotal();
     calculateAmountTotal();
+    emitter.emit('calctotal');
+};
+
+onMounted( async () => {
+    calculateRateTotal();
+    calculateQtyTotal();
     validateQty(props.items.qty);
     adjustSerialNumbers(props.items.qty, props.items.qty);
-    emitter.emit('calctotal');
 });
  
 onUnmounted(() => {

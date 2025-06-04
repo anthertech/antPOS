@@ -96,6 +96,7 @@ onUnmounted(() => {
 const selectedCustomer = computed({
   get: () => base.customer,
   set: (newVal) => {
+    if(base.is_return) return
     base.customer = newVal;
   },
 });

@@ -5,8 +5,8 @@
           <Button
             variant="ghost"
             size="lg"
-            @click="$emit('toggleSidebar')"
-            class="bg-gray-300 hover:bg-gray-400 rounded-full p-1.5 xl:hidden block "
+            @click="emitter.emit('trigger_collapse')"
+            class="bg-gray-300 hover:bg-gray-400 rounded-full p-1.5 lg:hidden block "
           >
             <FeatherIcon name="menu" class="w-4 h-4" />
           </Button>
@@ -44,7 +44,7 @@
   <script setup>
     import { inject, computed } from 'vue';
     import { Switch, Badge, FeatherIcon } from 'frappe-ui';
-    
+    import emitter from '../utils/emitter';
     const base = inject('base');
     // Computed property for v-model
     const createSalesOrder = computed({

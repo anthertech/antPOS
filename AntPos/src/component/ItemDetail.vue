@@ -74,7 +74,7 @@
                     placeholder="0"
                     :disabled="false"
                     label="Additional Discount (%)"
-                    v-model="base.additional_discount"
+                    v-model="base.additional_discount_percentage"
                 />
                 <FormControl
                     v-else
@@ -84,9 +84,10 @@
                     variant="subtle"
                     placeholder="0"
                     :disabled="false"
-                    label="Additional Discount"
-                    v-model="base.additional_discount"
-                />
+                    :label="`Additional Discount (${base.pos_profile.currency})`"
+                    v-model="base.discount_amount"
+                    />
+                    <!-- additional_discount_percentage -->
                 <FormControl
                     :type="'number'"
                     :ref_for="true"
@@ -181,7 +182,7 @@
 
     import Customer from './Customer.vue';
     import { Button, FeatherIcon , FormControl , createResource } from 'frappe-ui';
-    import { inject , watch  } from 'vue';
+    import { inject , watch,ref, onMounted } from 'vue';
     import { createToast } from '../utils';
     import Item from './Item.vue';
 
@@ -225,17 +226,18 @@
                     items: base.items,
                     customer: base.customer.name,
                     update_stock: 1,
+                    additional_discount_percentage: base.additional_discount_percentage, 
+                    discount_amount: base.discount_amount,
+                    // ...(base.additional_discount > 0 && {
+                    //     apply_discount_on: base.pos_profile.apply_discount_on
+                    // }),
 
-                    ...(base.additional_discount > 0 && {
-                        apply_discount_on: base.pos_profile.apply_discount_on
-                    }),
-
-                    ...(base.additional_discount > 0
-                        ? base.pos_profile.custom_use_percentage_discount
-                            ? { additional_discount_percentage: parseFloat(base.additional_discount) }
-                            : { discount_amount: parseFloat(base.additional_discount) }
-                        : {}
-                    ),
+                    // ...(base.additional_discount > 0
+                    //     ? base.pos_profile.custom_use_percentage_discount
+                    //         ? { additional_discount_percentage: parseFloat(base.additional_discount) }
+                    //         : { discount_amount: parseFloat(base.additional_discount) }
+                    //     : {}
+                    // ),
 
                     base_total: base.total,
                     custom_ant_opening: base.Ant_Opening_Shift.name,
@@ -290,27 +292,56 @@
     );
 
     watch(
-        () => base.additional_discount,
-        (newSerial, oldSerial) => {
-            if (newSerial!==oldSerial) {
-                emitter.emit('calctotal');
+        () => base.discount_amount,
+        (newVal) => {
+            
+            if (base.pos_profile.custom_use_percentage_discount) return;
+            const calculated = (newVal / base.total || 0) * 100;
+            if (base.additional_discount_percentage !== calculated) {
+                base.additional_discount_percentage = calculated;
             }
-        }
+            emitter.emit('calctotal');
+        },
+        { flush: 'post' }
+    );
+
+    watch(
+        () => base.additional_discount_percentage,
+        
+        (newVal) => {
+            if(!base.pos_profile.custom_use_percentage_discount) return
+            const calculated = (newVal / 100) * base.total || 0;
+            if (base.discount_amount !== calculated) {
+                base.discount_amount = calculated;
+            }
+            emitter.emit('calctotal');
+        },
+        { flush: 'post' }
     );
     const remove_invoice = () => {
-    base.invoice = {
-        payments: [],
-        paid_amount: 0,
-        rounded_total: 0,
-        net_total: 0,
-        total_taxes_and_charges: 0,
-        total: 0,
-        discount_amount: 0,
-        grand_total: 0,
-        base_rounded_total: 0
+        base.invoice = {
+            payments: [],
+            paid_amount: 0,
+            rounded_total: 0,
+            net_total: 0,
+            total_taxes_and_charges: 0,
+            total: 0,
+            discount_amount: 0,
+            grand_total: 0,
+            base_rounded_total: 0
+        };
+        base.items = [];
+        base.customer = {};
+        base.discount_amount = 0;
+        base.total = 0;  
     };
-    base.items = [];
-    base.customer = {};
-    base.discount_amount=0;
-};
+
+    onMounted(() => {
+        base.total_qty = 0;
+        base.additional_discount_percentage = 0;
+        base.discount_amount = 0;   
+        base.item_discount = 0;
+        base.total = 0;
+
+    });
 </script>

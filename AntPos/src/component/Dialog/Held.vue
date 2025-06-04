@@ -16,7 +16,7 @@
                     <p class="w-[30%]">Customer</p>
                     <p class="w-[30%]">Amount</p>
                 </div>
-                <div class="h-[92%] overflow-y-scroll scrollbar-hide">
+                <div class="h-[82%] overflow-y-scroll scrollbar-hide">
                     <div v-for="invoice in filteredInvoices" :key="invoice.name" class="flex flex-col">
                         <div class="flex justify-evenly rounded bg-blue-200 p-2.5 my-2">
                             <div class="w-[10%]">
@@ -28,6 +28,32 @@
                             <p class="w-[30%]">{{ invoice.grand_total }}</p>
                         </div>
                     </div>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <div class="flex gap-2">
+                        <Button
+                            v-for="size in [20, 100, 500, 2500]"
+                            :key="size"
+                            :variant="selectedPageLength === size ? 'solid' : 'ghost'"
+                            @click="setPageLength(size)"
+                            :ref_for="true"
+                            :loading="invoices.loading"
+                            :disabled="invoices.loading"
+                            :link="null"
+                        >
+                            {{ size }}
+                        </Button>
+
+                    </div>
+                    <Button 
+                        @click="invoices.next()" 
+                        variant="solid"
+                        :loading="invoices.loading"
+                        :disabled="invoices.loading"
+                    
+                    >
+                        Next
+                    </Button>
                 </div>
             </div>
         </template>
@@ -42,7 +68,7 @@
 
 <script setup>
 import { Dialog, Button, createListResource, createResource, TextInput, FeatherIcon } from 'frappe-ui';
-import { ref, inject, computed } from 'vue';
+import { ref, inject, computed, watch } from 'vue';
 import { createToast } from '../../utils';
 
 let base = inject('base');
@@ -50,15 +76,18 @@ const dialogVisible = ref(true);
 const selectedInvoice = ref(null);
 const searchQuery = ref("");
 let errorHandled = false;
+const selectedPageLength = ref(20);
 
-const handleDialogClose = () => {
-    dialogVisible.value = false;
+const handleDialogClose = () => { dialogVisible.value = false; };
 
+const setPageLength = (size) => {
+    if (selectedPageLength.value !== size) {
+        selectedPageLength.value = size;
+        invoices.update({ pageLength: size, start: 0 }); // Reset to first page
+        invoices.reload();
+    }
 };
-
-const submitInvoice = () => {
-    salesInvoice.fetch({ name: selectedInvoice.value });
-};
+const submitInvoice = () => {salesInvoice.fetch({ name: selectedInvoice.value });};
 
 let salesInvoice = createResource({
     url: 'frappe.desk.form.load.getdoc',
@@ -74,15 +103,7 @@ let salesInvoice = createResource({
             console.error("Invalid or missing items array", data.docs[0]?.items);
             return;
         }
-        base.invoice = { ...data.docs[0], status: null };
-        base.items = await addItems(data.docs[0].items);
-        base.customer = await get_value.fetch({
-            doctype: "Customer",
-            filters: { "name" : data.docs[0].customer },
-            fieldname: ['name', 'mobile_no','customer_group','territory','is_internal_customer'],
-        });
-        searchQuery.value=''
-        handleDialogClose()
+       addvalues();
     },
     onError(error) {
         createToast({
@@ -96,39 +117,81 @@ let salesInvoice = createResource({
         errorHandled = true;
     }
 });
+const  addvalues = async ()=>{
 
+    base.invoice =  { ...salesInvoice.data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" }
+    addItems(salesInvoice.data.docs[0].items);
+    base.discount_amount =  salesInvoice.data.docs[0].discount_amount;
+    base.additional_discount_percentage =  salesInvoice.data.docs[0].additional_discount_percentage;
+    base.total =  salesInvoice.data.docs[0].net_total;
+    await get_value.fetch({
+        doctype: "Customer",
+        filters: { "name": salesInvoice.data.docs[0].customer },
+        fieldname: ['name', 'mobile_no', 'customer_group', 'territory', 'is_internal_customer'],
+    });
+    base.customer = get_value.data || {};
+    
+    searchQuery.value=''
+    handleDialogClose()
+
+}
 const addItems = async (items) => {
     
     for (const element of items) {
+        
         try {
-            element.batch_nos = await getlist.fetch({
-                doctype: 'Batch',
-                fields: ["name as batch_no", "expiry_date"],
-                filters: { "item": element.item_code },
-                limit_page_length: Number.MAX_VALUE * 2,
-            });
-
-            element.selected_serial_no = await splitSerialNumbers(element.serial_no);
-            element.has_serial_no = element.selected_serial_no.length > 0
-            element.selected_serial_no = element.selected_serial_no.map(serial => ({ label: serial, value: serial }));
             
-
-            element.serial_no = await getlist.fetch({
-                doctype: "Serial No",
-                filters: { "item_code": element.item_code, "warehouse": element.warehouse },
-                fields: ["name as serial_no", "batch_no"],
-                limit_page_length :Number.MAX_VALUE * 2,
+            // element.selected_batch_no = [];
+            element.has_batch_no = 0;
+            element.has_serial_no = 0;
+            element.selected_serial_no = [];
+            element.batch_nos = [];
+            await itemDoc.fetch({
+                doctype: "Item",
+                filters: { "name": element.item_code },
+                fieldname: ['name', 'item_name', 'description', 'image', 'has_batch_no', 'has_serial_no'],
             });
 
-            element.selected_batch_no = element.batch_nos;
-            createOptioin(element)
+            let item =  itemDoc.data || {};
+            
+            
+            if (item.has_batch_no ) {
+                element.has_batch_no = item.has_batch_no ? 1 : 0;
+                await getlist.fetch({
+                    doctype: 'Batch',
+                    fields: ["name as batch_no", "expiry_date"],
+                    filters: { "item": element.item_code },
+                    limit_page_length: Number.MAX_VALUE * 2,
+                });
+                element.batch_nos =  getlist.data || [];  
+                element.selected_batch_no = element.batch_no;
+            }
+            if (item.has_serial_no) {
+                element.selected_serial_no  = await splitSerialNumbers(element.serial_no);
+                element.has_serial_no = 1;
+                await getlist.fetch({
+                    doctype: "Serial No",
+                    filters: { "item_code": element.item_code },
+                    orFilters: { "batch_no": element.batch_no },
+                    fields: ["name as serial_no", "batch_no"],
+                    limit_page_length: Number.MAX_VALUE * 2,
+                });
+                element.serial_no = getlist.data || [];
+                createOptioin(element);
+            }
+
+
 
         } catch (error) {
             console.error("Error fetching batch or serial numbers:", error);
         }
-        element.id= Date.now() + Math.random()
-    } 
-    return items
+        element.id = Date.now() + Math.random();
+        element.open = 0;
+    }
+    
+    
+    base.items = items;
+    return items;
 };
 
 let getlist = createResource({
@@ -154,6 +217,27 @@ let getlist = createResource({
 
 })
 
+let itemDoc = createResource({
+    url:'frappe.client.get_value',
+    makeParams(params) {
+      return { ...params }
+    },
+    onSuccess(data) {
+        
+    },
+    onError(error) {
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
+        errorHandled = true;
+    }
+
+})
 let get_value = createResource({
     url:'frappe.client.get_value',
     makeParams(params) {
@@ -188,14 +272,19 @@ let get_value = createResource({
 
 })
 
-const invoices = createListResource({
+    const invoices = createListResource({
     doctype: 'Sales Invoice',
     fields: ['name', 'customer', 'grand_total'],
     orderBy: 'creation desc',
-    filters: { docstatus: 0, pos_profile: base.pos_profile.name, },
-    pageLength: Number.MAX_VALUE * 2,
+    filters: { 
+        docstatus: 0, 
+        pos_profile: 
+        base.pos_profile.name, 
+    },
+    orFilters: [],
+    pageLength: 20,
     auto: true
-});
+    });
 
 const filteredInvoices = computed(() => {
     if (!searchQuery.value) {
@@ -241,4 +330,20 @@ async function splitSerialNumbers(serialString = "") {
 		.map(line => line.trim()) 
 		.filter(line => line !== "");
 }
+watch(searchQuery, (newQuery) => {
+  invoices.update({
+    filters: {
+        docstatus: 0, 
+        pos_profile: 
+        base.pos_profile.name,
+    },
+    orFilters: newQuery
+      ? [
+          ['name', 'like', `%${newQuery}%`],
+          ['customer', 'like', `%${newQuery}%`]
+        ]
+      : []
+  });
+  invoices.reload();
+});
 </script>

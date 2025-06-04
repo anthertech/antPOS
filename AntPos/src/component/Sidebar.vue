@@ -1,27 +1,31 @@
 <template>
-    <div
-      class="h-full pb-4  bg-white shadow-lg  flex-col items-center transition-all duration-300 ease-in-out hidden xl:flex"
-      :class="props.collapse ? 'w-[3%]' : 'w-[10%]'"
-    >
+  <div
+  :class="[
+    'h-full pb-4 bg-white shadow-lg flex-col items-center transition-all duration-300 ease-in-out flex ',
+    props.collapse
+      ? 'w-[3%] sm:hidden lg:flex'
+      : 'w-[30%] px-1 fixed inset-0 z-40 lg:w-[10%] lg:inset-auto lg:z-auto lg:relative'
+  ]"
+>
       <Dropdown :options="option" :class="props.collapse ? '' :'adjust w-full' " >
         <template #default>
           <button
             v-if="!props.collapse"
-            class="flex h-14 items-center pb-2 mt-1 duration-150 ease-in-out justify-center "
+            class="flex h-14 items-center pb-2 mt-1 max-w-full  duration-150 ease-in-out justify-center object-cover "
             :class="props.collapse ? 'w-full ' : 'w-full  hover:bg-gray-100'"
 
           >
             <img
               :src="brand.logo || '/assets/ant_pos/antPOS.png'"
               alt="Brand Logo"
-              class="object-cover transition-all duration-300 ease-in-out"
-              :class="props.collapse ? 'h-7 w-full' : 'h-10 w-10'"
+              class="object-cover max-h-[60%] lg:max-h-full transition-all duration-300 ease-in-out"
+              :class="props.collapse ? 'h-7 w-full' : 'h-10 w-10 object-center'"
             />
             <div
               v-show="!props.collapse"
-              class="flex flex-1 flex-col text-left ml-3 transition-all duration-300 ease-in-out"
+              class="flex flex-1 flex-col  text-left ml-3 transition-all duration-300 ease-in-out"
             >
-              <div class="text-lg font-semibold text-gray-900">{{ brand.name ? brand.name : 'antPOS'}}</div>
+              <div class="text-p-sm font-semibold text-gray-900">{{ brand.name ? brand.name : 'antPOS'}}</div>
               <div class="mt-1 text-sm text-gray-600">
                 {{ currentUser.full_name }}
               </div>
@@ -29,11 +33,11 @@
             <FeatherIcon
               v-show="!props.collapse"
               name="chevron-down"
-              class="h-5 w-5 text-gray-500"
+              class="h-5 w-5 text-gray-500 "
               aria-hidden="true"
             />
           </button>
-          <button
+          <but  ton
             v-else
             class="flex h-14 items-center pb-2 mt-1 duration-150 ease-in-out"
             :class="props.collapse ? 'w-full' : 'w-44 rounded-lg hover:bg-gray-100'"
@@ -44,7 +48,7 @@
               class="object-cover transition-all duration-300 ease-in-out"
               :class="props.collapse ? 'h-7 w-full' : 'h-10 w-10'"
             />
-        </button>
+        </but>
         </template>
       </Dropdown>
   

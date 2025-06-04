@@ -9,6 +9,7 @@
                     size="sm"
                     variant="subtle"
                     @keyup.enter="fetchSearchResource"
+                    :disabled="base.is_return"
                 >
                     <template #prefix>
                         <FeatherIcon class="w-4" name="search" />
@@ -297,18 +298,9 @@ const calculateAmountTotal = () => {
     base.items.forEach((item) => {
         total += Number(item.amount)
         item_discount += Number( (item.price_list_rate * item.qty) - item.amount )
-    })
-
-    if (base.pos_profile.custom_use_percentage_discount ) {
-        discount_amount =(Number(base.additional_discount || 0) / 100) * Number(total);
-        total =  total - Number(discount_amount);
-    } 
-    else {
-        
-       total = Number(total) - Number(base.additional_discount || 0) ;
-    }
+    })  
+    total = Number(total) - Number( base.is_return ? Math.abs(base.discount_amount) ||  base.discount_amount : 0) ;
     base.total = total.toFixed(2);
-    
     base.item_discount= item_discount.toFixed(2);
 };
 
@@ -324,6 +316,9 @@ emitter.on('calctotal', () => {
 });
 
 watch(() => base.items, () => {
+    if (!Array.isArray(base.items)) {
+        base.items = [];
+    }
     calculateAmountTotal();
 });
 

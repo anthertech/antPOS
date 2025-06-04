@@ -3,7 +3,7 @@
     <div v-if="currentComponent">
         <component :is="currentComponent"  @switchComponent="loadComponent"  />
     </div>
-    <Sidebar :collapse="collapse"/>
+    <Sidebar :class="w-full" :collapse="collapse"/>
     <Platform :collapse="collapse"/>
   </div>
 </template>
@@ -31,7 +31,6 @@
     }
   })
   emitter.on('trigger_collapse', () => {
-    console.log('Collapse triggered');
     
     collapse.value =!collapse.value
   });
