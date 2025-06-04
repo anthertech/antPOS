@@ -296,6 +296,8 @@
         (newVal) => {
             
             if (base.pos_profile.custom_use_percentage_discount) return;
+            console.log('base.discount_amount', base.discount_amount, newVal);
+            
             const calculated = (newVal / base.total || 0) * 100;
             if (base.additional_discount_percentage !== calculated) {
                 base.additional_discount_percentage = calculated;

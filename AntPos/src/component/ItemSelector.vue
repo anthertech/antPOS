@@ -292,14 +292,13 @@ const addNewLine = async (data) => {
 const calculateAmountTotal = () => {
     
     let total = 0;
-    let discount_amount = 0
     let item_discount = 0
 
     base.items.forEach((item) => {
         total += Number(item.amount)
         item_discount += Number( (item.price_list_rate * item.qty) - item.amount )
     })  
-    total = Number(total) - Number( base.is_return ? Math.abs(base.discount_amount) ||  base.discount_amount : 0) ;
+    total = Number(total) - Number( base.is_return ? Math.abs(base.discount_amount)  : base.discount_amount || 0) ;
     base.total = total.toFixed(2);
     base.item_discount= item_discount.toFixed(2);
 };
