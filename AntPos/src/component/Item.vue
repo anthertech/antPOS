@@ -337,8 +337,7 @@ watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
         if (props.items.serial_no_options && newSerial !== oldSerial) {
-            // props.items.qty = base.is_return ?  -Math.abs(newSerial.length) : newSerial.length;
-            // props.items.qty = -Math.abs(newSerial.length);
+            props.items.qty = base.is_return ?  -Math.abs(newSerial.length) : newSerial.length;
             
         }
     }
@@ -357,6 +356,8 @@ watch(
         if (newValue !== oldValue) {
             validateQty(newValue)    
             adjustSerialNumbers(newValue, oldValue);
+            calculateQtyTotal()
+            
     }
 
     }
