@@ -119,7 +119,7 @@ let salesInvoice = createResource({
 });
 const  addvalues = async ()=>{
 
-    base.invoice =  { ...salesInvoice.data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" }
+    base.invoice =  { ...salesInvoice.data.docs[0], status: null  }
     addItems(salesInvoice.data.docs[0].items);
     base.discount_amount =  salesInvoice.data.docs[0].discount_amount;
     base.additional_discount_percentage =  salesInvoice.data.docs[0].additional_discount_percentage;

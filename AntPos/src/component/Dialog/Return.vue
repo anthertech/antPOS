@@ -385,7 +385,7 @@ const filteredInvoices = computed(() => {
     );
 });
 
-    
+
 async function splitSerialNumbers(serialString = "") {
     if (typeof serialString !== "string" || !serialString.trim()) return [];
     
@@ -412,8 +412,6 @@ const  addvalues = async ()=>{
         fieldname: ['name', 'mobile_no', 'customer_group', 'territory', 'is_internal_customer'],
     });
     base.customer = customer.data || {};
-    console.log("base.customer", base.customer);
-    
     searchQuery.value=''
     base.is_return = 1; 
     handleDialogClose()
