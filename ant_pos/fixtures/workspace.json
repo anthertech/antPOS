@@ -10,6 +10,7 @@
   "icon": "color-review-points",
   "is_hidden": 0,
   "label": "antPOS",
+  "type": "Workspace",
   "links": [],
   "modified": "2025-05-29 13:02:38.499787",
   "module": "Ant-Pos",
