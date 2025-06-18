@@ -204,7 +204,7 @@ def items(pos_profile, search_value, customer):
     item_details = get_item_details(item_args, doc=None, overwrite_warehouse=False)
 
     # Assign fetched serial/batch lists
-    item_details["serial_no"] = serial_nos
+    item_details["all_serial_no"] = serial_nos
     item_details["batch_nos"] = batch_nos
 
     # Selected serial/batch

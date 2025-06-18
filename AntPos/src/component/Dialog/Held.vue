@@ -176,7 +176,7 @@ const addItems = async (items) => {
                     fields: ["name as serial_no", "batch_no"],
                     limit_page_length: Number.MAX_VALUE * 2,
                 });
-                element.serial_no = getlist.data || [];
+                element.all_serial_no = getlist.data || [];
                 createOptioin(element);
             }
 
@@ -298,8 +298,8 @@ const filteredInvoices = computed(() => {
 
 function createOptioin(item) {
 
-    if (item.batch_no && item.serial_no) {
-        let filteredSerials = item.serial_no.filter(serial_no => {
+    if (item.batch_no && item.all_serial_no) {
+        let filteredSerials = item.all_serial_no.filter(serial_no => {
             return serial_no.batch_no === item.batch_no;
         });
 
@@ -312,7 +312,7 @@ function createOptioin(item) {
         });
 
     } else {
-        item.serial_no_options = item.serial_no?.map(serial_no => ({
+        item.serial_no_options = item.all_serial_no?.map(serial_no => ({
             label: serial_no.serial_no,
             value: serial_no.serial_no,
         })) || [];

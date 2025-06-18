@@ -127,7 +127,7 @@ const addItemsResource = createResource({
         addItem(data);
     },
     transform(data){
-        if (data.serial_no && data.serial_no.length > 0 ){
+        if (data.selected_serial_no && data.selected_serial_no.length > 0 ){
             data.selected_serial_no = data.selected_serial_no.map(serial=>({
                 label:serial,
                 value:serial
@@ -143,6 +143,7 @@ const addItemsResource = createResource({
         }
         data.stock_qty = qty;
         data.expiry_date = date;
+        data.net_rate = data.price_list_rate || 0
     }
 });
 
@@ -164,7 +165,7 @@ const priceListResource = createResource({
                         "child_docname": "new-sales-invoice-item-lrdmbgmbcz",
                         "parenttype": "Sales Invoice",
                         "parent": "new-sales-invoice-owspmikswv",
-                        "serial_no": base.items.selected_serial_no,
+                        "serial_no": base.items.selected_serial_no, //need to update it to the serial no  with /n
                     }
                 ],
 
@@ -236,7 +237,7 @@ const addItem = (data) => {
     data.id= Date.now() + Math.random()
     if (!addItemIfExists(data)) {
         if (data.has_batch_no && data.batch_no) {
-            data.serial_no_options = data.serial_no
+            data.serial_no_options = data.all_serial_no
                 .filter(serial_no => data.batch_no && serial_no.batch_no === data.batch_no)
                 .map(serial_no => ({
                     label: serial_no.serial_no,
@@ -256,7 +257,7 @@ const addItemIfExists = (data) => {
                 ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
                     found = true;
                 
-                if (data.has_serial_no && data.serial_no ) {
+                if (data.has_serial_no && data.all_serial_no && data.selected_serial_no && data.selected_serial_no.length > 0) {
 
                     for (let serial of data.selected_serial_no) {
                         let selected = element.selected_serial_no.map(serial=>serial.value)
@@ -297,10 +298,29 @@ const calculateAmountTotal = () => {
     base.items.forEach((item) => {
         total += Number(item.amount)
         item_discount += Number( (item.price_list_rate * item.qty) - item.amount )
-    })  
+    }) 
+    
     total = Number(total) - Number( base.is_return ? Math.abs(base.discount_amount)  : base.discount_amount || 0) ;
+
+    base.additional_discount_percentage = (base.discount_amount /(total + base.discount_amount ))*100
+    
+    
+    
+    
+    
     base.total = total.toFixed(2);
     base.item_discount= item_discount.toFixed(2);
+    
+};
+const calculateQtyTotal = () => {
+    let total = 0;
+
+    base.items.forEach((element) => {
+        total += parseFloat(element.qty) || 0;
+    });
+
+
+    base.total_qty = total.toFixed(2);
 };
 
 emitter.on('fetchPriceList', (params) => {
@@ -311,9 +331,14 @@ emitter.on('featchsearchResource'),(params)=>{
     searchResource.fetch(params)
 }
 emitter.on('calctotal', () => {
+    
     calculateAmountTotal();
 });
-
+emitter.on('calcQty', () => {
+    
+    calculateQtyTotal();
+});
+// calculateQtyTotal
 watch(() => base.items, () => {
     if (!Array.isArray(base.items)) {
         base.items = [];

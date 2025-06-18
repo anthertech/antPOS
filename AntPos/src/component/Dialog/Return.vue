@@ -186,7 +186,7 @@ const addItems = async (items) => {
                 });
                 element.selected_serial_no = element.serial_no_options;
 
-                element.serial_no = serial.data || [];
+                element.all_serial_no = serial.data || [];
             }
 
 

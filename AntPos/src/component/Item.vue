@@ -75,6 +75,30 @@
             </div>
             <div class="p-2">
                 <FormControl
+                    type="text"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    :disabled="true"
+                    label="Price List Rate"
+                    placeholder="0"
+                    v-model="items.price_list_rate"
+                />
+            </div>
+            <div class="p-2">
+                <FormControl
+                    type="text"
+                    :ref_for="true"
+                    size="sm"
+                    variant="subtle"
+                    :disabled="true"
+                    label="Net Rate"
+                    placeholder="0"
+                    v-model="items.net_rate"
+                />
+            </div>
+            <div class="p-2">
+                <FormControl
                     type="number"
                     :ref_for="true"
                     size="sm"
@@ -97,18 +121,7 @@
                     v-model="items.discount_amount"
                 />
             </div>
-            <div class="p-2">
-                <FormControl
-                    type="text"
-                    :ref_for="true"
-                    size="sm"
-                    variant="subtle"
-                    :disabled="true"
-                    label="Price List Rate"
-                    placeholder="0"
-                    v-model="items.price_list_rate"
-                />
-            </div>
+            
             <div class="p-2">
                 <FormControl
                     type="text"
@@ -261,7 +274,7 @@ watch(
             let find = validateitems();
             if (!find && props.items.has_serial_no) {
                 props.items.selected_serial_no = [];
-                props.items.serial_no_options = props.items.serial_no.filter((serial_no) => serial_no.batch_no == newBatchNo)
+                props.items.serial_no_options = props.items.all_serial_no.filter((serial_no) => serial_no.batch_no == newBatchNo)
                     .map((serial_no) => ({
                         label: serial_no.serial_no,
                         value: serial_no.serial_no,
@@ -310,17 +323,8 @@ const calculateAmountTotal = () => {
     
 };
 
-const calculateQtyTotal = () => {
-    let total = 0;
 
-    base.items.forEach((element) => {
-        total += parseFloat(element.qty) || 0;
-    });
-
-
-    base.total_qty = total.toFixed(2);
-};
-
+emitter.emit('calcQty');
 const validateQty = (qty) => {
     if (props.items.serial_no_options) {
         const availableSerials = props.items.serial_no_options.map(option => option.value);
@@ -338,6 +342,7 @@ watch(
     (newSerial, oldSerial) => {
         if (props.items.serial_no_options && newSerial !== oldSerial) {
             props.items.qty = base.is_return ?  -Math.abs(newSerial.length) : newSerial.length;
+            props.items.serial_no = props.items.selected_serial_no.map(sn => sn.value).join('\n');
             
         }
     }
@@ -356,17 +361,17 @@ watch(
         if (newValue !== oldValue) {
             validateQty(newValue)    
             adjustSerialNumbers(newValue, oldValue);
-            calculateQtyTotal()
+            emitter.emit('calcQty');
             
     }
 
     }
 );
-const updatePriceListRate = () => {
-    emitter.emit('fetchPriceList', props);
+const updatePriceListRate = async () => {
+    await emitter.emit('fetchPriceList', props);
     props.items.rate = rateCalculation(props.items);
     props.items.amount = props.items.rate * Math.abs(props.items.qty);
-    calculateQtyTotal();
+    emitter.emit('calcQty');
     discountCalculation();
 };
 
@@ -437,6 +442,7 @@ base.items.forEach((items) => {
 const  rateCalculation =  (item) => {
     const rate = item.price_list_rate || item.rate;
     const discount = item.discount_percentage || 0;
+    
     return rate - (rate * (discount / 100));
 };
 const deliveryDate = computed({
@@ -469,13 +475,13 @@ const calculateRateTotal = () => {
 
 onMounted( async () => {
     calculateRateTotal();
-    calculateQtyTotal();
+    emitter.emit('calcQty');
     validateQty(props.items.qty);
     adjustSerialNumbers(props.items.qty, props.items.qty);
 });
  
 onUnmounted(() => {
     calculateAmountTotal();
-    calculateQtyTotal();
+    emitter.emit('calcQty');
 });
 </script>

@@ -196,8 +196,8 @@
         makeParams(params) {
             base.items.forEach((item) => {
                 
-                item.serial_no = item.selected_serial_no.map(serial => serial.value);
-                item.serial_no = item.serial_no.join('\n')
+                // item.serial_no = item.selected_serial_no.map(serial => serial.value);
+                // item.serial_no = item.serial_no.join('\n')
 
                 
 
@@ -285,11 +285,15 @@
         () => base.discount_amount,
         (newVal) => {
             
-            if (base.pos_profile.custom_use_percentage_discount) return;
-            const calculated = (newVal / base.total || 0) * 100;
-            if (base.additional_discount_percentage !== calculated) {
-                base.additional_discount_percentage = calculated;
-            }
+            // if (base.pos_profile.custom_use_percentage_discount) return;
+            // const calculated = (newVal / (base.total + base.discount_amount) || 0) * 100;
+            // console.log(newVal, base.total, base.discount_amount, calculated, "calculated");
+            
+            // if (base.additional_discount_percentage !== calculated) {
+            //     base.additional_discount_percentage = calculated;
+            //     console.log( base.additional_discount_percentage,base.total+base.discount_amount     ,"hhhhh");
+                
+            // }
             emitter.emit('calctotal');
         },
         { flush: 'post' }
@@ -300,10 +304,14 @@
         
         (newVal) => {
             if(!base.pos_profile.custom_use_percentage_discount) return
-            const calculated = (newVal / 100) * base.total || 0;
+
+            const calculated = (newVal / 100) *  (base.total + base.discount_amount) || 0;
+            
             if (base.discount_amount !== calculated) {
-                base.discount_amount = calculated;
+                
+                base.discount_amount =calculated;
             }
+            
             emitter.emit('calctotal');
         },
         { flush: 'post' }

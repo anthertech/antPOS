@@ -1,8 +1,8 @@
 <template>
-<div
-  class="w-full h-full"
-  :class="props.collapse ? 'xl:w-[97%]' : 'xl:w-[90%]'"
->
+  <div
+    class="w-full h-full"
+    :class="props.collapse ? 'xl:w-[97%]' : 'xl:w-[90%]'"
+  >
         <Navbar />
         <component :is="componentMap[currentComponent]" />
     </div>
