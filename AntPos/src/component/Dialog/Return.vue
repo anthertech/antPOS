@@ -96,6 +96,32 @@ let runDoCMethod = createResource({
         return {...params}
     
     },
+    transform(data){
+        if (data.docs[0] && data.docs[0].items && data.docs[0].items.length > 0) {
+            data.docs[0].items.forEach(item => {
+                if (item.serial_no) {
+                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => serial);
+                    
+                }
+                if (item.batch_no) {
+                    
+                    item.selected_batch_no = {
+                        label: item.batch_no,
+                        value: item.batch_no
+                    };
+                } else {
+                    item.selected_batch_no = null;
+                }
+                if (!item.custom_id) {
+                    item.custom_id = Date.now() + Math.random();
+                }
+            });
+            
+        }
+
+
+        return data
+    },
     onSuccess(data){
         errorHandled = false;
         addvalues();
@@ -142,225 +168,6 @@ let salesInvoice = createResource({
     }
 });
 
-const addItems = async (items) => {
-    
-    for (const element of items) {
-        
-        try {
-            
-            // element.selected_batch_no = [];
-            element.has_batch_no = 0;
-            element.has_serial_no = 0;
-            element.selected_serial_no = [];
-            element.batch_nos = [];
-            await itemDoc.fetch({
-                doctype: "Item",
-                filters: { "name": element.item_code },
-                fieldname: ['name', 'item_name', 'description', 'image', 'has_batch_no', 'has_serial_no'],
-            });
-
-            let item =  itemDoc.data || {};
-            
-            
-            if (item.has_batch_no ) {
-                element.has_batch_no = item.has_batch_no ? 1 : 0;
-                await batch.fetch({
-                    doctype: 'Batch',
-                    fields: ["name as batch_no", "expiry_date"],
-                    filters: { "item": element.item_code },
-                    limit_page_length: Number.MAX_VALUE * 2,
-                });
-                element.batch_nos =  batch.data || [];  
-                element.selected_batch_no = element.batch_no;
-                element.use_serial_batch_fields = 1;
-            }
-            if (item.has_serial_no) {
-                element.serial_no_options  = await splitSerialNumbers(element.serial_no);
-                element.has_serial_no = 1;
-                await serial.fetch({
-                    doctype: "Serial No",
-                    filters: { "item_code": element.item_code },
-                    orFilters: { "batch_no": element.batch_no },
-                    fields: ["name as serial_no", "batch_no"],
-                    limit_page_length: Number.MAX_VALUE * 2,
-                });
-                element.selected_serial_no = element.serial_no_options;
-
-                element.all_serial_no = serial.data || [];
-            }
-
-
-
-        } catch (error) {
-            console.error("Error fetching batch or serial numbers:", error);
-        }
-        element.id = Date.now() + Math.random();
-        element.is_return = 1;
-        element.open = 0;
-    }
-    
-    
-    base.items = items;
-    return items;
-};
-
-    let getlist = createResource({
-        url:'frappe.client.get_list',
-        makeParams(params) {
-        return { ...params }
-        },
-        onSuccess(data) {
-            errorHandled = false;
-            
-        },
-        onError(error) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-
-    })
-     let batch = createResource({
-        url:'frappe.client.get_list',
-        makeParams(params) {
-        return { ...params }
-        },
-        onSuccess(data) {
-            errorHandled = false;
-            
-        },
-        onError(error) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-
-    })
-     let serial = createResource({
-        url:'frappe.client.get_list',
-        makeParams(params) {
-        return { ...params }
-        },
-        onSuccess(data) {
-            errorHandled = false;
-            
-        },
-        onError(error) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-
-    })
-    
-
-        let itemDoc = createResource({
-        url:'frappe.client.get_value',
-        makeParams(params) {
-        return { ...params }
-        },
-        onSuccess(data) {
-            
-        },
-    onError(error) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-
-    })
-
-        let customer = createResource({
-        url:'frappe.client.get_value',
-        makeParams(params) {
-        return { ...params }
-        },
-        onSuccess(data) {
-            
-        },
-        transform: (data) => {
-            
-                return {
-                label: data.name,
-                value: data.name,
-                mobile_no: data.mobile_no,
-                name: data.name,
-                customer_group: data.customer_group,
-                territory: data.territory,
-                is_internal_customer: data.is_internal_customer,
-                }
-    },
-    onError(error) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-
-    })
-
-    let get_value = createResource({
-        url:'frappe.client.get_value',
-        makeParams(params) {
-        return { ...params }
-        },
-        onSuccess(data) {
-            
-        },
-        transform: (data) => {
-            
-                return {
-                label: data.name,
-                value: data.name,
-                mobile_no: data.mobile_no,
-                name: data.name,
-                customer_group: data.customer_group,
-                territory: data.territory,
-                is_internal_customer: data.is_internal_customer,
-                }
-    },
-    onError(error) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-
-    })
 
     const invoices = createListResource({
     doctype: 'Sales Invoice',
@@ -402,21 +209,52 @@ async function splitSerialNumbers(serialString = "") {
 const  addvalues = async ()=>{
 
     base.invoice =  { ...runDoCMethod.data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" }
-    addItems(runDoCMethod.data.docs[0].items);
+    base.items = runDoCMethod.data.docs[0].items || [];
     base.discount_amount =  runDoCMethod.data.docs[0].discount_amount;
     base.additional_discount_percentage =  runDoCMethod.data.docs[0].additional_discount_percentage;
     base.total =  runDoCMethod.data.docs[0].net_total;
-    await customer.fetch({
+    await get_value.fetch({
         doctype: "Customer",
         filters: { "name": runDoCMethod.data.docs[0].customer },
         fieldname: ['name', 'mobile_no', 'customer_group', 'territory', 'is_internal_customer'],
     });
-    base.customer = customer.data || {};
-    searchQuery.value=''
+    base.customer = get_value.data || {};
+    searchQuery.value='';
     base.is_return = 1; 
     handleDialogClose()
 
 }
+
+let get_value = createResource({
+        url:'frappe.client.get_value',
+        makeParams(params) {
+        return { ...params }
+        },
+        transform: (data) => {
+            
+                return {
+                label: data.name,
+                value: data.name,
+                mobile_no: data.mobile_no,
+                name: data.name,
+                customer_group: data.customer_group,
+                territory: data.territory,
+                is_internal_customer: data.is_internal_customer,
+                }
+    },
+    onError(error) {
+            createToast({
+                title: 'error',
+                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+                icon: 'x-circle',
+                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                position: 'top-center',
+                timeout: 5,
+            });
+            errorHandled = true;
+        }
+
+    })
 
 watch(searchQuery, (newQuery) => {
   invoices.update({

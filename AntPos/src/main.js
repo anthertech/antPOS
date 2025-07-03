@@ -38,7 +38,9 @@ const base = reactive({
   Ant_Opening_Shift:{},
   pos_profile:{},
   items:[],
-  invoice:{},
+  invoice:{
+    
+  },
   page:'',
 })
 app.provide('base', base)

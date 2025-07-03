@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
+import { FormControl, FeatherIcon, createResource,debounce } from 'frappe-ui';
 import { ref, inject, watch } from 'vue';
 import { createToast } from '../utils';
 import { showToast } from '../utils'
@@ -127,12 +127,7 @@ const addItemsResource = createResource({
         addItem(data);
     },
     transform(data){
-        if (data.selected_serial_no && data.selected_serial_no.length > 0 ){
-            data.selected_serial_no = data.selected_serial_no.map(serial=>({
-                label:serial,
-                value:serial
-            }))
-        }
+        
         let  date=null
         let qty=0
         if (data.batch_no && data.batch_no.length > 0 && data.has_batch_no) {
@@ -141,90 +136,18 @@ const addItemsResource = createResource({
             date = batch ? batch.expiry_date : null;
             
         }
+        data.selected_batch_no = {
+            label: data.batch_no,
+            value: data.batch_no
+        };
+        data.custom_id = Date.now() + Math.random();
         data.stock_qty = qty;
         data.expiry_date = date;
         data.net_rate = data.price_list_rate || 0
     }
 });
 
-const priceListResource = createResource({
-    url: 'erpnext.stock.get_item_details.apply_price_list',
-    method: 'POST',
-    makeParams(params) {
-        lastParams = params;
-        if(params.items.batch_no?.value) {
-            params.items.batch_no = params.items.batch_no.value;
-        }
-        return {
-            args: JSON.stringify({
-                items: [
-                    {
-                        ...params.items,
-                        "doctype": "Sales Invoice Item",
-                        "name": "new-sales-invoice-item-lrdmbgmbcz",
-                        "child_docname": "new-sales-invoice-item-lrdmbgmbcz",
-                        "parenttype": "Sales Invoice",
-                        "parent": "new-sales-invoice-owspmikswv",
-                        "serial_no": base.items.selected_serial_no, //need to update it to the serial no  with /n
-                    }
-                ],
 
-                "customer": base.customer.name,
-                "customer_group": base.customer.customer_group,
-                "is_internal_customer": base.customer.is_internal_customer,
-                "territory": base.customer.territory,
-                "currency": base.pos_profile.currency,
-                "conversion_rate": 1,
-                "price_list": "Standard Selling",
-                "price_list_currency": base.pos_profile.currency,
-                "plc_conversion_rate": 1,
-                "company": base.pos_profile.company,
-                "transaction_date": "",
-                "ignore_pricing_rule": 0,
-                "doctype": "Sales Invoice",
-                "name": "new-sales-invoice-owspmikswv",
-                "is_return": 0,
-                "update_stock": 1,
-                "pos_profile": base.pos_profile.name,
-            })
-        };
-    },
-    onError(error) {
-        if (!errorHandled) {
-            console.error('Price list error:', error);
-            createToast({
-                title: 'error',
-                message: error.messages[0] || error.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
-    },
-    onSuccess(data) {
-        errorHandled = false;
-        if (!lastParams) return;
-
-        let updatedItem = base.items.find(item => item.item_code === lastParams.items.item_code);
-
-        if (updatedItem && data.children && data.children.length > 0) {
-            const childData = data.children[0];
-            updatedItem.price_list_rate = childData.price_list_rate ?? updatedItem.price_list_rate;
-            updatedItem.has_margin = childData.has_margin ?? updatedItem.has_margin;
-            updatedItem.discount_percentage = childData.discount_percentage ?? updatedItem.discount_percentage;
-            updatedItem.discount_amount = childData.discount_amount ?? updatedItem.discount_amount;
-            updatedItem.validate_applied_rule = childData.validate_applied_rule ?? updatedItem.validate_applied_rule;
-            updatedItem.price_or_product_discount = childData.price_or_product_discount ?? updatedItem.price_or_product_discount;
-            updatedItem.pricing_rule_for = childData.pricing_rule_for ?? updatedItem.pricing_rule_for;
-            updatedItem.margin_type = childData.margin_type ?? updatedItem.margin_type;
-            updatedItem.margin_rate_or_amount = childData.margin_rate_or_amount ?? updatedItem.margin_rate_or_amount;
-            updatedItem.has_pricing_rule = childData.has_pricing_rule ?? updatedItem.has_pricing_rule;
-            updatedItem.pricing_rules = childData.pricing_rules ?? updatedItem.pricing_rules;
-        }
-    }
-});
 
 const fetchSearchResource = () => {
     errorHandled = false;
@@ -234,7 +157,7 @@ const fetchSearchResource = () => {
 const addItem = (data) => {
     data.doctype = "Sales Invoice Item";
     data.parenttype = "Sales Invoice";
-    data.id= Date.now() + Math.random()
+    data.custom_id = Date.now() + Math.random()
     if (!addItemIfExists(data)) {
         if (data.has_batch_no && data.batch_no) {
             data.serial_no_options = data.all_serial_no
@@ -260,14 +183,13 @@ const addItemIfExists = (data) => {
                 if (data.has_serial_no && data.all_serial_no && data.selected_serial_no && data.selected_serial_no.length > 0) {
 
                     for (let serial of data.selected_serial_no) {
-                        let selected = element.selected_serial_no.map(serial=>serial.value)
+                        let selected = element.selected_serial_no.map(serial=>serial)
                         if (selected.includes(serial)) {
                             showToast('warning', 'Serial-no Already added')
-                            
                             return found;
                         }
                     }
-                    element.selected_serial_no.push({label:data.serial_no,value:data.serial_no})
+                    element.selected_serial_no.push(data.serial_no)
                 }
                 if (element.serial_no  && !data.serial_no) {
                     showToast('warning', 'Batch already entered')
@@ -275,7 +197,6 @@ const addItemIfExists = (data) => {
                     return found
                 }
                 base.items[index].qty += 1;
-                priceListResource.fetch({ items: base.items[index] })
                 debounceSearch.value = '';
                 
             }
@@ -285,33 +206,86 @@ const addItemIfExists = (data) => {
 };
 
 const addNewLine = async (data) => {
-    await priceListResource.fetch({ items: data });
     base.items.push(data);
     debounceSearch.value = '';
 };
+const runDocMethod = createResource({
+    url: 'ant_pos.ant_pos.api.sales_invoice.calculate_invoice_item_taxes',
+    method: 'POST',
+    auto: false,
+    makeParams(params) {
+        return {
+            ...params
+        };   
+    },
+    transform(data){
+        if (data && data.items && data.items.length > 0) {
+            data.items.forEach(item => {
+                if (item.serial_no) {
+                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => serial);
+                    
+                }
+                if (item.batch_no) {
+                    
+                    item.selected_batch_no = {
+                        label: item.batch_no,
+                        value: item.batch_no
+                    };
+                } else {
+                    item.selected_batch_no = null;
+                }
+                // item.custom_id = Date.now() + Math.random();
+                
+            });
+            
+        }
+        return data
+    },
 
-const calculateAmountTotal = () => {
-    
-    let total = 0;
-    let item_discount = 0
+    onSuccess(data){
+        base.invoice=data;        
+        data.items.forEach(n => {
+          const e = base.items.find(b => b.custom_id === n.custom_id);
+            if (!e) return;
+            for (const k in n) if (k !== 'custom_id' && e[k] !== n[k]) e[k] = n[k];
+        });
+        
+        errorHandled = false;
+    },
+    onError(error) {
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
+        errorHandled = true;
+    }
+});
 
-    base.items.forEach((item) => {
-        total += Number(item.amount)
-        item_discount += Number( (item.price_list_rate * item.qty) - item.amount )
-    }) 
-    
-    total = Number(total) - Number( base.is_return ? Math.abs(base.discount_amount)  : base.discount_amount || 0) ;
 
-    base.additional_discount_percentage = (base.discount_amount /(total + base.discount_amount ))*100
-    
-    
-    
-    
-    
-    base.total = total.toFixed(2);
-    base.item_discount= item_discount.toFixed(2);
-    
-};
+const calculateAmountTotal = async () => {
+    if (base.items.length === 0 ) return;
+    await runDocMethod.fetch({doc: JSON.stringify({
+                ...base?.invoice,
+                doctype: 'Sales Invoice',
+                is_pos: base.invoice.is_return ? base.invoice.is_pos : 1,
+                pos_profile: base.pos_profile.name,
+                company: base.pos_profile.company,
+                conversion_rate: 1,
+                selling_price_list: base.pos_profile.selling_price_list,
+                items: base.items,
+                customer: base.customer.name,
+                update_stock: 1,
+                additional_discount_percentage: Number(base.additional_discount_percentage),
+                discount_amount: Number(base.discount_amount),
+                base_total: base.invoice.base_total || 0,
+                custom_ant_opening: base.Ant_Opening_Shift.name,
+                apply_discount_on: base.pos_profile.apply_discount_on,
+            })});
+}
 const calculateQtyTotal = () => {
     let total = 0;
 
@@ -323,10 +297,7 @@ const calculateQtyTotal = () => {
     base.total_qty = total.toFixed(2);
 };
 
-emitter.on('fetchPriceList', (params) => {
-       
-    priceListResource.fetch(params);
-});
+
 emitter.on('featchsearchResource'),(params)=>{
     searchResource.fetch(params)
 }
@@ -334,16 +305,13 @@ emitter.on('calctotal', () => {
     
     calculateAmountTotal();
 });
-emitter.on('calcQty', () => {
-    
-    calculateQtyTotal();
-});
+
 // calculateQtyTotal
-watch(() => base.items, () => {
-    if (!Array.isArray(base.items)) {
-        base.items = [];
-    }
-    calculateAmountTotal();
-});
+// watch(() => base.items, () => {
+//     if (!Array.isArray(base.items)) {
+//         base.items = [];
+//     }
+//     calculateAmountTotal();
+// });
 
 </script> 

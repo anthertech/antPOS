@@ -5,7 +5,7 @@ from typing import Dict, Any
 from erpnext.stock.get_item_details import get_item_details  
 from frappe.utils import flt
 from datetime import datetime
-
+from erpnext.stock.doctype.batch.batch import get_batches
 
 BarcodeScanResult = dict[str, str | None]
 
@@ -204,7 +204,6 @@ def items(pos_profile, search_value, customer):
     item_details = get_item_details(item_args, doc=None, overwrite_warehouse=False)
 
     # Assign fetched serial/batch lists
-    item_details["all_serial_no"] = serial_nos
     item_details["batch_nos"] = batch_nos
 
     # Selected serial/batch
@@ -231,5 +230,14 @@ def items(pos_profile, search_value, customer):
             frappe.throw(_("Batch No {0} for item {1} is not available in warehouse {2}").format(
                 selected_batch_no, item_code, pos_profile_doc.warehouse
             ))
-
+    item_details["serial_no"] = selected_serial_no if has_serial_no else None
     return item_details
+
+@frappe.whitelist()
+def get_batches_list(item_code, warehouse):
+    """
+    Fetches batch numbers for a given item code and warehouse.
+    Returns a list of batch numbers with their expiry dates and stock quantities.
+    """
+    value=get_batches(item_code, warehouse)
+    return get_batches(item_code, warehouse)

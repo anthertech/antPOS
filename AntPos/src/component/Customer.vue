@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, onUnmounted } from 'vue';
+import { computed, inject, onMounted, onUnmounted, watch } from 'vue';
 import emitter from '../utils/emitter'; 
 import Autocomplete from './custom_components/Autocomplete.vue';
 import { createListResource } from 'frappe-ui';
@@ -84,6 +84,7 @@ const refreshCustomerList = async (params) => {
   }
 };
 
+
 onMounted(() => {
   emitter.on("customerCreated"  ,refreshCustomerList);
 
@@ -100,5 +101,6 @@ const selectedCustomer = computed({
     base.customer = newVal;
   },
 });
+
 
 </script>

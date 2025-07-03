@@ -8,16 +8,16 @@
             <table class="w-full mt-4">
                 <thead>
                     <tr class="text-left text-sm border-b">
-                        <th class="pb-2">Mode of Payment</th>
-                        <th class="pb-2">Opening Amount</th>
-                        <th class="pb-2">Closing Amount</th>
-                        <th class="pb-2">Expected Amount</th>
-                        <th class="pb-2">Difference</th>
+                        <th class="pb-2 w-48">Mode of Payment</th>
+                        <th class="pb-2 w-32">Opening Amount</th>
+                        <th class="pb-2 w-32">Closing Amount</th>
+                        <th class="pb-2 w-32">Expected Amount</th>
+                        <th class="pb-2 w-32">Difference</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr v-for="(row, index) in data" :key="index" class="border-b">
-                        <td class="py-2 pr-4">{{ row.mode_of_payment }}</td>
+                        <td class="py-2 pr-4 w-48">{{ row.mode_of_payment }}</td>
                         <td class="py-2 px-1">
                             <FormControl
                                 type="number"
@@ -29,7 +29,9 @@
                         </td>
                         <td class="py-2 px-1">
                             <FormControl
-                                type="number"
+                                type="text"
+                                inputmode="decimal"
+                                step="any"
                                 size="sm"
                                 variant="subtle"
                                 v-model="row.closing"
@@ -70,13 +72,14 @@
                 <Button variant="ghost" @click="handleClose">Cancel</Button>
                 <Button variant="solid" @click="handleSubmit.fetch({ action: 'Submit' })">Submit</Button>
             </div>
+            <Spinner class="w-4" v-if="mode.isLoading" />
         </template>
     </Dialog>
 </template>
 
 <script setup>
-    import { ref, inject, defineEmits, onBeforeMount, computed, watch } from 'vue';
-    import { Button, Dialog, FormControl, createResource } from 'frappe-ui';
+    import { ref, inject, defineEmits, watch } from 'vue';
+    import { Button, Dialog, FormControl, createResource, debounce,Spinner} from 'frappe-ui';
     import { createToast } from '../../utils';
     import { useDynamicComponent } from '../../utils/Dialog';
 
@@ -84,7 +87,7 @@
     const dialogVisible = ref(true);
     const base = inject('base');
     const openShiftVisible = ref(false);
-    const data = ref([]);
+    const data = ref(base.pos_profile.payments);
     let errorHandled = false;
     const { currentComponent, loadComponent } = useDynamicComponent();
     
@@ -95,16 +98,13 @@
         difference: 0,
     });
 
-    const updateDifference = (index) => {
-        const row = data.value[index];
-        if (typeof row === 'object' && row !== null) {
-            row.difference = (row.expected || 0) - (row.closing || 0);
-
-            calculateTotals();
-        } else {
-            console.error(`Row at index ${index} is not an object:`, row);
-        }
-    };
+   const updateDifference = debounce((index) => {
+    const row = data.value[index];
+    if (row) {
+        row.difference = (row.expected || 0) - (row.closing || 0);
+        calculateTotals();
+    }
+}, 100);
 
     let mode = createResource({
         url: "ant_pos.ant_pos.api.payment_entry.get_payments",
@@ -114,8 +114,9 @@
                 shift: base?.Ant_Opening_Shift?.name
             };
         },
-        auto: false,
+        auto: true,
         onSuccess(closingData) {
+            
             createClosingShift(closingData);
         },
     });
@@ -124,40 +125,35 @@
     const emit = defineEmits(['switchComponent']);
 
     const createClosingShift = (closing) => {
+        const newData = [];
+
         base.pos_profile.payments.forEach(element => {
             const openingDetail = base.Ant_Opening_Shift.opening_balance_details.find(
                 item => item.mode_of_payment === element.mode_of_payment
             );
-
+            
             const closingDetail = closing.find(
                 item => item.mode_of_payment === element.mode_of_payment
             );
             
             const openingAmount = Number(openingDetail?.opening_amount) || 0;
             const closingTotal = Number(closingDetail?.total) || 0;
-
-            const newRow = {
+            
+            newData.push({
                 mode_of_payment: element.mode_of_payment,
                 opening: openingAmount,
                 expected: closingTotal + openingAmount,
                 closing: closingTotal + openingAmount,
                 difference: 0, 
-            };
-
-            updateDifference(newRow);
-
-            data.value.push(newRow);
+            });
         });
 
+        data.value = newData;
         calculateTotals();
 
     };
     const handleClose = async () => {
-        // emits('update:modelValue', false);
-
-        
         dialogVisible.value = false;
-        // currentComponent.value = null;
         openShiftVisible.value = true;
         
         await loadComponent('OpenShift');
@@ -182,7 +178,6 @@
         async onSuccess(data) {
         errorHandled = false;
         
-        // Reset base data
         Object.assign(base, {
             customer: {},
             Ant_Opening_Shift: {},
@@ -191,7 +186,6 @@
             page: '',
         });
         
-        // Close dialog and open OpenShift with proper timing
         dialogVisible.value = false;
         
         setTimeout(() => {
@@ -225,7 +219,5 @@
 
     watch(data, calculateTotals, { deep: true });
 
-    onBeforeMount(() => {
-        mode.fetch();
-    });
+    
 </script>

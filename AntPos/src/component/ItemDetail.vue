@@ -46,7 +46,7 @@
                         </div>
                     </div>
                 </div>
-                <div v-for="(item, key) in base.items" :key="item.id" class="flex flex-col justify-between mb-2 w-full ">
+                <div v-for="(item, key) in base.items" :key="item.custom_id" class="flex flex-col justify-between mb-2 w-full ">
                     
                     <Item :items="item" :index="key"  />                   
                 </div>
@@ -63,7 +63,7 @@
                     placeholder="0"
                     :disabled="true"
                     label="Total Qty"
-                    v-model="base.total_qty"
+                    v-model="base.invoice.total_qty"
                 />
                 <FormControl
                     v-if="base.pos_profile.custom_use_percentage_discount"
@@ -106,7 +106,7 @@
                     placeholder="0"
                     :disabled="true"
                     label="Total"
-                    v-model="base.total"
+                    v-model="base.invoice.grand_total"
                 />
 
             </div>
@@ -180,13 +180,14 @@
 
 <script setup>
 
-    import Customer from './Customer.vue';
-    import { Button, FeatherIcon , FormControl , createResource } from 'frappe-ui';
+import Customer from './Customer.vue';
+import { Button, FeatherIcon , FormControl , createResource, createDocumentResource  } from 'frappe-ui';
     import { inject , watch,ref, onMounted } from 'vue';
     import { createToast } from '../utils';
     import Item from './Item.vue';
-
+    
     const { loadComponent } = inject('dynamicComponent');
+    const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
     let base = inject('base');
     let status = '';
     const emitter = inject('emitter');
@@ -194,13 +195,7 @@
     let sales_invoice = createResource({
         url: 'frappe.desk.form.save.savedocs',
         makeParams(params) {
-            base.items.forEach((item) => {
-                
-                // item.serial_no = item.selected_serial_no.map(serial => serial.value);
-                // item.serial_no = item.serial_no.join('\n')
-
-                
-
+            base.items.forEach((item) => {                
                 if (item.has_serial_no && item.selected_serial_no.length !== item.qty) {
                     createToast({
                         title: 'error',
@@ -228,7 +223,7 @@
                     update_stock: 1,
                     additional_discount_percentage: Number(base.additional_discount_percentage), 
                     discount_amount: Number(base.discount_amount),
-                    base_total: base.total,
+                    base_total: base.invoice.base_total && base.invoice.base_total,
                     custom_ant_opening: base.Ant_Opening_Shift.name,
                     apply_discount_on: base.pos_profile.apply_discount_on,
                 }),
@@ -269,77 +264,39 @@
             }
         },
     });
-    
-    const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
-
-    watch(
-        () => base.items,
-        (newSerial, oldSerial) => {
-            if (newSerial!==oldSerial) {
-                emitter.emit('calctotal');
-            }
-        }
-    );
+   
 
     watch(
         () => base.discount_amount,
-        (newVal) => {
-            
-            // if (base.pos_profile.custom_use_percentage_discount) return;
-            // const calculated = (newVal / (base.total + base.discount_amount) || 0) * 100;
-            // console.log(newVal, base.total, base.discount_amount, calculated, "calculated");
-            
-            // if (base.additional_discount_percentage !== calculated) {
-            //     base.additional_discount_percentage = calculated;
-            //     console.log( base.additional_discount_percentage,base.total+base.discount_amount     ,"hhhhh");
-                
-            // }
-            emitter.emit('calctotal');
+        (newVal,oldVal) => {
+            if ((!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) && newVal ) {   
+                             
+                emitter.emit('calctotal');
+            }
         },
         { flush: 'post' }
     );
-
     watch(
         () => base.additional_discount_percentage,
-        
-        (newVal) => {
-            if(!base.pos_profile.custom_use_percentage_discount) return
-
-            const calculated = (newVal / 100) *  (base.total + base.discount_amount) || 0;
-            
-            if (base.discount_amount !== calculated) {
+        (newVal,oldVal) => {
+            if ((base.pos_profile.custom_use_percentage_discount && newVal !== oldVal)&& newVal) {
                 
-                base.discount_amount =calculated;
+                emitter.emit('calctotal');
             }
-            
-            emitter.emit('calctotal');
         },
         { flush: 'post' }
     );
     const remove_invoice = () => {
-        base.invoice = {
-            payments: [],
-            paid_amount: 0,
-            rounded_total: 0,
-            net_total: 0,
-            total_taxes_and_charges: 0,
-            total: 0,
-            discount_amount: 0,
-            grand_total: 0,
-            base_rounded_total: 0
-        };
+        base.invoice = {};
         base.items = [];
         base.customer = {};
         base.discount_amount = 0;
-        base.total = 0;  
     };
 
     onMounted(() => {
-        base.total_qty = 0;
         base.additional_discount_percentage = 0;
         base.discount_amount = 0;   
         base.item_discount = 0;
-        base.total = 0;
 
     });
 </script>

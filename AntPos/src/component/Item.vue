@@ -1,8 +1,8 @@
 <template>
     <div>
-        <div :class="['flex bg-gray-200 w-full py-2 px-3 justify-between hover:cursor-pointer text-center' ,items.open ? 'rounded-t-2xl' : 'rounded']">
-            <div class="flex items-center h-[100%] rounded hover:bg-gray-300" @click="items.open = !items.open">
-                <FeatherIcon :name="items.open ? 'chevron-up' : 'chevron-down'" class="w-5 h-5" />
+        <div :class="['flex bg-gray-200 w-full py-2 px-3 justify-between hover:cursor-pointer text-center' ,items.custom_open ? 'rounded-t-2xl' : 'rounded']">
+            <div class="flex items-center h-[100%] rounded hover:bg-gray-300" @click="items.custom_open = !items.custom_open">
+                <FeatherIcon :name="items.custom_open ? 'chevron-up' : 'chevron-down'" class="w-5 h-5" />
             </div>
             <div class="w-[18.4%]">
                 {{ items.item_code }} 
@@ -23,7 +23,7 @@
                 <FeatherIcon name="trash-2" class="w-5 h-5 rounded hover:bg-red-400 fill-red-700" @click="base.items.splice(index, 1)" />
             </div>
         </div>
-        <div v-if="items.open" class="flex flex-col bg-gray-200 w-full py-1 px-3 rounded-b-2xl justify-between">
+        <div v-if="items.custom_open" class="flex flex-col bg-gray-200 w-full py-1 px-3 rounded-b-2xl justify-between">
             <div class="grid grid-cols-3 w-full gap-4">
                 <div class="p-2">
                     <FormControl
@@ -186,7 +186,7 @@
             <div class="w-full">
                 <div class="p-2">
                     <Autocomplete
-                        :options="items.serial_no_options"
+                        :options="get_serial_no_options()"
                         placeholder="Serial No"
                         :multiple="true"
                         v-model="items.selected_serial_no"
@@ -223,13 +223,13 @@
                         <div class="w-full">
                             <Autocomplete
                                 type="select"
-                                :options="getbatchNo(items.batch_nos)"
+                                :options="getbatchNo()"
                                 size="sm"
                                 variant="subtle"
                                 placeholder="Batch No"
                                 :disabled="false"
                                 label="Batch No"
-                                v-model="items.batch_no"
+                                v-model="items.selected_batch_no"
                                 :hideSearch="true"
                             />
                         </div>
@@ -240,7 +240,7 @@
     </div>
 </template>
 <script setup>
-import { FeatherIcon, FormControl, Autocomplete, DatePicker, dayjsLocal } from 'frappe-ui';
+import { FeatherIcon, FormControl, Autocomplete, DatePicker, dayjsLocal, createResource, createListResource } from 'frappe-ui';
 import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vue';
 import { showToast } from '../utils'
 
@@ -257,34 +257,85 @@ const props = defineProps({
         required: true,
     },
 });
+const get_batch = createResource({
+        url: 'ant_pos.ant_pos.api.item.get_batches_list',
+        method: 'POST',
+        auto: false,
+        makeParams(params) {
+            return {
+                ...params
+            }
+        },
+    })
+    
+    const get_serial_no = createListResource({
+        url: 'frappe.client.get_list',
+        method: 'POST',
+        auto: false,
+        doctype: 'Serial No',
+        fields: ['name as serial_no', 'batch_no' ],
+        filters: {
+            warehouse: base.pos_profile.warehouse,
+            item_code: props.items.item_code,
+        },
+        cache: props.items.serial_no_options,
+        pageLength: Number.MAX_VALUE * 2,
+        onSuccess(data) {            
+            props.items.serial_no_options = data.map((serial_no) => ({
+                label: serial_no.serial_no,
+                value: serial_no.serial_no,
+                batch_no: serial_no.batch_no
+            }));
+        },
+    });
+const get_serial_no_options = () => {
+    
+    const { has_batch_no, batch_no } = props.items;
 
-const getbatchNo = (batch_nos) => {
-    return batch_nos.map((batch_no) => ({
-        label: batch_no.batch_no,
-        value: batch_no.batch_no,
+    let serials = get_serial_no.data || [];
+    
+    const batchValue = typeof batch_no === 'object' ? batch_no?.value : batch_no;
+    
+    if (props.items.batch_no != null) {
+        
+        serials = serials.filter(serial_no => serial_no.batch_no === props.items.batch_no);
+    }
+    
+    
+    return serials.map(serial_no => ({
+        label: serial_no.serial_no,
+        value: serial_no.serial_no,
+    }));
+};
+    const getbatchNo =  () => {
+    return get_batch.data.map((batch_no) => ({
+        label: batch_no.batch_id,
+        value: batch_no.batch_id,
     }));
 };
 
 const serialNoQty = computed(() => props.items?.serial_no_options?.length || 0);
 
 watch(
-    () => props.items.batch_no,
+    () => props.items.selected_batch_no,
     (newBatchNo, oldBatchNo) => {        
+        
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
+            
             let find = validateitems();
             if (!find && props.items.has_serial_no) {
                 props.items.selected_serial_no = [];
-                props.items.serial_no_options = props.items.all_serial_no.filter((serial_no) => serial_no.batch_no == newBatchNo)
-                    .map((serial_no) => ({
-                        label: serial_no.serial_no,
-                        value: serial_no.serial_no,
-                    }));
+            props.items.serial_no_options = props.items.all_serial_no.filter((serial_no) => serial_no.batch_no === newBatchNo)
+                .map((serial_no) => serial_no.serial_no);
+                add_serial_no();
             }
-            emitter.emit('fetchPriceList', props);
 
-            const batch = props.items.batch_nos.find(b => b.batch_no ===newBatchNo);
+            const batch = get_batch.data.find(b => b.batch_no ===newBatchNo);
             props.items.stock_qty = batch ? batch.stock_qty : 0;
             props.items.expiry_date = batch ? batch.expiry_date : null;
+
+            props.items.batch_no = typeof newBatchNo === 'object' ? newBatchNo?.value : newBatchNo;
+            
             
         }
     }
@@ -324,26 +375,37 @@ const calculateAmountTotal = () => {
 };
 
 
-emitter.emit('calcQty');
-const validateQty = (qty) => {
+const validateQty = () => {
     if (props.items.serial_no_options) {
         const availableSerials = props.items.serial_no_options.map(option => option.value);
-            if (props.items.has_serial_no && qty > availableSerials.length) {
+            if (props.items.has_serial_no && props.items.qty > availableSerials.length) {
                 showToast('warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
                 props.items.qty = base.is_return ?  -Math.abs(availableSerials.length) : availableSerials.length ;
             }
-        updatePriceListRate()
+            if (props.items.qty!== props.items.selected_serial_no.length) {
+                props.items.qty = props.items.selected_serial_no.length;
+            }
     }
     return ;
 };
+const add_serial_no = () =>{
+
+    props.items.serial_no = props.items.selected_serial_no.map(sn => sn).join('\n');
+    // props.items.qty = props.items.selected_serial_no.length;
+    
+
+}
+
+
 
 watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
-        if (props.items.serial_no_options && newSerial !== oldSerial) {
-            props.items.qty = base.is_return ?  -Math.abs(newSerial.length) : newSerial.length;
-            props.items.serial_no = props.items.selected_serial_no.map(sn => sn.value).join('\n');
-            
+        
+        
+        if (((props.items.serial_no_options && newSerial !== oldSerial) || !oldSerial)) {
+            add_serial_no()
+            validateQty(newSerial.length);
         }
     }
 );
@@ -357,30 +419,24 @@ watch(
 );
 watch(
     () => props.items.qty,
-    (newValue, oldValue) => {
-        if (newValue !== oldValue) {
-            validateQty(newValue)    
-            adjustSerialNumbers(newValue, oldValue);
-            emitter.emit('calcQty');
-            
+    (newValue, oldValue)  =>  {
+        if (newValue !== oldValue)  {
+            adjustSerialNumbers(newValue);
+            emitter.emit('calctotal');          
+
     }
 
     }
 );
-const updatePriceListRate = async () => {
-    await emitter.emit('fetchPriceList', props);
-    props.items.rate = rateCalculation(props.items);
-    props.items.amount = props.items.rate * Math.abs(props.items.qty);
-    emitter.emit('calcQty');
-    discountCalculation();
-};
 
-const adjustSerialNumbers = (newQty, oldQty) => {
 
+const adjustSerialNumbers = (newQty) => {
+    
     if (!props.items.has_serial_no || !props.items.serial_no_options ) return;
     
     
     const selected = props.items.selected_serial_no;
+    
     const options = props.items.serial_no_options;
     const selectedLength = selected.length;
     
@@ -391,6 +447,7 @@ const adjustSerialNumbers = (newQty, oldQty) => {
     // If reducing quantity
     if (Math.abs(selectedLength) > Math.abs(newQty)) {
         props.items.selected_serial_no = selected.slice(0, newQty);
+        
 
     }
     // If increasing quantity
@@ -411,23 +468,21 @@ const adjustSerialNumbers = (newQty, oldQty) => {
     }
 
     // Ensure the qty is aligned with the actual selected_serial_no length
+    
     props.qty = props.items.selected_serial_no.length;
+    
+    // emitter.emit('calctotal');
+
 };
 
-watch(
-    () => props.items.discount_percentage,
-    (newValue, oldValue) => {
-        if (newValue !== oldValue || !oldValue) {
-            discountCalculation();
-        }
-    }
-);
-
-const discountCalculation = () => {
-    props.items.rate = rateCalculation(props.items);
-    props.items.amount = props.items.rate* Math.abs(props.items.qty); 
-    props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty) 
-}
+// watch(
+//     () => props.items.discount_percentage,
+//     (newValue, oldValue) => {
+//         if (newValue !== oldValue || !oldValue) {
+//             discountCalculation();
+//         }
+//     }
+// );
 
 base.items.forEach((items) => {
     watch(
@@ -470,18 +525,27 @@ watch(
 const calculateRateTotal = () => {
     props.items.rate = rateCalculation(props.items);
     calculateAmountTotal();
-    emitter.emit('calctotal');
 };
 
 onMounted( async () => {
+    emitter.emit('calctotal');
+    
     calculateRateTotal();
-    emitter.emit('calcQty');
     validateQty(props.items.qty);
-    adjustSerialNumbers(props.items.qty, props.items.qty);
+    adjustSerialNumbers(props.items.selected_serial_no.length);
+    add_serial_no();
+    await get_batch.fetch({
+        item_code: props.items.item_code,
+        warehouse: base.pos_profile.warehouse,
+    })
+    await get_serial_no.fetch()
+    
 });
  
 onUnmounted(() => {
+    
     calculateAmountTotal();
-    emitter.emit('calcQty');
+    emitter.emit('calctotal');          
+
 });
 </script>
