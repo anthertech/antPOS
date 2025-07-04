@@ -127,7 +127,12 @@ const addItemsResource = createResource({
         addItem(data);
     },
     transform(data){
-        
+        if (data.selected_serial_no && data.selected_serial_no.length > 0 ){
+            data.selected_serial_no = data.selected_serial_no.map(serial=>({
+                label:serial,
+                value:serial
+            }))
+        }
         let  date=null
         let qty=0
         if (data.batch_no && data.batch_no.length > 0 && data.has_batch_no) {
@@ -160,7 +165,7 @@ const addItem = (data) => {
     data.custom_id = Date.now() + Math.random()
     if (!addItemIfExists(data)) {
         if (data.has_batch_no && data.batch_no) {
-            data.serial_no_options = data.all_serial_no
+            data.serial_no_options = data.serial_no_options
                 .filter(serial_no => data.batch_no && serial_no.batch_no === data.batch_no)
                 .map(serial_no => ({
                     label: serial_no.serial_no,
@@ -183,13 +188,13 @@ const addItemIfExists = (data) => {
                 if (data.has_serial_no && data.all_serial_no && data.selected_serial_no && data.selected_serial_no.length > 0) {
 
                     for (let serial of data.selected_serial_no) {
-                        let selected = element.selected_serial_no.map(serial=>serial)
+                        let selected = element.selected_serial_no.map(serial=>serial.value)
                         if (selected.includes(serial)) {
                             showToast('warning', 'Serial-no Already added')
                             return found;
                         }
                     }
-                    element.selected_serial_no.push(data.serial_no)
+                    element.selected_serial_no.push({label:data.serial_no,value:data.serial_no})
                 }
                 if (element.serial_no  && !data.serial_no) {
                     showToast('warning', 'Batch already entered')
@@ -222,7 +227,10 @@ const runDocMethod = createResource({
         if (data && data.items && data.items.length > 0) {
             data.items.forEach(item => {
                 if (item.serial_no) {
-                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => serial);
+                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => ({
+                        label: serial,
+                        value: serial
+                    }));
                     
                 }
                 if (item.batch_no) {

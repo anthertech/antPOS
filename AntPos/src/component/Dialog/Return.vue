@@ -100,7 +100,10 @@ let runDoCMethod = createResource({
         if (data.docs[0] && data.docs[0].items && data.docs[0].items.length > 0) {
             data.docs[0].items.forEach(item => {
                 if (item.serial_no) {
-                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => serial);
+                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => ({
+                        label: serial,
+                        value: serial
+                    }));
                     
                 }
                 if (item.batch_no) {
