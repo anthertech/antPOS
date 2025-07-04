@@ -1,0 +1,46 @@
+{
+  "hash": "754359b2",
+  "configHash": "a041ceb0",
+  "lockfileHash": "e8662749",
+  "browserHash": "5d33f830",
+  "optimized": {
+    "vue": {
+      "src": "../../node_modules/vue/dist/vue.runtime.esm-bundler.js",
+      "file": "vue.js",
+      "fileHash": "3e57c2c8",
+      "needsInterop": false
+    },
+    "pinia": {
+      "src": "../../../node_modules/pinia/dist/pinia.mjs",
+      "file": "pinia.js",
+      "fileHash": "2af0bebc",
+      "needsInterop": false
+    },
+    "mitt": {
+      "src": "../../../node_modules/mitt/dist/mitt.mjs",
+      "file": "mitt.js",
+      "fileHash": "85b08400",
+      "needsInterop": false
+    },
+    "frappe-ui": {
+      "src": "../../node_modules/frappe-ui/src/index.ts",
+      "file": "frappe-ui.js",
+      "fileHash": "48a19020",
+      "needsInterop": false
+    },
+    "vue-router": {
+      "src": "../../node_modules/vue-router/dist/vue-router.mjs",
+      "file": "vue-router.js",
+      "fileHash": "1b094073",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-GY7FY3NU": {
+      "file": "chunk-GY7FY3NU.js"
+    },
+    "chunk-UVKRO5ER": {
+      "file": "chunk-UVKRO5ER.js"
+    }
+  }
+}

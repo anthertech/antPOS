@@ -23,8 +23,16 @@
                 :disabled="false"
                 v-model="createSalesOrder"
             />
+
+            <Badge
+                :label="'Not Saved'"
+                variant="subtle"
+                theme="orange"
+                 size="lg"
+                />
           </div>
           <div>
+            
             <Badge
               :variant="'subtle'"
               :ref_for="true"

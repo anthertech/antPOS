@@ -5,7 +5,12 @@
         </template>
 
         <template #body-content>
-            <table class="w-full mt-4">
+            <!-- Spinner at the top -->
+            <div class="w-full flex justify-center mb-2" v-if="mode.isLoading">
+                <Spinner class="w-5 h-5" />
+            </div>
+
+            <table class="w-full mt-2">
                 <thead>
                     <tr class="text-left text-sm border-b">
                         <th class="pb-2 w-48">Mode of Payment</th>
@@ -68,14 +73,15 @@
                     </tr>
                 </tfoot>
             </table>
+
             <div class="flex justify-end gap-2 mt-4">
                 <Button variant="ghost" @click="handleClose">Cancel</Button>
                 <Button variant="solid" @click="handleSubmit.fetch({ action: 'Submit' })">Submit</Button>
             </div>
-            <Spinner class="w-4" v-if="mode.isLoading" />
         </template>
     </Dialog>
 </template>
+
 
 <script setup>
     import { ref, inject, defineEmits, watch } from 'vue';
