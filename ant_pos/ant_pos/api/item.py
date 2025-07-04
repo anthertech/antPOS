@@ -231,6 +231,7 @@ def items(pos_profile, search_value, customer):
                 selected_batch_no, item_code, pos_profile_doc.warehouse
             ))
     item_details["serial_no"] = selected_serial_no if has_serial_no else None
+    item_details["serial_no_options"] = [s["serial_no"] for s in serial_nos] if has_serial_no else []
     return item_details
 
 @frappe.whitelist()

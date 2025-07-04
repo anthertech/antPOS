@@ -325,8 +325,11 @@ watch(
             let find = validateitems();
             if (!find && props.items.has_serial_no) {
                 props.items.selected_serial_no = [];
-            props.items.serial_no_options = props.items.all_serial_no.filter((serial_no) => serial_no.batch_no === newBatchNo)
-                .map((serial_no) => serial_no.serial_no);
+                props.items.serial_no_options = props.items.serial_no_options.filter((serial_no) => serial_no.batch_no == newBatchNo)
+                    .map((serial_no) => ({
+                        label: serial_no.serial_no,
+                        value: serial_no.serial_no,
+                    }));
                 add_serial_no();
             }
 
@@ -390,7 +393,7 @@ const validateQty = () => {
 };
 const add_serial_no = () =>{
 
-    props.items.serial_no = props.items.selected_serial_no.map(sn => sn).join('\n');
+    props.items.serial_no = props.items.selected_serial_no.map(sn => sn.value).join('\n');
     // props.items.qty = props.items.selected_serial_no.length;
     
 
