@@ -2,10 +2,23 @@
     <Dialog :options="{size :'6xl'}"  v-model="dialogVisible" class="my-custom-dialog-height"  >
         <template #body-main >
             <div class="flex h-[calc(100vh_-_8rem)]">
+                
                 <div class="flex flex-col p-2 w-52 shrink-0 bg-surface-gray-2">
                     <h1 class="px-2 pt-2 mb-3 text-lg font-semibold text-ink-gray-9">
                         {{ 'Settings' }}
                     </h1>
+                    <ul class="flex flex-col gap-2 mt-3 hover:cursor-pointer">
+                        <li class=" flex items-center  gap-2 hover:bg-surface-gray-3 px-2 py-1 rounded-md">
+                            <FeatherIcon
+                                name="settings"
+                                class="w-4 h-4 text-ink-gray-9 "
+                            />
+                            <h1 class=""
+                            >
+                                {{ 'General' }}
+                            </h1>
+                        </li>
+                    </ul>
                 </div>
                 <div class="flex h-full flex-col gap-8 p-8 text-ink-gray-9">
                     <h2 class="flex gap-2 text-xl font-semibold leading-none h-5">
@@ -91,9 +104,19 @@
                         :label="'Update'"
                         @click="updateSettings"
                         />
+                        
                         <ErrorMessage :message="settings.save.error" />
                     </div>
                     </div>
+                <div>
+                    <Button
+                        variant="ghost"
+                        class="absolute top-4 right-4"
+                        @click="dialogVisible = false"
+                    >
+                        <FeatherIcon name="x" class="w-5 h-5 text-ink-gray-9" />
+                    </Button>
+                </div>
             </div>
         </template>
     </Dialog>

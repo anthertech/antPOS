@@ -87,8 +87,8 @@
     });
     const confirmShift = async () => {
       const submissionData = {
-          company: autocompleteValue.value || null,
-          pos_profile: autocompleteProfileValue.value || null,
+          company: autocompleteValue.value.value || null,
+          pos_profile: autocompleteProfileValue.value.value || null,
           status: 'Open',
           opening_balance_details: mode_of_payment.value.map((mode) => ({
           mode_of_payment: mode,
@@ -100,6 +100,8 @@
           await submit.submit({ values: submissionData });
           closeDialog();
       } catch (error) {
+          errorMessage.value = 'Failed to submit data. Please try again.';
+          console.error('Submission Error:', error);
       } finally {
       }
     };
@@ -107,17 +109,15 @@
 
     const getModeOfPayment = () => {
       if (getProfileOptions()) {
-        
-          const profiles = options.profile[autocompleteValue.value];
-          const profile = profiles.find((p) => p.name === autocompleteProfileValue.value);
+          const profiles = options.profile[autocompleteValue.value.value];
+          const profile = profiles.find((p) => p.name === autocompleteProfileValue.value.value);
           return profile ? profile.modes_of_payment : [];
       }
       return [];
     };
 
     const getProfileOptions = () => {
-      
-      const profile = options.profile[autocompleteValue.value];
+      const profile = options.profile[autocompleteValue.value.value];
       return profile ? profile.map((item) => item.name) : [];
     };
 
@@ -151,13 +151,8 @@
         }
       },
     });
-    watch(autocompleteValue, ( newVal , oldVal ) => {
-      getProfileOptions()
-    });
     watch(autocompleteProfileValue, (newVal, oldVal) => {
-      
-      if (newVal !== oldVal) {
-        
+      if (newVal.value !== oldVal.value) {
         mode_of_payment.value = getModeOfPayment();
       }
     });
