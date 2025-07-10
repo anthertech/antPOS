@@ -74,7 +74,7 @@ const searchResource = createResource({
         if (data.serial_no) {
             data.selected_serial_no = [data.serial_no];
         }
-        if (!addItemIfExists(data)) {
+        if (!addItemIfExists(data)) {            
             addItemsResource.fetch({ search_value: JSON.stringify(data) });
         }
     },
@@ -181,20 +181,21 @@ const addItemIfExists = (data) => {
     let found = false;
     if (!base.pos_profile.custom_new_items_on_new_line) {
         base.items.forEach((element, index) => {
+            
             if (!element.is_return && data.item_code === element.item_code &&
-                ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
-                    found = true;
+            ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
+                found = true;
                 
-                if (data.has_serial_no && data.all_serial_no && data.selected_serial_no && data.selected_serial_no.length > 0) {
+                if (data.has_serial_no && data.selected_serial_no && data.selected_serial_no.length > 0) {
 
-                    for (let serial of data.selected_serial_no) {
+                    for (let serial of data.selected_serial_no) {                        
                         let selected = element.selected_serial_no.map(serial=>serial.value)
                         if (selected.includes(serial)) {
                             showToast('warning', 'Serial-no Already added')
                             return found;
                         }
                     }
-                    element.selected_serial_no.push({label:data.serial_no,value:data.serial_no})
+                    element.selected_serial_no.push({label:data.serial_no,value:data.serial_no})                    
                 }
                 if (element.serial_no  && !data.serial_no) {
                     showToast('warning', 'Batch already entered')
@@ -218,6 +219,7 @@ const runDocMethod = createResource({
     url: 'ant_pos.ant_pos.api.sales_invoice.calculate_invoice_item_taxes',
     method: 'POST',
     auto: false,
+    debounce: 500,
     makeParams(params) {
         return {
             ...params
@@ -242,7 +244,6 @@ const runDocMethod = createResource({
                 } else {
                     item.selected_batch_no = null;
                 }
-                // item.custom_id = Date.now() + Math.random();
                 
             });
             
@@ -251,7 +252,7 @@ const runDocMethod = createResource({
     },
 
     onSuccess(data){
-        base.invoice=data;        
+        base.invoice=data;
         data.items.forEach(n => {
           const e = base.items.find(b => b.custom_id === n.custom_id);
             if (!e) return;
@@ -287,8 +288,8 @@ const calculateAmountTotal = async () => {
                 items: base.items,
                 customer: base.customer.name,
                 update_stock: 1,
-                additional_discount_percentage: Number(base.additional_discount_percentage),
-                discount_amount: Number(base.discount_amount),
+                additional_discount_percentage: base.additional_discount_percentage ? Number(base.additional_discount_percentage) : 0 ,
+                discount_amount: base.discount_amount ? Number(base.discount_amount) : 0,
                 base_total: base.invoice.base_total || 0,
                 custom_ant_opening: base.Ant_Opening_Shift.name,
                 apply_discount_on: base.pos_profile.apply_discount_on,
@@ -314,12 +315,6 @@ emitter.on('calctotal', () => {
     calculateAmountTotal();
 });
 
-// calculateQtyTotal
-// watch(() => base.items, () => {
-//     if (!Array.isArray(base.items)) {
-//         base.items = [];
-//     }
-//     calculateAmountTotal();
-// });
+
 
 </script> 

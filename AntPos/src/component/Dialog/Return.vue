@@ -87,7 +87,6 @@ const setPageLength = (size) => {
     }
 };
 const submitInvoice = () => {
-    // base.items=[]
     salesInvoice.fetch({ name: selectedInvoice.value });
 };
 let runDoCMethod = createResource({
@@ -105,6 +104,9 @@ let runDoCMethod = createResource({
                         value: serial
                     }));
                     
+                }
+                if (item.serial_no){
+                    item._serial=item.serial_no.trim().split('\n');
                 }
                 if (item.batch_no) {
                     
