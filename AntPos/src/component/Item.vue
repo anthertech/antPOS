@@ -227,7 +227,7 @@
                                 size="sm"
                                 variant="subtle"
                                 placeholder="Batch No"
-                                :disabled="false"
+                                :disabled="base.is_return"
                                 label="Batch No"
                                 v-model="items.selected_batch_no"
                                 :hideSearch="true"
@@ -275,6 +275,7 @@ const get_batch = createResource({
         doctype: 'Serial No',
         fields: ['name as serial_no', 'batch_no' ],
         filters: {
+            
             warehouse: base.pos_profile.warehouse,
             item_code: props.items.item_code,
         },
@@ -291,13 +292,15 @@ const get_batch = createResource({
 const get_serial_no_options = () => {
     
     const { has_batch_no, batch_no } = props.items;
-
-    let serials = get_serial_no.data || [];
+    if (base.is_return){
+        return props.items._serial.map(serial_no => ({
+        label: serial_no,
+        value: serial_no,
+    }));
+    }
+    let serials =  get_serial_no.data || [];
     
-    const batchValue = typeof batch_no === 'object' ? batch_no?.value : batch_no;
-    
-    if (props.items.batch_no != null) {
-        
+    if (props.items.batch_no != null && !base.is_return) {
         serials = serials.filter(serial_no => serial_no.batch_no === props.items.batch_no);
     }
     
@@ -308,6 +311,13 @@ const get_serial_no_options = () => {
     }));
 };
     const getbatchNo =  () => {
+    if (base.is_return) {
+        return [{
+            label: props.items.batch_no,
+            value: props.items.batch_no,
+        }];
+    }
+    
     return get_batch.data.map((batch_no) => ({
         label: batch_no.batch_id,
         value: batch_no.batch_id,
@@ -323,7 +333,8 @@ watch(
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
             
             let find = validateitems();
-            if (!find && props.items.has_serial_no) {
+            const option =get_serial_no_options() 
+            if (!find && option.length < 0) {
                 props.items.selected_serial_no = [];
                 props.items.serial_no_options = props.items.serial_no_options.filter((serial_no) => serial_no.batch_no == newBatchNo)
                     .map((serial_no) => ({
@@ -380,23 +391,17 @@ const calculateAmountTotal = () => {
 
 const validateQty = () => {
     if (props.items.serial_no_options) {
-        const availableSerials = props.items.serial_no_options.map(option => option.value);
-            if (props.items.has_serial_no && props.items.qty > availableSerials.length) {
+        const options = get_serial_no_options()
+            if (options.length > 0 && props.items.qty > options.length) {
                 showToast('warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
-                props.items.qty = base.is_return ?  -Math.abs(availableSerials.length) : availableSerials.length ;
+                props.items.qty = base.is_return ?  -Math.abs(options.length) : options.length;
             }
-            if (props.items.qty!== props.items.selected_serial_no.length) {
-                props.items.qty = props.items.selected_serial_no.length;
-            }
+            
     }
     return ;
 };
-const add_serial_no = () =>{
-
+const add_serial_no = () =>{  
     props.items.serial_no = props.items.selected_serial_no.map(sn => sn.value).join('\n');
-    // props.items.qty = props.items.selected_serial_no.length;
-    
-
 }
 
 
@@ -404,11 +409,9 @@ const add_serial_no = () =>{
 watch(
     () => props.items.selected_serial_no,
     (newSerial, oldSerial) => {
-        
-        
         if (((props.items.serial_no_options && newSerial !== oldSerial) || !oldSerial)) {
             add_serial_no()
-            validateQty(newSerial.length);
+            adjustQtyNumbers(props.items.qty)
         }
     }
 );
@@ -424,41 +427,54 @@ watch(
     () => props.items.qty,
     (newValue, oldValue)  =>  {
         if (newValue !== oldValue)  {
-            adjustSerialNumbers(newValue);
+            const option= get_serial_no_options()
+            if (option.length > 0){
+                adjustSerialNumbers(newValue);
+                validateQty()
+                add_serial_no()
+            }
             emitter.emit('calctotal');          
 
-    }
-
+        }
     }
 );
 
+const adjustQtyNumbers = () =>{
+    const options = get_serial_no_options();    
+    if (options.length < 0 ) return;
+    
+    const qty = props.items.qty
+    const serialLength = props.items.selected_serial_no.length
+    if (qty!=serialLength){
+        
+        props.items.qty = base.is_return ?  -Math.abs(serialLength) : serialLength;
+    }    
+}
+
+
 
 const adjustSerialNumbers = (newQty) => {
-    
-    if (!props.items.has_serial_no || !props.items.serial_no_options ) return;
-    
-    
+    const options = get_serial_no_options();
+    if (options.length < 0 ) return;
     const selected = props.items.selected_serial_no;
     
-    const options = props.items.serial_no_options;
-    const selectedLength = selected.length;
+    const selectedLength = selected.length ;
+        
+    if (Math.abs(selectedLength) === Math.abs(newQty))return; 
     
-    
-    
-    if (selectedLength === newQty) return;
-
     // If reducing quantity
     if (Math.abs(selectedLength) > Math.abs(newQty)) {
+        
         props.items.selected_serial_no = selected.slice(0, newQty);
         
-
+                
     }
     // If increasing quantity
     else if (Math.abs(selectedLength) < Math.abs(newQty)) {
         
-        const selectedValues = new Set(selected.map(sn => sn.value));
+        const selectedValues = new Set(selected.map(sn => sn.value));        
         const needed = newQty - selectedLength;
-
+        
         const additional = [];
         for (let i = 0; i < options.length && additional.length < needed; i++) {
             const opt = options[i];
@@ -466,27 +482,27 @@ const adjustSerialNumbers = (newQty) => {
                 additional.push(opt);
             }
         }
-
-        props.items.selected_serial_no = [...selected, ...additional];
+        
+        props.items.selected_serial_no = JSON.parse(JSON.stringify([...selected, ...additional]));
     }
-
-    // Ensure the qty is aligned with the actual selected_serial_no length
     
-    props.qty = props.items.selected_serial_no.length;
-    
-    // emitter.emit('calctotal');
 
 };
 
-// watch(
-//     () => props.items.discount_percentage,
-//     (newValue, oldValue) => {
-//         if (newValue !== oldValue || !oldValue) {
-//             discountCalculation();
-//         }
-//     }
-// );
-
+watch(
+    () => props.items.discount_percentage,
+    (newValue, oldValue) => {
+        if (newValue !== oldValue || !oldValue) {
+            discountCalculation()
+        }
+    }
+);
+const discountCalculation = () => {
+    props.items.rate = rateCalculation(props.items);
+    props.items.amount = props.items.rate* Math.abs(props.items.qty); 
+    props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty)     
+    emitter.emit('calctotal')
+}
 base.items.forEach((items) => {
     watch(
         () => items,
@@ -531,8 +547,7 @@ const calculateRateTotal = () => {
 };
 
 onMounted( async () => {
-    emitter.emit('calctotal');
-    
+    emitter.emit('calctotal');    
     calculateRateTotal();
     validateQty(props.items.qty);
     adjustSerialNumbers(props.items.selected_serial_no.length);

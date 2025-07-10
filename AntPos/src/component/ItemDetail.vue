@@ -87,7 +87,6 @@
                     :label="`Additional Discount (${base.pos_profile.currency})`"
                     v-model="base.discount_amount"
                     />
-                    <!-- additional_discount_percentage -->
                 <FormControl
                     :type="'number'"
                     :ref_for="true"
@@ -95,8 +94,9 @@
                     variant="subtle"
                     placeholder="0"
                     :disabled="true"
-                    label="Item Discount"
-                    v-model="base.item_discount"
+                    label="Net Total"
+                    :class="''"
+                    v-model="base.invoice.net_total"
                 />
                 <FormControl
                     :type="'number'"
@@ -106,6 +106,7 @@
                     placeholder="0"
                     :disabled="true"
                     label="Total"
+                    :class="''"
                     v-model="base.invoice.grand_total"
                 />
 
@@ -226,6 +227,9 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
                     base_total: base.invoice.base_total && base.invoice.base_total,
                     custom_ant_opening: base.Ant_Opening_Shift.name,
                     apply_discount_on: base.pos_profile.apply_discount_on,
+                    payments:getPayments()
+                    
+                    
                 }),
                 action:params.action,
             };
@@ -265,12 +269,17 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
         },
     });
    
-
+const getPayments = ()=> {
+    const payments = base.invoice.payments.map(p => ({
+        ...p,
+        amount: base.is_return ? -Math.abs(p.amount) : p.amount
+    }));
+    return payments;
+}
     watch(
         () => base.discount_amount,
         (newVal,oldVal) => {
-            if ((!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) && newVal ) {   
-                             
+            if ((!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) && newVal ) {                   
                 emitter.emit('calctotal');
             }
         },
@@ -279,8 +288,7 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
     watch(
         () => base.additional_discount_percentage,
         (newVal,oldVal) => {
-            if ((base.pos_profile.custom_use_percentage_discount && newVal !== oldVal)&& newVal) {
-                
+            if ((base.pos_profile.custom_use_percentage_discount && newVal !== oldVal)&& newVal) {                
                 emitter.emit('calctotal');
             }
         },

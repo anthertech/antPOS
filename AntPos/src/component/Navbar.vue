@@ -23,13 +23,15 @@
                 :disabled="false"
                 v-model="createSalesOrder"
             />
-
             <Badge
-                :label="'Not Saved'"
-                variant="subtle"
-                theme="orange"
-                 size="lg"
-                />
+              v-if="badgeComponent"
+              :label="badgeComponent.label"
+              variant="subtle"
+              :class="badgeComponent.class"
+              :theme="badgeComponent.theme"
+              size="lg"
+            />
+
           </div>
           <div>
             
@@ -54,7 +56,6 @@
     import { Switch, Badge, FeatherIcon } from 'frappe-ui';
     import emitter from '../utils/emitter';
     const base = inject('base');
-    // Computed property for v-model
     const createSalesOrder = computed({
     get() {
         return base?.pos_profile?.custom_set_sales_order === 1;
@@ -64,6 +65,27 @@
         base.pos_profile.custom_set_sales_order = value ? 1 : 0;
         }
     },
+    });
+    const badgeComponent = computed(() => {
+      if (base?.is_return) {
+        return {
+          label: 'Return',
+          theme: 'yellow',
+          class:"'text-xs font-semibold text-yellow-300'"
+        };
+      } else if (base?.invoice?.docstatus) {
+        return {
+          label: 'Draft',
+          theme: 'red',
+          class:"'text-xs font-semibold'"
+        };
+      } else {
+        return {
+          label: 'Not Saved',
+          theme: 'red',
+          class:"'text-xs font-semibold'"
+        };
+      }
     });
   </script>
   

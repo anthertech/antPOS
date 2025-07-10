@@ -340,6 +340,14 @@ const saveAndSubmit = async (doc) => {
 }
 
 const submitInvoice = async (action = null) => {
+    if(!base.pos_profile.custom_allow_credit){
+        if (base.invoice.paid_amount<base.invoice.rounded_total)return showToast('warning', 'Credit Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
+         
+    }
+
+    if(!base.pos_profile.custom_allow_partial_payments){
+        if ((base.invoice.paid_amount - base.invoice.rounded_total)>0)return showToast('warning', 'Partial payment  Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
+    }
     let invoice = { ...base.invoice };
 
     if (await validatePaymentBeforeSave(base)) {
@@ -438,6 +446,7 @@ let advance = createResource({
 
 let makepayment = createResource({
     url: 'frappe.desk.form.save.savedocs',
+    
     makeParams(params) {
         return {
             doc: JSON.stringify({
