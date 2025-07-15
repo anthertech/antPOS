@@ -270,10 +270,13 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
     });
    
 const getPayments = ()=> {
-    const payments = base.invoice.payments.map(p => ({
-        ...p,
-        amount: base.is_return ? -Math.abs(p.amount) : p.amount
-    }));
+    // const payments = base.invoice.payments.map(p => ({
+    //     ...p,
+    //     amount: base.is_return ? -Math.abs(p.amount) : p.amount,
+    //     base_amount: base.is_return ? -Math.abs(p.base_amount) : p.base_amount
+    // }));
+    console.log(payments,"&&&&&&&&&&&&&&&&&&&&&&&&7");
+    
     return payments;
 }
     watch(

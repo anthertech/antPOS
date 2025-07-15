@@ -123,7 +123,7 @@ def items(pos_profile, search_value, customer):
     item_code = item.get("item_code")
     has_serial_no = item.get("has_serial_no")
     has_batch_no = item.get("has_batch_no")
-
+    print(search_values.get("batch_no"),"$%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
     selected_batch_no = search_values.get("batch_no")
     selected_serial_no = search_values.get("serial_no")
 
@@ -232,6 +232,7 @@ def items(pos_profile, search_value, customer):
             ))
     item_details["serial_no"] = selected_serial_no if has_serial_no else None
     item_details["serial_no_options"] = [s["serial_no"] for s in serial_nos] if has_serial_no else []
+    print(item_details,"^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
     return item_details
 
 @frappe.whitelist()
@@ -240,5 +241,4 @@ def get_batches_list(item_code, warehouse):
     Fetches batch numbers for a given item code and warehouse.
     Returns a list of batch numbers with their expiry dates and stock quantities.
     """
-    value=get_batches(item_code, warehouse)
     return get_batches(item_code, warehouse)
