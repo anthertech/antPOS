@@ -70,6 +70,7 @@
                     :disabled="!base.pos_profile.custom_edit_rate"
                     label="Rate"
                     placeholder="0"
+                    :value="Number(items.rate).toFixed(2)"
                     v-model="items.rate"
                 />
             </div>
@@ -82,6 +83,7 @@
                     :disabled="true"
                     label="Price List Rate"
                     placeholder="0"
+                    :value="Number(items.price_list_rate).toFixed(2)"
                     v-model="items.price_list_rate"
                 />
             </div>
@@ -94,6 +96,7 @@
                     :disabled="true"
                     label="Net Rate"
                     placeholder="0"
+                    :value="Number(items.net_rate).toFixed(2)"
                     v-model="items.net_rate"
                 />
             </div>
@@ -118,6 +121,7 @@
                     :disabled="true"
                     label="Discount Amount"
                     placeholder="0"
+                    :value="Number(items.discount_amount).toFixed(2)"
                     v-model="items.discount_amount"
                 />
             </div>

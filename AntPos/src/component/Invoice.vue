@@ -10,6 +10,7 @@
                     placeholder="Placeholder"
                     :disabled="true"
                     label="Amount Paid"
+                    :value="Number(base.invoice.paid_amount).toFixed(2)"
                     v-model="base.invoice.paid_amount" 
                 />
                 <FormControl
@@ -20,6 +21,8 @@
                     placeholder="Placeholder"
                     :disabled="true"
                     label="To Be Paid"
+                    :value="Number(base.invoice.rounded_total).toFixed(2)"
+
                     v-model="base.invoice.rounded_total"
                 />
                 <FormControl
@@ -31,7 +34,7 @@
                     placeholder="Placeholder"
                     :disabled="true"
                     label="Paid Change"
-                    :value="base.invoice.paid_amount - base.invoice.rounded_total"
+                    :value="Number(base.invoice.paid_amount - base.invoice.rounded_total).toFixed(2)"
                 />
             </div>
             <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in base?.pos_profile?.payments" :key="index">
@@ -40,9 +43,10 @@
                     type="number"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="false"
                     :label="mode.mode_of_payment"
+                    :value="Number(base.invoice.payments[index].amount).toFixed(2)"
                     v-model="base.invoice.payments[index].amount"
                     @change="changePaymentAmount($event)"
                 />
@@ -65,9 +69,10 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Net Total"
+                    :value="Number(base.invoice.net_total).toFixed(2)"
                     v-model="base.invoice.net_total"
                 />
                 <FormControl
@@ -75,9 +80,10 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Tax and Charges"
+                    :value="Number(base.invoice.total_taxes_and_charges).toFixed(2)"
                     v-model="base.invoice.total_taxes_and_charges"
                 />
                 <FormControl
@@ -85,9 +91,10 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Total Amount"
+                    :value="Number(base.invoice.total).toFixed(2)"
                     v-model="base.invoice.total"
                 />
                 <FormControl
@@ -95,9 +102,10 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Discount Amount"
+                    :value="Number(base.invoice.discount_amount).toFixed(2)"
                     v-model="base.invoice.discount_amount"
                 />
                 <FormControl
@@ -105,9 +113,10 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Grand Total"
+                    :value="Number(base.invoice.grand_total).toFixed(2)"
                     v-model="base.invoice.grand_total"
                 />
                 <FormControl
@@ -115,9 +124,10 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Rounded Total"
+                    :value="Number(base.invoice.rounded_total).toFixed(2)"
                     v-model="base.invoice.rounded_total"
                 />
             </div>
@@ -128,7 +138,7 @@
                         :ref_for="true"
                         size="sm"
                         variant="subtle"
-                        placeholder="0"
+                        placeholder="0.00"
                         :disabled="true"
                         label="Credit Origin"
                         v-model="credit.reference_name"
@@ -138,9 +148,10 @@
                         :ref_for="true"
                         size="sm"
                         variant="subtle"
-                        placeholder="0"
+                        placeholder="0.00"
                         :disabled="true"
                         label="Total Credit"
+                        :value="Number(credit.advance_amount).toFixed(2)"
                         v-model="credit.advance_amount"
                     />
                     <FormControl
@@ -148,9 +159,10 @@
                         :ref_for="true"
                         size="sm"
                         variant="subtle"
-                        placeholder="0"
+                        placeholder="0.00"
                         :disabled="false"
                         label="Credit To Redeem"
+                        :value="Number(credit.allocated_amount).toFixed(2)"
                         v-model="credit.allocated_amount"
                         @change="changePaymentAmount($event)"
                     />

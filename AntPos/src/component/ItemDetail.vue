@@ -84,6 +84,7 @@
                     variant="subtle"
                     placeholder="0"
                     :disabled="false"
+                    :value="Number(base.discount_amount).toFixed(2)"
                     :label="`Additional Discount (${base.pos_profile.currency})`"
                     v-model="base.discount_amount"
                     />
@@ -92,10 +93,11 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Net Total"
                     :class="''"
+                    :value="Number(base.invoice.net_total).toFixed(2)"
                     v-model="base.invoice.net_total"
                 />
                 <FormControl
@@ -103,10 +105,11 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Total"
                     :class="''"
+                    :value="Number(base.invoice.grand_total).toFixed(2)"
                     v-model="base.invoice.grand_total"
                 />
 
