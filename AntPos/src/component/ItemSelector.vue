@@ -139,12 +139,12 @@ const addItemsResource = createResource({
             const batch = data.batch_nos.find(b => b.batch_no ===data.selected_batch_no);
             qty = batch ? batch.stock_qty : 0;
             date = batch ? batch.expiry_date : null;
+            data.selected_batch_no = {
+                label: data.batch_no,
+                value: data.batch_no
+            }
             
         }
-        data.selected_batch_no = {
-            label: data.batch_no,
-            value: data.batch_no
-        };
         data.custom_id = Date.now() + Math.random();
         data.stock_qty = qty;
         data.expiry_date = date;

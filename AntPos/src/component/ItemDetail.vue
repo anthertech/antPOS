@@ -84,6 +84,7 @@
                     variant="subtle"
                     placeholder="0"
                     :disabled="false"
+                    :value="Number(base.discount_amount).toFixed(2)"
                     :label="`Additional Discount (${base.pos_profile.currency})`"
                     v-model="base.discount_amount"
                     />
@@ -92,10 +93,11 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Net Total"
                     :class="''"
+                    :value="Number(base.invoice.net_total).toFixed(2)"
                     v-model="base.invoice.net_total"
                 />
                 <FormControl
@@ -103,10 +105,11 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Total"
                     :class="''"
+                    :value="Number(base.invoice.grand_total).toFixed(2)"
                     v-model="base.invoice.grand_total"
                 />
 
@@ -269,13 +272,20 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
         },
     });
    
-const getPayments = ()=> {
-    const payments = base.invoice.payments.map(p => ({
-        ...p,
-        amount: base.is_return ? -Math.abs(p.amount) : p.amount
-    }));
+const getPayments = () => {
+    const total = base.is_return ? -Math.abs(base.invoice.grand_total) : base.invoice.grand_total;
+
+    const payments = base.invoice.payments.map(p => {
+        const amount = p.default ? total : 0;
+        return {
+            ...p,
+            amount,
+            base_amount: amount
+        };
+    });
+
     return payments;
-}
+};
     watch(
         () => base.discount_amount,
         (newVal,oldVal) => {
