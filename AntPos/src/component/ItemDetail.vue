@@ -269,16 +269,20 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
         },
     });
    
-const getPayments = ()=> {
-    // const payments = base.invoice.payments.map(p => ({
-    //     ...p,
-    //     amount: base.is_return ? -Math.abs(p.amount) : p.amount,
-    //     base_amount: base.is_return ? -Math.abs(p.base_amount) : p.base_amount
-    // }));
-    console.log(payments,"&&&&&&&&&&&&&&&&&&&&&&&&7");
-    
+const getPayments = () => {
+    const total = base.is_return ? -Math.abs(base.invoice.grand_total) : base.invoice.grand_total;
+
+    const payments = base.invoice.payments.map(p => {
+        const amount = p.default ? total : 0;
+        return {
+            ...p,
+            amount,
+            base_amount: amount
+        };
+    });
+
     return payments;
-}
+};
     watch(
         () => base.discount_amount,
         (newVal,oldVal) => {

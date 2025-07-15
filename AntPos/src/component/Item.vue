@@ -290,15 +290,16 @@ const get_batch = createResource({
         },
     });
 const get_serial_no_options = () => {
-    
+    let serials = []
     const { has_batch_no, batch_no } = props.items;
     if (base.is_return){
-        return props.items._serial.map(serial_no => ({
+        serials=props.items._serial || []
+        return serials.map(serial_no => ({
         label: serial_no,
         value: serial_no,
     }));
     }
-    let serials =  get_serial_no.data || [];
+    serials =  get_serial_no.data || [];
     
     if (props.items.batch_no != null && !base.is_return) {
         serials = serials.filter(serial_no => serial_no.batch_no === props.items.batch_no);
@@ -550,8 +551,8 @@ onMounted( async () => {
     emitter.emit('calctotal');    
     calculateRateTotal();
     validateQty(props.items.qty);
-    adjustSerialNumbers(props.items.selected_serial_no.length);
-    add_serial_no();
+    if(props.items.selected_serial_no) adjustSerialNumbers(props.items.selected_serial_no.length); 
+     if(props.items.selected_serial_no) add_serial_no();
     await get_batch.fetch({
         item_code: props.items.item_code,
         warehouse: base.pos_profile.warehouse,
