@@ -354,6 +354,8 @@ watch(
             props.items.expiry_date = batch ? batch.expiry_date : null;
 
             props.items.batch_no = typeof newBatchNo === 'object' ? newBatchNo?.value : newBatchNo;
+            emitter.emit('calctotal')
+
             
             
         }
