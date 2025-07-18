@@ -389,7 +389,7 @@ const submitInvoice = async (action = null) => {
               doc: base.invoice
             }
         
-        saveAndSubmit(doc)
+        await saveAndSubmit(doc)
 
         remove_invoice();
         createPayments(invoice);

@@ -339,8 +339,12 @@ watch(
             
             let find = validateitems();
             const option =get_serial_no_options() 
-            if (!find && option.length < 0) {
+            console.log(find,"*****************");
+            
+            if (!find && option.length > 0) {
+                
                 props.items.selected_serial_no = [];
+                console.log(props.items,"&^^^^^^^^^^^^^^^^^^^");
                 props.items.serial_no_options = props.items.serial_no_options.filter((serial_no) => serial_no.batch_no == newBatchNo)
                     .map((serial_no) => ({
                         label: serial_no.serial_no,
