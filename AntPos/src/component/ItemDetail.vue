@@ -60,7 +60,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="true"
                     label="Total Qty"
                     v-model="base.invoice.total_qty"
@@ -71,7 +71,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="false"
                     label="Additional Discount (%)"
                     v-model="base.additional_discount_percentage"
@@ -82,11 +82,11 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    placeholder="0"
+                    placeholder="0.00"
                     :disabled="false"
-                    :value="Number(base.discount_amount).toFixed(2)"
                     :label="`Additional Discount (${base.pos_profile.currency})`"
                     v-model="base.discount_amount"
+                    :value="Number(base.discount_amount).toFixed(2)"
                     />
                 <FormControl
                     :type="'number'"
@@ -185,7 +185,7 @@
 <script setup>
 
 import Customer from './Customer.vue';
-import { Button, FeatherIcon , FormControl , createResource, createDocumentResource  } from 'frappe-ui';
+import { Button, FeatherIcon , FormControl , createResource,} from 'frappe-ui';
     import { inject , watch,ref, onMounted } from 'vue';
     import { createToast } from '../utils';
     import Item from './Item.vue';
@@ -225,8 +225,8 @@ import { Button, FeatherIcon , FormControl , createResource, createDocumentResou
                     items: base.items,
                     customer: base.customer.name,
                     update_stock: 1,
-                    additional_discount_percentage: Number(base.additional_discount_percentage), 
-                    discount_amount: Number(base.discount_amount),
+                    additional_discount_percentage: Number(base.additional_discount_percentage) || 0,
+                    discount_amount: Number(base.discount_amount) || 0,
                     base_total: base.invoice.base_total && base.invoice.base_total,
                     custom_ant_opening: base.Ant_Opening_Shift.name,
                     apply_discount_on: base.pos_profile.apply_discount_on,
@@ -289,7 +289,7 @@ const getPayments = () => {
     watch(
         () => base.discount_amount,
         (newVal,oldVal) => {
-            if ((!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) && newVal ) {                   
+            if (!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) {                   
                 emitter.emit('calctotal');
             }
         },
@@ -298,7 +298,7 @@ const getPayments = () => {
     watch(
         () => base.additional_discount_percentage,
         (newVal,oldVal) => {
-            if ((base.pos_profile.custom_use_percentage_discount && newVal !== oldVal)&& newVal) {                
+            if (base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) {                
                 emitter.emit('calctotal');
             }
         },
@@ -308,13 +308,7 @@ const getPayments = () => {
         base.invoice = {};
         base.items = [];
         base.customer = {};
-        base.discount_amount = 0;
+        base.discount_amount = 0.00;
     };
 
-    onMounted(() => {
-        base.additional_discount_percentage = 0;
-        base.discount_amount = 0;   
-        base.item_discount = 0;
-
-    });
 </script>

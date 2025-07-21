@@ -295,17 +295,6 @@ const calculateAmountTotal = async () => {
                 apply_discount_on: base.pos_profile.apply_discount_on,
             })});
 }
-const calculateQtyTotal = () => {
-    let total = 0;
-
-    base.items.forEach((element) => {
-        total += parseFloat(element.qty) || 0;
-    });
-
-
-    base.total_qty = total.toFixed(2);
-};
-
 
 emitter.on('featchsearchResource'),(params)=>{
     searchResource.fetch(params)
