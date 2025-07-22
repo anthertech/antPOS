@@ -48,9 +48,22 @@
     
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-6 h-fit">
-                                <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
+                                <!-- <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
                                     <p>Payment Total</p>
-                                </div>
+                                </div> -->
+                                    <TabButtons
+                                        :buttons="[
+                                        {
+                                            label: 'Credit',
+                                            value: 'credit',
+                                        },
+                                        {
+                                            label: 'Advanced',
+                                            value: 'advanced',
+                                        },
+                                        ]"
+                                        v-model="currentTab"
+                                    />
                                 <FormControl
                                 :type="'number'"
                                 :ref_for="true"
@@ -105,17 +118,17 @@
                         </div>
                         <div class="text-right">
                             <Button
-                                class="w-full h-full"
+                                class="w-full p-2 h-full"
                                 :variant="'solid'"
                                 theme="gray"
                                 size="lg"
                                 label="Button"
                                 :loading="false"
-                                :disabled="!hasSelectedInvoice"
                                 @click="createpayment"
-                            >
+                                :disabled="!hasSelectedInvoice"
+                                >
                                 Submit
-                            
+                                
                             </Button>
                         </div>
                     </div>
@@ -127,7 +140,7 @@
 
 <script setup>
 
-import { createListResource, TextInput, FormControl, FeatherIcon, createResource } from 'frappe-ui';
+import { createListResource, TextInput, FormControl, FeatherIcon, createResource,TabButtons } from 'frappe-ui';
 import { ref, inject, computed, watch, onBeforeMount } from 'vue';
 import Customer from './Customer.vue';
 import { createToast } from '../utils';
@@ -135,6 +148,7 @@ import { createToast } from '../utils';
 
 let base = inject('base');
 const searchQuery = ref("");
+const currentTab = ref('credit');
 const customerName = ref(base.customer.name);
 const selectAll = ref(false);
     const modes = ref([]);
@@ -147,7 +161,6 @@ const selectAll = ref(false);
             outstanding_amount: [">", 0],
             docstatus: 1, 
             is_return: 0, 
-            set_warehouse: base.pos_profile.warehouse, 
             customer: customerName.value
         },
         orderBy: 'creation asc',
@@ -174,37 +187,18 @@ const selectAll = ref(false);
         );
     });
     const hasSelectedInvoice = computed(() => {
-    return invoices.data?.some(inv => inv.selected);
+        if (currentTab.value === 'credit') return invoices.data?.some(inv => inv.selected);
+        else if (currentTab.value === 'advanced') return customerName.value && modes.value.some(mode => mode.amount > 0);
+        else return false;
     });
 
 
-    watch(
-        () => base.customer,
-        (newValue, oldValue) => {
-            if (oldValue != null && newValue.name !== oldValue.name) {
-                customerName.value = newValue.name;
-                invoices.filters.customer = newValue.name;
-                invoices.fetch();
-            }
-        },
-        { immediate: true }
-        ,
-    );
-        watch(
-    () => modes.value.map(mode => mode.amount),
-    (newAmounts) => {
-        const total = newAmounts.reduce((sum, val) => sum + Number(val || 0), 0);
-        base.diff =   Number(base.paymentAmount || 0) - total
     
-    },
-    { immediate: true }
-    );
-
     const calculateAmountTotal = () => {
         let total = invoices.data.reduce((sum, invoice) => {
             return invoice.selected ? sum + invoice.grand_total : sum;
-        }, 0);
-
+        }, 0);paymentAmount
+        
         base.paymentAmount = total;
     };
     const toggleAllSelection = (event) => {
@@ -231,14 +225,14 @@ const selectAll = ref(false);
     const addPayments = () => {
         
         base.pos_profile.payments.forEach(element => {
-
+            
                 modes.value.push({
                     "mode_of_payment": element.mode_of_payment,
                     "amount": 0.00,
                     "base_amount": 0.00,
                 })
-        })
-        base.paid_amount=0
+            })
+            base.paid_amount=0
         base.diff=0
 
         
@@ -254,7 +248,7 @@ const selectAll = ref(false);
                 element.amount = 0
             }
         })
-        base.paid_amount =base.paymentAmount 
+        base.paid_amount = base.paymentAmount 
     }
     
     onBeforeMount(() => {
@@ -270,43 +264,73 @@ const selectAll = ref(false);
     };
 
     const createpayment = () => {
-        const sortedModes = [...modes.value].sort((a, b) => b.amount - a.amount);
-        const selectedInvoices = filteredInvoices.value.filter(inv => inv.selected);
-        let i = 0;
+        if (currentTab.value === 'credit'){
+            const sortedModes = [...modes.value].sort((a, b) => b.amount - a.amount);
+            const selectedInvoices = filteredInvoices.value.filter(inv => inv.selected);
+            let i = 0;
 
-        while (i < sortedModes.length) {
-            const currentMode = sortedModes[i];
-            let totalToSpend = currentMode.amount;
-            const invoiceDetails = [];
+            while (i < sortedModes.length) {
+                const currentMode = sortedModes[i];
+                let totalToSpend = currentMode.amount;
+                const invoiceDetails = [];
+                
+                for (let invoice of selectedInvoices) {
+                    if (totalToSpend <= 0) break;
+                    if (invoice.outstanding_amount <= 0) continue;
 
-            for (let invoice of selectedInvoices) {
-                if (totalToSpend <= 0) break;
-                if (invoice.outstanding_amount <= 0) continue;
+                    const allocated = Math.min(totalToSpend, invoice.outstanding_amount);
+                    invoice.outstanding_amount -= allocated;
+                    totalToSpend -= allocated;
+                    
+                    invoiceDetails.push({
+                        reference_doctype: "Sales Invoice",
+                        reference_name: invoice.name,
+                        allocated_amount: allocated,
+                        outstanding_amount: invoice.outstanding_amount
+                    });
+                }
 
-                const allocated = Math.min(totalToSpend, invoice.outstanding_amount);
-                invoice.outstanding_amount -= allocated;
-                totalToSpend -= allocated;
-
-                invoiceDetails.push({
-                    reference_doctype: "Sales Invoice",
-                    reference_name: invoice.name,
-                    allocated_amount: allocated,
-                    outstanding_amount: invoice.outstanding_amount
+                if ((currentMode.amount - totalToSpend) > 0 && invoiceDetails.length > 0) {
+                    save.fetch({
+                        action: 'Submit',
+                        references: invoiceDetails,
+                        mode: currentMode.mode_of_payment,
+                        amount: currentMode.amount - totalToSpend
+                    });
+                }
+                
+                i++;
+            }
+        }
+        else {
+            const totalAmount = modes.value.reduce((sum, mode) => sum + (mode.amount || 0), 0);
+            console.log(modes.value,"ooooooooooooooooooo");
+            
+            if (totalAmount > 0) {
+                modes.value.forEach(mode => {
+                    if(mode.amount>0){
+                        save.fetch({
+                            action: 'Submit',
+                            references: [],
+                            mode: mode.mode_of_payment,
+                            amount: mode.amount || 0
+    
+                        });
+                    }
+                });
+            } else {
+                createToast({
+                    title: 'Error',
+                    message: 'Please enter a valid amount for the payment method.',
+                    icon: 'x-circle',
+                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                    position: 'top-center',
+                    timeout: 5,
                 });
             }
-
-            if ((currentMode.amount - totalToSpend) > 0 && invoiceDetails.length > 0) {
-                save.fetch({
-                    action: 'Submit',
-                    references: invoiceDetails,
-                    mode: currentMode.mode_of_payment,
-                    amount: currentMode.amount - totalToSpend
-                });
-            }
-
-            i++;
         }
     }
+    
 
     
     let save = createResource({
@@ -327,9 +351,9 @@ const selectAll = ref(false);
                         paid_to_account_currency:base.pos_profile.currency,
                         paid_amount: params.amount ,
                         base_paid_amount: params.amount,
-                        received_amount: base.paid_amount,
-                        base_received_amount: base.paid_amount,
-                        references:params.references,
+                        received_amount: params.amount,
+                        base_received_amount: params.amount,
+                        references: params.references.length > 0 ?  params.references : [],
                         reference_no:base.Ant_Opening_Shift.name
                     },
                 ),
@@ -351,7 +375,28 @@ const selectAll = ref(false);
                     });
                     errorHandled = true;
                 }
+            },
+        });
+    watch(
+        () => base.customer,
+        (newValue, oldValue) => {
+            if (oldValue != null && newValue.name !== oldValue.name) {
+                customerName.value = newValue.name;
+                invoices.filters.customer = newValue.name;
+                invoices.fetch();
+            }
         },
-    });
+        { immediate: true }
+        ,
+    );
+    watch(
+        () => modes.value.map(mode => mode.amount),
+        (newAmounts) => {
+            const total = newAmounts.reduce((sum, val) => sum + Number(val || 0), 0);
+            base.diff =   Number(base.paymentAmount || 0) - total;
+
+        },
+        { immediate: true }
+    );
    
 </script>

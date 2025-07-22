@@ -509,7 +509,8 @@ const validatePaymentBeforeSave = async () => {
     let payment = 0
     
     base.invoice.advances.forEach((element) => {
-        advance += Number(element.allocated_amount)
+        element.allocated_amount = Number(element.allocated_amount)
+        advance += element.allocated_amount
     })
 
     base.invoice.payments.forEach((element) => {
