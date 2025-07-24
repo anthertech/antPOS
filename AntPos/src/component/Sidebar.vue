@@ -37,18 +37,18 @@
               aria-hidden="true"
             />
           </button>
-          <but  ton
+          <button
             v-else
-            class="flex h-14 items-center pb-2 mt-1 duration-150 ease-in-out"
+            class="flex h-14 justify-center items-center pb-2 mt-1 duration-150 ease-in-out"
             :class="props.collapse ? 'w-full' : 'w-44 rounded-lg hover:bg-gray-100'"
           >
           <img
               :src="brand.logo || '/assets/ant_pos/antPOS.png'"
               alt="Brand Logo"
               class="object-cover transition-all duration-300 ease-in-out"
-              :class="props.collapse ? 'h-7 w-full' : 'h-10 w-10'"
+              :class="props.collapse ? 'h-full w-full m-0.5' : 'h-10 w-10'"
             />
-        </but>
+        </button>
         </template>
       </Dropdown>
   
@@ -59,7 +59,7 @@
                 { 'bg-gray-100': base.page != 'payments' },
                 props.collapse ? 'justify-center' : ''
             ]"
-            @click="emitter.emit('updatePage', 'invoice')"
+            @click="emitter.emit('updatePage', 'Pos')"
         >
             <FeatherIcon name="monitor" class="w-5 h-5 text-gray-600" />
             <p v-show="!props.collapse" class="text-gray-700 font-medium">POS</p>

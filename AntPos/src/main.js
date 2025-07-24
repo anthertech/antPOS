@@ -41,7 +41,7 @@ const base = reactive({
   invoice:{
     
   },
-  page:'',
+  page:'Pos',
 })
 app.provide('base', base)
 
