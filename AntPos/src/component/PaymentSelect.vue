@@ -13,7 +13,7 @@
                                     <FeatherIcon class="w-4" name="search" />
                                 </template>
                             </TextInput>
-                            <div class="flex justify-evenly text-center bg-black-overlay-800 text-white rounded-md p-3 h-[6%]">
+                            <div class="flex justify-evenly text-center bg-black-overlay-800 text-white rounded-md p-3 h-[6%] items-center">
                                 <div class="w-[4%]">
                                     <input name="name" id="id" type="checkbox" :checked="selectAll"
                                     class="text-black rounded-sm focus:outline-none focus:ring-0 focus:border-transparent" @change="toggleAllSelection" />
@@ -48,10 +48,11 @@
     
                         <div class="flex flex-col gap-4">
                             <div class="flex flex-col gap-6 h-fit">
-                                <!-- <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
+                                <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3">
                                     <p>Payment Total</p>
-                                </div> -->
+                                </div>
                                     <TabButtons
+                                        class=" flex "
                                         :buttons="[
                                         {
                                             label: 'Credit',

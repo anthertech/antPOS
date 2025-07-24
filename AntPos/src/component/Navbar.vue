@@ -11,7 +11,9 @@
             <FeatherIcon name="menu" class="w-4 h-4" />
           </Button>
           <div>
-            breadcrumbs
+            <Breadcrumbs
+              :items="getBreadcrumbs"
+            />
           </div>
         </div>
         <div class="flex float-right gap-4">
@@ -53,7 +55,7 @@
   
   <script setup>
     import { inject, computed } from 'vue';
-    import { Switch, Badge, FeatherIcon } from 'frappe-ui';
+    import { Switch, Badge, FeatherIcon,Breadcrumbs } from 'frappe-ui';
     import emitter from '../utils/emitter';
     const base = inject('base');
     const createSalesOrder = computed({
@@ -87,5 +89,16 @@
         };
       }
     });
-  </script>
+const getBreadcrumbs = computed(() => {
+  console.log(base.page, "99999999999999999");
+
+  const isPos = base?.page === 'Pos';
+
+  return [
+    {
+      label: isPos ? 'POS' : 'Payments',
+      route: { name: 'Home' },
+    },
+  ];
+});  </script>
   
