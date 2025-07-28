@@ -9,9 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      # This sets the branch name based on event type
-      # For push event: github.ref is refs/heads/<branch>
-      # For pull_request, uses github.head_ref (source branch)
       BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name || 'main' }}
 
     steps:
@@ -55,4 +52,5 @@ jobs:
         shell: bash
 
       - name: Show current branch
-        run: echo "Using branch: $BRANCH_NAME"
+        run: |
+          echo "Using branch: $BRANCH_NAME"
