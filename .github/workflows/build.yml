@@ -59,10 +59,10 @@ jobs:
           push: true
           context: builds
           file: builds/images/layered/Containerfile
-          tags: >
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }},
-            ghcr.io/${{ github.repository }}:${{ env.IMAGE_TAG }},
-            ghcr.io/${{ github.repository }}:${{ env.STABLE_TAG }}
+          tags: |
+            ghcr.io/anthertech/antpos:${{ github.ref_name }}
+            ghcr.io/anthertech/antpos:${{ env.IMAGE_TAG }}
+            ghcr.io/anthertech/antpos:${{ env.STABLE_TAG }}
           build-args: |
             "FRAPPE_BRANCH=${{ env.FRAPPE_BRANCH }}"
             "APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }}"
