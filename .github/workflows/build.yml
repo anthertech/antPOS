@@ -40,7 +40,7 @@ jobs:
       - name: Add your app to bench
         run: |
           cd frappe-bench
-          bench get-app --branch main ../ant_pos
+          bench get-app --branch main ant_pos https://github.com/anthertech/antPOS
         shell: bash
 
       - name: Build App Assets
