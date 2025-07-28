@@ -1,68 +1,50 @@
-name: Build Container Image
+name: Frappe App Build
+
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
-      - develop
-    tags:
-      - "*"
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
-    name: Build
-
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        arch: [amd64, arm64]
-
     steps:
-      - name: Checkout Entire Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          platforms: linux/${{ matrix.arch }}
+          python-version: "3.11"
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.CR_PAT }}
+          node-version: "18"
 
-      - name: Set Branch
+      - name: Install yarn
+        run: npm install -g yarn
+
+      - name: Install Bench CLI
+        run: pip install frappe-bench
+
+      - name: Initialize Frappe bench (minimal, no app get-app)
         run: |
-          export APPS_JSON='[{"url": "https://github.com/frappe/erpnext","branch": "${{ github.ref_name }}"},{"url": "https://github.com/${{ github.repository }}","branch": "${{ github.ref_name }}"}]'
-          echo "APPS_JSON_BASE64=$(echo $APPS_JSON | base64 -w 0)" >> $GITHUB_ENV
-          echo "FRAPPE_BRANCH=${{ github.ref_type == 'tag' || github.ref_name == 'main' && 'main' || 'develop' }}" >> $GITHUB_ENV
+          bench init --skip-redis-config-generation --python python3 frappe-bench
+          cd frappe-bench
+          bench set-config -g developer_mode 1
+          cd ..
+        shell: bash
 
-      - name: Set Image Tag
+      - name: Add your app to bench
         run: |
-          echo "IMAGE_TAG=${{ github.ref_name == 'develop' && 'latest' || 'v15' }}" >> $GITHUB_ENV
-          echo "STABLE_TAG=${{ github.ref_name == 'develop' && 'nightly' || 'stable' }}" >> $GITHUB_ENV
+          cd frappe-bench
+          bench get-app --branch main ../ant_pos
+        shell: bash
 
-      - uses: actions/checkout@v4
-        with:
-          repository: frappe/frappe_docker
-          path: builds
-
-      - name: Build and push
-        uses: docker/build-push-action@v6
-        with:
-          push: true
-          context: builds
-          file: builds/images/layered/Containerfile
-          tags: |
-            ghcr.io/anthertech/antpos:${{ github.ref_name }}
-            ghcr.io/anthertech/antpos:${{ env.IMAGE_TAG }}
-            ghcr.io/anthertech/antpos:${{ env.STABLE_TAG }}
-          build-args: |
-            "FRAPPE_BRANCH=${{ env.FRAPPE_BRANCH }}"
-            "APPS_JSON_BASE64=${{ env.APPS_JSON_BASE64 }}"
+      - name: Build App Assets
+        run: |
+          cd frappe-bench
+          bench build --app ant_pos
+        shell: bash
