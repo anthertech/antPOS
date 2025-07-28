@@ -8,6 +8,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # This sets the branch name based on event type
+      # For push event: github.ref is refs/heads/<branch>
+      # For pull_request, uses github.head_ref (source branch)
+      BRANCH_NAME: ${{ github.event.pull_request.head.ref || github.ref_name || 'main' }}
 
     steps:
       - name: Checkout code
@@ -37,10 +42,10 @@ jobs:
           cd ..
         shell: bash
 
-      - name: Add your app to bench
+      - name: Add your app to bench using dynamic branch
         run: |
           cd frappe-bench
-          bench get-app --branch main ant_pos https://github.com/anthertech/antPOS
+          bench get-app --branch $BRANCH_NAME ant_pos https://github.com/anthertech/antPOS.git
         shell: bash
 
       - name: Build App Assets
@@ -48,3 +53,6 @@ jobs:
           cd frappe-bench
           bench build --app ant_pos
         shell: bash
+
+      - name: Show current branch
+        run: echo "Using branch: $BRANCH_NAME"
