@@ -305,7 +305,6 @@ const selectAll = ref(false);
         }
         else {
             const totalAmount = modes.value.reduce((sum, mode) => sum + (mode.amount || 0), 0);
-            console.log(modes.value,"ooooooooooooooooooo");
             
             if (totalAmount > 0) {
                 modes.value.forEach(mode => {

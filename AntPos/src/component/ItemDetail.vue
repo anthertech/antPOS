@@ -286,10 +286,20 @@ const getPayments = () => {
 
     return payments;
 };
+    const calcuateDiscount = () => {
+        let amount = base.pos_profile.apply_discount_on === 'grand_total' ? base.invoice.grand_total : base.invoice.base_total;
+        if (base.pos_profile.custom_use_percentage_discount) {
+            base.discount_amount= (amount * 100) / base.additional_discount_percentage;
+        } else {
+            base.additional_discount_percentage = base.discount_amount * (100 / amount);
+        }
+    };
+
     watch(
         () => base.discount_amount,
         (newVal,oldVal) => {
-            if (!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) {                   
+            if (!base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) { 
+                calcuateDiscount();
                 emitter.emit('calctotal');
             }
         },
@@ -298,7 +308,8 @@ const getPayments = () => {
     watch(
         () => base.additional_discount_percentage,
         (newVal,oldVal) => {
-            if (base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) {                
+            if (base.pos_profile.custom_use_percentage_discount && newVal !== oldVal) {   
+                calcuateDiscount();
                 emitter.emit('calctotal');
             }
         },
