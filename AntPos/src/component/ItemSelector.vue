@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { FormControl, FeatherIcon, createResource,debounce } from 'frappe-ui';
+import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
 import { ref, inject, watch } from 'vue';
 import { createToast } from '../utils';
 import { showToast } from '../utils'

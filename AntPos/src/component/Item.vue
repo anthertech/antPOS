@@ -244,7 +244,7 @@
     </div>
 </template>
 <script setup>
-import { FeatherIcon, FormControl, Autocomplete, DatePicker, dayjsLocal, createResource, createListResource } from 'frappe-ui';
+import { FeatherIcon, FormControl, Autocomplete, DatePicker, dayjsLocal, createResource, createListResource,debounce } from 'frappe-ui';
 import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vue';
 import { showToast } from '../utils'
 
@@ -339,12 +339,10 @@ watch(
             
             let find = validateitems();
             const option =get_serial_no_options() 
-            console.log(find,"*****************");
             
             if (!find && option.length > 0) {
                 
                 props.items.selected_serial_no = [];
-                console.log(props.items,"&^^^^^^^^^^^^^^^^^^^");
                 props.items.serial_no_options = props.items.serial_no_options.filter((serial_no) => serial_no.batch_no == newBatchNo)
                     .map((serial_no) => ({
                         label: serial_no.serial_no,
@@ -508,12 +506,12 @@ watch(
         }
     }
 );
-const discountCalculation = () => {
+const discountCalculation = debounce(() => {
     props.items.rate = rateCalculation(props.items);
     props.items.amount = props.items.rate* Math.abs(props.items.qty); 
     props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty)     
     emitter.emit('calctotal')
-}
+},300);
 base.items.forEach((items) => {
     watch(
         () => items,

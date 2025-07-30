@@ -16,8 +16,8 @@
             />
           </div>
         </div>
-        <div class="flex float-right gap-4">
-          <div>
+        <div class="flex  float-right gap-4">
+          <div class="flex flex-row items-center">
             <Switch
                 v-if="base?.pos_profile?.custom_create_sales_order"    
                 size="sm"
@@ -90,7 +90,6 @@
       }
     });
 const getBreadcrumbs = computed(() => {
-  console.log(base.page, "99999999999999999");
 
   const isPos = base?.page === 'Pos';
 
