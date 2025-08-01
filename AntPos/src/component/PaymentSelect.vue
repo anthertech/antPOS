@@ -198,7 +198,7 @@ const selectAll = ref(false);
     const calculateAmountTotal = () => {
         let total = invoices.data.reduce((sum, invoice) => {
             return invoice.selected ? sum + invoice.grand_total : sum;
-        }, 0);paymentAmount
+        }, 0);
         
         base.paymentAmount = total;
     };
@@ -240,6 +240,21 @@ const selectAll = ref(false);
 
 
     }
+const clearPayments = () => {
+    modes.value.forEach(mode => {
+        mode.amount = 0;
+    });
+    base.paymentAmount = 0;
+    base.paid_amount = 0;
+    base.diff = 0;
+    invoices.data.forEach(invoice => {
+        invoice.selected = false;
+    });
+    selectAll.value = false;
+
+    invoices.reload(); // Await to ensure reactivity updates fully
+};
+
     const changemode = (index) => {
         modes.value.forEach((element, i) => {
             if (i === index) {
@@ -264,7 +279,7 @@ const selectAll = ref(false);
         return `${year}-${month}-${day}`;
     };
 
-    const createpayment = () => {
+    const createpayment = async () => {
         if (currentTab.value === 'credit'){
             const sortedModes = [...modes.value].sort((a, b) => b.amount - a.amount);
             const selectedInvoices = filteredInvoices.value.filter(inv => inv.selected);
@@ -292,7 +307,7 @@ const selectAll = ref(false);
                 }
 
                 if ((currentMode.amount - totalToSpend) > 0 && invoiceDetails.length > 0) {
-                    save.fetch({
+                    await save.fetch({
                         action: 'Submit',
                         references: invoiceDetails,
                         mode: currentMode.mode_of_payment,
@@ -302,22 +317,23 @@ const selectAll = ref(false);
                 
                 i++;
             }
+            clearPayments();
         }
         else {
             const totalAmount = modes.value.reduce((sum, mode) => sum + (mode.amount || 0), 0);
             
             if (totalAmount > 0) {
-                modes.value.forEach(mode => {
-                    if(mode.amount>0){
-                        save.fetch({
+                for (const mode of modes.value) {
+                    if (mode.amount > 0) {
+                        await save.fetch({
                             action: 'Submit',
                             references: [],
                             mode: mode.mode_of_payment,
                             amount: mode.amount || 0
-    
                         });
                     }
-                });
+            }
+            clearPayments();
             } else {
                 createToast({
                     title: 'Error',
