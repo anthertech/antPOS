@@ -5,8 +5,8 @@ import { userResource } from '@/data/user'
 const routes = [
   {
     path: '/',
-    name: 'Home',
-    component: () => import('@/pages/Home.vue'),
+    name: 'Pos',
+    component: () => import('@/pages/Pos.vue'),
   },
   {
     name: 'Login',
@@ -30,7 +30,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.name === 'Login' && isLoggedIn) {
-    next({ name: 'Home' })
+    next({ name: 'Pos' })
   } else if (to.name !== 'Login' && !isLoggedIn) {
     next({ name: 'Login' })
   } else {

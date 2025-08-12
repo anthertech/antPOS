@@ -352,6 +352,7 @@ const saveAndSubmit = async (doc) => {
 }
 
 const submitInvoice = async (action = null) => {
+    
     if(!base.pos_profile.custom_allow_credit){
         if (base.invoice.paid_amount<base.invoice.rounded_total)return showToast('warning', 'Credit Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
          
