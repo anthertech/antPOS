@@ -1,6 +1,6 @@
-# 💼 Ant-POS
+# 💼 antPOS
 
-**Ant-POS** is a modern, efficient, and flexible Point of Sale (POS) system built on **Frappe** and **ERPNext**. Designed to work seamlessly across all Frappe versions, it leverages Frappe's built-in APIs and validation mechanisms to ensure smooth performance, accurate error handling, and a superior user experience.
+**antPOS** is a modern, efficient, and flexible Point of Sale (POS) system built on **Frappe** and **ERPNext**. Designed to work seamlessly across all Frappe versions, it leverages Frappe's built-in APIs and validation mechanisms to ensure smooth performance, accurate error handling, and a superior user experience.
 
 ---
 
