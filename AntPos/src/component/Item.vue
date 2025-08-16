@@ -283,7 +283,6 @@ const get_batch = createResource({
             warehouse: base.pos_profile.warehouse,
             item_code: props.items.item_code,
         },
-        cache: props.items.serial_no_options,
         pageLength: Number.MAX_VALUE * 2,
         onSuccess(data) {            
             props.items.serial_no_options = data.map((serial_no) => ({

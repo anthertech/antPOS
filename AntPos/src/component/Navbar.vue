@@ -96,7 +96,7 @@ const getBreadcrumbs = computed(() => {
   return [
     {
       label: isPos ? 'POS' : 'Payments',
-      route: { name: 'Home' },
+      route: { name: 'Pos' },
     },
   ];
 });  </script>

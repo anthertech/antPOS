@@ -67,7 +67,7 @@
 </template>
 
 <script setup>
-import { Dialog, Button, createListResource, createResource, TextInput, FeatherIcon } from 'frappe-ui';
+import { Dialog, Button, createListResource, createResource, TextInput, debounce, FeatherIcon } from 'frappe-ui';
 import { ref, inject, computed, watch, onMounted } from 'vue';
 import { createToast } from '../../utils';
 
@@ -190,11 +190,11 @@ let salesInvoice = createResource({
     });
 
 const filteredInvoices = computed(() => {
-    if (!searchQuery.value) return invoices.data || [];
-    return (invoices.data || []).filter(invoice =>
-        invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        invoice.customer.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
+  if (!searchQuery.value) return invoices.data || [];
+  return (invoices.data || []).filter(invoice =>
+    invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    invoice.customer.toLowerCase().includes(searchQuery.value.toLowerCase())
+  );
 });
 
 
@@ -261,7 +261,7 @@ let get_value = createResource({
 
     })
 
-watch(searchQuery, (newQuery) => {
+const updateInvoices = debounce((newQuery) => {
   invoices.update({
     filters: {
       docstatus: 1,
@@ -276,5 +276,7 @@ watch(searchQuery, (newQuery) => {
       : []
   });
   invoices.reload();
-});
+}, 300); 
+
+watch(searchQuery, updateInvoices);
 </script>

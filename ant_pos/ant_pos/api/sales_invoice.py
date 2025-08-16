@@ -27,6 +27,5 @@ def calculate_invoice_item_taxes(doc):
             },
             item.item_code
         )
-        print(data,"+++++++++++++++++++++++++++++++++++++++++++++++++++++++")
         item.price_list_rate=data
     return invoice.as_dict()

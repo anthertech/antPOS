@@ -273,7 +273,7 @@ import { Button, FeatherIcon , FormControl , createResource,} from 'frappe-ui';
     });
    
 const getPayments = () => {
-    const total = base.is_return ? -Math.abs(base.invoice.grand_total) : base.invoice.grand_total;
+    const total = base.is_return ? -Math.abs(base.invoice.rounded_total) : base.invoice.rounded_total;
 
     const payments = base.invoice.payments.map(p => {
         const amount = p.default ? total : 0;
@@ -283,11 +283,11 @@ const getPayments = () => {
             base_amount: amount
         };
     });
-
+    
     return payments;
 };
     const calcuateDiscount = () => {
-        let amount = base.pos_profile.apply_discount_on === 'grand_total' ? base.invoice.grand_total : base.invoice.base_total;
+        let amount = base.pos_profile.apply_discount_on === 'grand_total' ? base.invoice.grand_total : base.invoice.net_total;
         if (base.pos_profile.custom_use_percentage_discount) {
             base.discount_amount= (amount * 100) / base.additional_discount_percentage;
         } else {
