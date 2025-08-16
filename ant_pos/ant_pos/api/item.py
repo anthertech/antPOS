@@ -189,7 +189,7 @@ def items(pos_profile, search_value, customer):
         "price_list": "Standard Selling",
         "price_list_currency": company.default_currency,
         "company": company.name,
-        "ignore_pricing_rule": 0,
+        "ignore_pricing_rule": pos_profile.ignore_pricing_rule,
         "doctype": "Sales Invoice",
         "stock_uom": item.get("stock_uom"),
         "pos_profile": pos_profile_doc.name,
