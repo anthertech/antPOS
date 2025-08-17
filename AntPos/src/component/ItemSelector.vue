@@ -37,7 +37,7 @@
 
 <script setup>
 import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
-import { ref, inject, watch } from 'vue';
+import { ref, inject } from 'vue';
 import { createToast } from '../utils';
 import { showToast } from '../utils'
 
@@ -254,10 +254,16 @@ const runDocMethod = createResource({
     onSuccess(data){
         base.invoice=data;
         data.items.forEach(n => {
-          const e = base.items.find(b => b.custom_id === n.custom_id);
-            if (!e) return;
-            for (const k in n) if (k !== 'custom_id' && e[k] !== n[k]) e[k] = n[k];
-        });
+        const e = base.items.find(b => b.custom_id === n.custom_id);
+        if (!e) return;
+        for (const k in n) {
+            if (k !== 'custom_id' && e[k] !== n[k]) {
+                if (JSON.stringify(e[k]) !== JSON.stringify(n[k])) {
+                    e[k] = n[k];
+                }
+            }
+        }
+    })
         
         errorHandled = false;
     },

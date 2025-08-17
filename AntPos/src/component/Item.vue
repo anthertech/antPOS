@@ -555,16 +555,16 @@ const calculateRateTotal = () => {
 };
 
 onMounted( async () => {
-    emitter.emit('calctotal');    
     calculateRateTotal();
     validateQty(props.items.qty);
     if(props.items.selected_serial_no) adjustSerialNumbers(props.items.selected_serial_no.length); 
-     if(props.items.selected_serial_no) add_serial_no();
+    if(props.items.selected_serial_no) add_serial_no();
     await get_batch.fetch({
         item_code: props.items.item_code,
         warehouse: base.pos_profile.warehouse,
     })
     await get_serial_no.fetch()
+    emitter.emit('calctotal');    
     
 });
  
