@@ -59,35 +59,24 @@
                 { 'bg-gray-100': base.page != 'payments' },
                 props.collapse ? 'justify-center' : ''
             ]"
-            @click="emitter.emit('updatePage', 'Pos')"
+            @click="router.push({ name: 'Pos' })"
         >
             <FeatherIcon name="monitor" class="w-5 h-5 text-gray-600" />
             <p v-show="!props.collapse" class="text-gray-700 font-medium">POS</p>
         </div>
   
         <div
+
             class="w-full p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
             :class="[
                 { 'bg-gray-100': base.page === 'payments' },
                 props.collapse ? 'justify-center' : ''
             ]"
-            @click="emitter.emit('updatePage', 'payments')"
+            @click="router.push({ name: 'Payments' })"
         >
           <FeatherIcon name="credit-card" class="w-5 h-5 text-gray-600" />
           <p v-show="!props.collapse" class="text-gray-700 font-medium">Payments</p>
         </div>
-  
-        <!-- <div
-            class="w-full p-2 flex gap-3 items-center hover:bg-gray-100 hover:cursor-pointer rounded-lg transition-all duration-500 ease-in-out"
-            :class="[
-                { 'bg-gray-100': base.page === 'salesinvoice' },
-                props.collapse ? 'justify-center' : ''
-            ]"
-            @click="emitter.emit('updatePage', 'salesinvoice')"
-        >
-          <FeatherIcon name="file-text" class="w-5 h-5 text-gray-600" />
-          <p v-show="!props.collapse" class="text-gray-700 font-medium">Sales Invoice</p>
-        </div> -->
       </div>
   
       <Button
@@ -108,10 +97,13 @@
   </template>
 <script setup>
     import { FeatherIcon, Dropdown, createResource, Button } from 'frappe-ui';
+    import { useRouter } from 'vue-router';
     import { inject, ref, h, computed , defineProps} from 'vue';
-    import { getSettings } from '../stores/settings'
-    import { usersStore } from '../data/users';
-    import emitter from '../utils/emitter';
+    import { getSettings } from '@/stores/settings'
+    import { usersStore } from '@/data/users';
+    import emitter from '@/utils/emitter';
+
+    const router = useRouter();
     const { settings, brand } = getSettings()
     let base = inject('base');
     const sidebarStore = ref({"isExpanded":true})
@@ -137,14 +129,14 @@
       icon: () => h(FeatherIcon, { name: 'file-minus' }),
       onClick: () => {
         loadComponent('CloseShift')
-                  },
+      },
     },
     {
       label: 'Settings',
       icon: () => h(FeatherIcon, { name: 'settings' }),
       onClick: () => {
         loadComponent('Settings')
-                  },
+      },
     },
     
     {
@@ -152,7 +144,7 @@
       icon: () => h(FeatherIcon, { name: 'log-out' }),
       onClick: () => {
         logout.fetch();
-                  },
+      },
     },
 ]
 </script>

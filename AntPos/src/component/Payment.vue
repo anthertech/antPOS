@@ -141,7 +141,7 @@
 
 <script setup>
 
-import { createListResource, TextInput, FormControl, FeatherIcon, createResource,TabButtons } from 'frappe-ui';
+import { createListResource, TextInput, FormControl, FeatherIcon, createResource, TabButtons } from 'frappe-ui';
 import { ref, inject, computed, watch, onBeforeMount } from 'vue';
 import Customer from './Customer.vue';
 import { createToast } from '../utils';
@@ -224,13 +224,13 @@ const selectAll = ref(false);
         calculateAmountTotal();
     };
     const addPayments = () => {
-        
-        base.pos_profile.payments.forEach(element => {
-            
-                modes.value.push({
-                    "mode_of_payment": element.mode_of_payment,
-                    "amount": 0.00,
-                    "base_amount": 0.00,
+
+        base?.pos_profile?.payments?.forEach(element => {
+
+            modes.value.push({
+                "mode_of_payment": element.mode_of_payment,
+                "amount": 0.00,
+                "base_amount": 0.00,
                 })
             })
             base.paid_amount=0

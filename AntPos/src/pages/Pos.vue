@@ -10,15 +10,16 @@
 
 <script setup>
 
-  import Sidebar from '../component/Sidebar.vue';
-  import Platform from '../component/Platform.vue';
-  import { provide, ref, inject } from 'vue';
-  import { useDynamicComponent } from '../utils/Dialog';
+  import Sidebar from '@/component/Sidebar.vue';
+  import Navbar from '@/component/Navbar.vue';
+  import Platform from '@/component/Platform.vue';
+  import { provide, ref } from 'vue';
+  import { useDynamicComponent } from '@/utils/Dialog';
   import { usePageMeta } from 'frappe-ui';
-  import emitter from '../utils/emitter';
-  import  { getSettings } from '../stores/settings';
+  import emitter from '@/utils/emitter';
+  import  { getSettings } from '@/stores/settings';
 
-  const collapse=ref(true)
+  const collapse = ref(true)
   const { currentComponent, loadComponent } = useDynamicComponent();
   const { brand } = getSettings()
   

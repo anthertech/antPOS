@@ -9,6 +9,11 @@ const routes = [
     component: () => import('@/pages/Pos.vue'),
   },
   {
+    path: '/payments',
+    name: 'Payments',
+    component: () => import('@/pages/Payments.vue'),
+  },
+  {
     name: 'Login',
     path: '/account/login',
     component: () => import('@/pages/Login.vue'),
