@@ -28,7 +28,7 @@ const customerResource = createListResource({
   },
   pageLength: Number.MAX_VALUE * 2,
   auto: true,
-  onSuccess(data,params) {
+  onSuccess(data) {
     errorHandled = false;
   },
   onError(error) {

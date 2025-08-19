@@ -72,7 +72,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0.00"
-                    :disabled="false"
+                    :disabled="!base.pos_profile.allow_discount_change"
                     label="Additional Discount (%)"
                     v-model="base.additional_discount_percentage"
                 />
@@ -83,7 +83,7 @@
                     size="sm"
                     variant="subtle"
                     placeholder="0.00"
-                    :disabled="false"
+                    :disabled="!base.pos_profile.allow_discount_change"
                     :label="`Additional Discount (${base.pos_profile.currency})`"
                     v-model="base.discount_amount"
                     :value="Number(base.discount_amount).toFixed(2)"

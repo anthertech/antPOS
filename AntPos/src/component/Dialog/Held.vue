@@ -146,6 +146,7 @@ let salesInvoice = createResource({
 });
 const  addvalues = async ()=>{
     base.invoice =  { ...salesInvoice.data.docs[0], status: null  }
+    base.is_return =salesInvoice.data.docs[0].is_return
     base.items = salesInvoice.data.docs[0].items;
     base.discount_amount =  salesInvoice.data.docs[0].discount_amount;
     base.additional_discount_percentage =  salesInvoice.data.docs[0].additional_discount_percentage;
