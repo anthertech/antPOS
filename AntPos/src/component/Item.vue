@@ -67,7 +67,7 @@
                     :ref_for="true"
                     size="sm"
                     variant="subtle"
-                    :disabled="!base.pos_profile.custom_edit_rate"
+                    :disabled="!base.pos_profile.allow_rate_change"
                     label="Rate"
                     placeholder="0"
                     :value="Number(items.rate).toFixed(2)"

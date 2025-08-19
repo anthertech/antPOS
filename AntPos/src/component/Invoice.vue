@@ -38,6 +38,7 @@
                 />
             </div>
             <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in base?.pos_profile?.payments" :key="index">
+                
                 <FormControl
                     v-if="base.invoice?.payments?.[index] && base.invoice?.payments?.[index].amount !== undefined"
                     type="number"
@@ -51,6 +52,7 @@
                     @change="changePaymentAmount($event)"
                 />
                 <Button
+                    v-if="base.invoice?.payments?.[index] && base.invoice?.payments?.[index].amount !== undefined"
                     class="w-full h-full"
                     :variant="'solid'"
                     theme="gray"
@@ -227,7 +229,7 @@
 </template>
 
 <script setup>
-import { Button, FormControl, createResource, DatePicker, dayjsLocal, createListResource  } from 'frappe-ui'
+import { Button, FormControl, createResource, DatePicker, dayjsLocal  } from 'frappe-ui'
 import { ref, inject, onMounted , watch, computed } from 'vue'
 import { createToast } from '../utils';
 import { showToast } from '../utils'
@@ -240,7 +242,7 @@ const addPayments = () => {
     
     base.invoice.paid_amount = base.invoice.base_rounded_total
     base.pos_profile.payments.forEach(element => {
-        if (!base.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment)) {
+        if (!base.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment) && (base.is_return && element.allow_in_returns || !base.is_return )) {
             base.invoice.payments.push({
                 "mode_of_payment": element.mode_of_payment,
                 "amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
@@ -324,6 +326,7 @@ const remove_invoice = () => {
         base_rounded_total: 0,
         delivery_date: '',
     };
+    base.is_return = false
     base.items = [];
     base.customer = {};
 };
