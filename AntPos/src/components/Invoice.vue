@@ -233,6 +233,7 @@ import { Button, FormControl, createResource, DatePicker, dayjsLocal  } from 'fr
 import { ref, inject, onMounted , watch, computed } from 'vue'
 import { createToast } from '@/utils';
 import { showToast } from '@/utils'
+import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
 
 let base = inject('base')
