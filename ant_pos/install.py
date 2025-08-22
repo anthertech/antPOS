@@ -1,6 +1,6 @@
 import frappe
 
-def after_install():
+def before_install():
     create_roles_and_permissions()
 
 def create_roles_and_permissions():
