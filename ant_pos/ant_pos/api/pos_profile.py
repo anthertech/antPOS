@@ -16,17 +16,20 @@ def get_openingshift():
         fields=["name", "pos_profile"],
         order_by="period_start_date desc",
     )
-    data = ""
     if open_vouchers:
+        data = {
+            "Ant_Opening_Shift": frappe.get_doc(
+                "Ant Opening Shift", open_vouchers[0]["name"]
+            ),
+            "pos_profile": get_pos_profile(
+                open_vouchers[0]["pos_profile"]
+            )
+        }
+    else:
         data = {}
-        data["Ant_Opening_Shift"] = frappe.get_doc(
-            "Ant Opening Shift", open_vouchers[0]["name"]
-        )
-        data["pos_profile"] = get_pos_profile(data["Ant_Opening_Shift"].pos_profile)
     return data
 
 
-@frappe.whitelist()
 def get_pos_profile(profile):
     pos = frappe.get_doc("POS Profile", profile)
     return pos
@@ -34,12 +37,14 @@ def get_pos_profile(profile):
 
 @frappe.whitelist()
 def get_pos_profiles_by_company():
-    # Fetch all POS Profiles with associated company
-    pos_profiles = frappe.get_all(
+    # Fetch POS Profiles with associated company respecting permissions
+    pos_profiles = frappe.get_list(
         "POS Profile",
         fields=["name", "company"],
         order_by="company ASC",
+        ignore_permissions=False
     )
+
     company_profiles = {}
 
     for profile in pos_profiles:
@@ -49,19 +54,17 @@ def get_pos_profiles_by_company():
         if company not in company_profiles:
             company_profiles[company] = []
 
-        # Fetch modes of payment for the current POS Profile
+        # Fetch modes of payment (this is safe as it's a child table or linked with parent)
         modes_of_payment = frappe.get_all(
             "POS Payment Method",
-            filters={"parent": pos_name},  # Assuming "parent" links to POS Profile
+            filters={"parent": pos_name},
             fields=["mode_of_payment"],
         )
 
-        # Append POS Profile with its modes of payment
         company_profiles[company].append({
             "name": pos_name,
             "modes_of_payment": [mop["mode_of_payment"] for mop in modes_of_payment],
         })
-
 
     return company_profiles
 

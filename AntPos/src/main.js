@@ -1,5 +1,4 @@
 import './index.css'
-
 import { createApp, reactive } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
@@ -35,13 +34,8 @@ app.use(pinia)
 
 const base = reactive({
   customer: {},
-  Ant_Opening_Shift:{},
-  pos_profile:{},
   items:[],
-  invoice:{
-    
-  },
-  page:'Pos',
+  invoice:{},
 })
 app.provide('base', base)
 

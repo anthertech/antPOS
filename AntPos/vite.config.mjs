@@ -60,6 +60,14 @@ export default defineConfig({
       },
       workbox: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.origin === self.location.origin &&
+              url.pathname.startsWith('/api/'),
+            handler: 'NetworkOnly',
+          },
+        ],
       },
     }),
   ],

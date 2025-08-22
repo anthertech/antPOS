@@ -31,7 +31,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-05-21 13:40:19.236877",
+ "modified": "2025-08-21 16:01:20.229542",
  "modified_by": "Administrator",
  "module": "Ant-Pos",
  "name": "AntPOS Settings",
@@ -58,10 +58,6 @@
   {
    "read": 1,
    "role": "Sales Manager"
-  },
-  {
-   "read": 1,
-   "role": "POS Billing"
   },
   {
    "read": 1,
