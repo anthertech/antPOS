@@ -13,6 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@vueuse/core": "^13.7.0",
     "frappe-ui": "0.1.177",
     "mitt": "^3.0.1",
     "pinia": "^3.0.2"

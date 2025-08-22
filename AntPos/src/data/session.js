@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { createResource } from 'frappe-ui'
-import { userResource } from './user'
+import { userResource } from '@/data/user'
 import router from '@/router'
 import { ref, computed } from 'vue'
 

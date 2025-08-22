@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from './data/session'
-import { userResource } from '@/data/user'
+import { userResource } from './data/user'
 
 const routes = [
   {
@@ -37,6 +37,7 @@ router.beforeEach(async (to, from, next) => {
   if (to.name === 'Login' && isLoggedIn) {
     next({ name: 'Pos' })
   } else if (to.name !== 'Login' && !isLoggedIn) {
+    // window.location.href = '/login?redirect-to=/antPOS'
     next({ name: 'Login' })
   } else {
     next()

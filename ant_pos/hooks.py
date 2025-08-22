@@ -1,10 +1,25 @@
+from . import __version__ as app_version
+
 app_name = "ant_pos"
 app_title = "Ant-Pos"
 app_publisher = "Anther Technologies Pvt. Ltd."
 app_description = "pos application"
+app_icon = "octicon octicon-file-directory"
+app_color = "red"
 app_email = "nihalroshan55@gmail.com"
 app_license = "MIT"
 
+required_apps = ["erpnext"]
+
+add_to_apps_screen = [
+	{
+		"name": "antPOS",
+		"logo": "/assets/ant_pos/antPOS.png",
+		"title": "antPOS",
+		"route": "/antPOS",
+		"has_permission": "ant_pos.ant_pos.api.user_has_posprofile",
+	}
+]
 # Includes in <head>
 # ------------------
 
@@ -61,7 +76,7 @@ app_license = "MIT"
 # Installation
 # ------------
 
-# before_install = "ant_pos.install.before_install"
+before_install = "ant_pos.install.before_install"
 # after_install = "ant_pos.install.after_install"
 
 # Uninstallation
@@ -96,9 +111,9 @@ app_license = "MIT"
 # -----------
 # Permissions evaluated in scripted ways
 
-# permission_query_conditions = {
-# 	"Event": "frappe.desk.doctype.event.event.get_permission_query_conditions",
-# }
+permission_query_conditions = {
+	"POS Profile": "ant_pos.ant_pos.api.posprofile_user_query_conditions"
+}
 #
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",

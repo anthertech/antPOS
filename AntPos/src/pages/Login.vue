@@ -24,8 +24,8 @@
   </div>
 </template>
 
-<script  setup>
-import { useSessionStore } from '../data/session'
+<script setup>
+import { useSessionStore } from '@/data/session'
 
 const session = useSessionStore()
 
@@ -36,4 +36,5 @@ function submit(e) {
     password: formData.get('password'),
   })
 }
+
 </script>
