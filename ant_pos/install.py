@@ -1,6 +1,49 @@
 import frappe
 from frappe.core.page.permission_manager.permission_manager import add, update
 
+def before_install():
+    create_roles_and_permissions()
+    set_custom_permissions(permission_matrix)
+    
+def set_custom_permissions(permission_matrix):
+    """
+    Set Custom DocPerms for all entries in permission_matrix.
+    Each entry is a tuple: (doctype, role, permissions_dict)
+    """
+    for doctype, role, perms in permission_matrix:
+        permlevel = perms.get("permlevel", 0)
+        filters = {
+            "parent": doctype,
+            "role": role,
+            "permlevel": permlevel
+        }
+        # Check if a Custom DocPerm already exists for this tuple
+        custom_perm_name = frappe.db.exists("Custom DocPerm", filters)
+        perms_for_doc = {
+            "doctype": "Custom DocPerm",
+            "parent": doctype,
+            "parenttype": "DocType",
+            "parentfield": "permissions",
+            "role": role,
+            "permlevel": permlevel,
+        }
+        perms_for_doc.update(perms)
+        # Don't set permlevel twice
+        del perms_for_doc["permlevel"]
+        
+        if not custom_perm_name:
+            # Create new Custom DocPerm
+            frappe.get_doc(perms_for_doc).insert(ignore_permissions=True)
+        else:
+            # Update existing Custom DocPerm
+            doc = frappe.get_doc("Custom DocPerm", custom_perm_name)
+            for k, v in perms_for_doc.items():
+                setattr(doc, k, v)
+            doc.save(ignore_permissions=True)
+        frappe.db.commit()
+    # Always clear cache so permission map is updated immediately
+    frappe.clear_cache()
+
 def create_roles_and_permissions():
     roles = [
         {"role_name": "POS Billing", "desk_access": 0},
@@ -12,9 +55,8 @@ def create_roles_and_permissions():
         if not frappe.db.exists("Role", role["role_name"]):
             frappe.get_doc({"doctype": "Role", **role}).insert()
 
-    # 3. Permission Matrix: (doctype, role, permissions dict)
-    permission_matrix = [
-
+    
+permission_matrix = [
         # POS Cash user permission in Doctype
         ("POS Invoice", "POS Cash", {"permlevel":0, "if_owner":0, "select":1, "read":1, "write":1,"create":0, "delete":0, "submit": 1, "cancel":0, "amend":0, "print":1, "email":0, "report":0, "import":0, "export":1, "set_user_permissions":0, "share":0}),
         ("Customer", "POS Cash", {"permlevel":0, "if_owner":0, "select":1, "read":1, "write":1,"create":1, "delete":0, "submit": 0, "cancel":0, "amend":0, "print":0, "email":0, "report":0, "import":0, "export":1, "set_user_permissions":0, "share":0}),
@@ -61,31 +103,3 @@ def create_roles_and_permissions():
         ("Tax Category", "POS Billing", {"permlevel":0, "if_owner":0, "select":1, "read":1, "write":0,"create":0, "delete":0, "submit": 0, "cancel":0, "amend":0, "print": 0, "email":0, "report":1, "import":0, "export":1, "set_user_permissions":0, "share":0}),
         
     ]
-
-    for doctype, role, perms in permission_matrix:
-        permlevel = perms.get("permlevel", 0)
-        # Fetch current doctype permissions to check existence
-        doc = frappe.get_doc("DocType", doctype)
-        # exists = any(p.role == role and p.permlevel == permlevel for p in doc.permissions)
-        # print(exists,"!!!!!!!!!!!!!!!",doctype)
-        # if not exists:
-            # print("not exist **********",doctype)
-        add(doctype, role, permlevel)
-        frappe.db.commit()  # Commit after add to save changes
-
-        # Update each permission flag via the update API
-        for ptype, value in perms.items():
-            if ptype == "permlevel":
-                continue
-            update(
-                doctype=doctype,
-                role=role,
-                permlevel=permlevel,
-                ptype=ptype,
-                value=value,
-                if_owner=perms.get("if_owner", 0)
-            )
-        frappe.db.commit()  # Commit after all updates
-
-    # 5. Clear frappe cache so permissions take effect immediately
-    frappe.clear_cache()
