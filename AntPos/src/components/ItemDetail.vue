@@ -139,6 +139,7 @@
                     RETURN
                 </Button>
                 <Button
+                    v-if="permissionStore.salesInvoiceCanCreate"
                     :ref_for="true"
                     label="Button"
                     :loading="false"
@@ -152,6 +153,7 @@
                     SAVE/NEW
                 </Button>
                 <Button
+                    v-if="permissionStore.salesInvoiceCanSubmit"
                     :ref_for="true"
                     label="Button"
                     :loading="false"
@@ -164,6 +166,7 @@
                     PAY
                 </Button>
                 <Button
+                    v-if="permissionStore.salesInvoiceCanPrint && permissionStore.salesInvoiceCanCreate"
                     :ref_for="true"
                     label="Button"
                     :loading="false"
@@ -186,11 +189,13 @@ import Customer from '@/components/Customer.vue';
 import { Button, FeatherIcon , FormControl , createResource,} from 'frappe-ui';
 import { inject , watch } from 'vue';
 import { createToast } from '@/utils';
-import emitter from '@/utils/emitter'; 
 import { usePosProfileStore } from '@/stores/posProfile';
+import { usePermissionStore } from '@/stores/permissionStore';
+import emitter from '@/utils/emitter'; 
 import Item from '@/components/Item.vue';
 
 const store = usePosProfileStore();
+const permissionStore = usePermissionStore();
 const { loadComponent } = inject('dynamicComponent');
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
 let base = inject('base');

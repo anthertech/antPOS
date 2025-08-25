@@ -31,7 +31,7 @@
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2025-08-21 16:01:20.229542",
+ "modified": "2025-08-23 11:49:36.759797",
  "modified_by": "Administrator",
  "module": "Ant-Pos",
  "name": "AntPOS Settings",
@@ -66,6 +66,16 @@
   {
    "read": 1,
    "role": "Accounts User"
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "role": "POS Billing"
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "role": "POS Cash"
   }
  ],
  "sort_field": "modified",

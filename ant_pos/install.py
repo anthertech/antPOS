@@ -1,16 +1,13 @@
 import frappe
-
-def before_install():
-    create_roles_and_permissions()
+from frappe.core.page.permission_manager.permission_manager import add, update
 
 def create_roles_and_permissions():
-    # 1. Define roles to create
     roles = [
         {"role_name": "POS Billing", "desk_access": 0},
         {"role_name": "POS Cash", "desk_access": 0},
     ]
 
-    # 2. Create roles if not exists
+    # Create roles if not exist
     for role in roles:
         if not frappe.db.exists("Role", role["role_name"]):
             frappe.get_doc({"doctype": "Role", **role}).insert()
@@ -65,24 +62,30 @@ def create_roles_and_permissions():
         
     ]
 
-    # 4. Create DocPerm entries if not already set
     for doctype, role, perms in permission_matrix:
-        exists = frappe.db.exists(
-            "DocPerm",
-            {"parent": doctype, "role": role, "permlevel": perms.get("permlevel", 0)}
-        )
-        if not exists:
-            perms_lower = {k.lower(): v for k, v in perms.items()}
-            doc = frappe.get_doc({
-                "doctype": "DocPerm",
-                "parent": doctype,
-                "parenttype": "DocType",
-                "parentfield": "permissions",
-                "role": role,
-                **perms_lower
-            })
-            doc.insert(ignore_permissions=True)
+        permlevel = perms.get("permlevel", 0)
+        # Fetch current doctype permissions to check existence
+        doc = frappe.get_doc("DocType", doctype)
+        # exists = any(p.role == role and p.permlevel == permlevel for p in doc.permissions)
+        # print(exists,"!!!!!!!!!!!!!!!",doctype)
+        # if not exists:
+            # print("not exist **********",doctype)
+        add(doctype, role, permlevel)
+        frappe.db.commit()  # Commit after add to save changes
 
-    # 5. Clear cache so changes take effect
+        # Update each permission flag via the update API
+        for ptype, value in perms.items():
+            if ptype == "permlevel":
+                continue
+            update(
+                doctype=doctype,
+                role=role,
+                permlevel=permlevel,
+                ptype=ptype,
+                value=value,
+                if_owner=perms.get("if_owner", 0)
+            )
+        frappe.db.commit()  # Commit after all updates
+
+    # 5. Clear frappe cache so permissions take effect immediately
     frappe.clear_cache()
-
