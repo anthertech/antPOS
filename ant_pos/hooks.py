@@ -231,5 +231,4 @@ website_route_rules = [{'from_route': '/antPOS/<path:app_path>', 'to_route': 'an
 
 fixtures = [
        {"dt": "Custom Field", "filters": [["module", "=", "Ant-Pos"]], "prefix": "Ant-Pos_custom_fields"},
-       {"dt": "Workspace", "filters": [["module", "=", "Ant-Pos"]], "prefix": "Ant-Pos_workspace"}
 ]
