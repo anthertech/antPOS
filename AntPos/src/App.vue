@@ -30,6 +30,7 @@ import Sidebar from '@/components/Sidebar.vue';
 const { brand } = getSettings()
 const { currentComponent, loadComponent } = inject('dynamicComponent');
 const posProfileStore = usePosProfileStore();
+const sessionStore = useSessionStore();
 
 usePageMeta(() => {
   return {
@@ -40,7 +41,8 @@ usePageMeta(() => {
 watch(
   () => posProfileStore.hasNoData,
   (val) => {
-    if (val && useSessionStore.isLoggedIn) {
+
+    if (val && sessionStore.isLoggedIn) {
       loadComponent('OpenShift')
     } 
   }

@@ -178,7 +178,7 @@ const fetchSearchResource = () => {
 const addItem = (data) => {
     data.doctype = "Sales Invoice Item";
     data.parenttype = "Sales Invoice";
-    data.custom_id = Date.now() + Math.random()
+    data.custom_id = Date.now() + Math.random();
     if (!addItemIfExists(data)) {
         if (data.has_batch_no && data.batch_no) {
             data.serial_no_options = data.serial_no_options
@@ -277,7 +277,8 @@ const runDocMethod = createResource({
                     }
                 }
             }
-        });        errorHandled = false;
+        });
+        errorHandled = false;
     },
     onError(error) {
         createToast({
