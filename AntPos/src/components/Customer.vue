@@ -26,7 +26,6 @@ const getCustomerGroups = computed(()=>{
   return usePosProfileStore().posProfileData?.customer_groups.map(item=>item.customer_group);
 
 })
-console.log(getCustomerGroups.value);
 
 const customerResource = createListResource({
   doctype: 'Customer',

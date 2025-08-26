@@ -68,9 +68,11 @@
 
 <script setup>
 import { Dialog, Button, createListResource, createResource, TextInput, debounce, FeatherIcon } from 'frappe-ui';
-import { ref, inject, computed, watch, onMounted } from 'vue';
+import { ref, inject, computed, watch } from 'vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { usePermissionStore } from '@/stores/permissionStore';
+import { usersStore } from '@/stores/users';
 
 let base = inject('base');
 let errorHandled = false;
@@ -80,6 +82,8 @@ const selectedInvoice = ref(null);
 const searchQuery = ref("");
 const selectedPageLength = ref(20);
 const handleDialogClose = () => { dialogVisible.value = false; };
+const permissionStore = usePermissionStore();
+const user = usersStore().getUser();
 
 const setPageLength = (size) => {
     if (selectedPageLength.value !== size) {
@@ -179,7 +183,9 @@ const invoices = createListResource({
         docstatus: 1,
         pos_profile: store.posProfileData.name,
         is_return: 0,
-        status: ['!=', 'Credit Note Issued']
+        status: ['!=', 'Credit Note Issued'],
+        owner: permissionStore.salesInvoiceCanOnlyOwn ? user.name : undefined,
+
     },
     orFilters: [],
     pageLength: 20,

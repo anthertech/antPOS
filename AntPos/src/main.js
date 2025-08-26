@@ -4,6 +4,7 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import translationPlugin from './translation'
+import { useDynamicComponent } from './utils/Dialog';
 import mitt from 'mitt';
 
 import {
@@ -40,6 +41,8 @@ const base = reactive({
   invoice:{},
 })
 app.provide('base', base)
+
+app.provide('dynamicComponent', useDynamicComponent());
 
 // Provide emitter it globally
 app.provide('emitter', emitter);

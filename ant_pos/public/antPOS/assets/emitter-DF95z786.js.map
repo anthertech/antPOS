@@ -1,1 +1,0 @@
-{"version":3,"file":"emitter-DF95z786.js","sources":["../../../../AntPos/src/utils/emitter.js"],"sourcesContent":["import mitt from 'mitt';\n\nconst emitter = mitt();\nexport default emitter;\n"],"names":["emitter","mitt"],"mappings":"yCAEK,MAACA,EAAUC,EAAI"}

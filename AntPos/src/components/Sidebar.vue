@@ -101,18 +101,24 @@ import { FeatherIcon, Dropdown, createResource, Button } from 'frappe-ui';
 import { useRouter } from 'vue-router';
 import { inject, h, computed } from 'vue';
 import { getSettings } from '@/stores/settings'
-import { usersStore } from '@/data/users';
+import { usersStore } from '@/stores/users';
 import { useSidebar } from '@/stores/sidebar';
 import { usePermissionStore } from '@/stores/permissionStore';
+import { useSessionStore } from '@/stores/session';
 
 const sidebarStore = useSidebar()
 const permissionStore = usePermissionStore();
+const sessionStore = useSessionStore();
 const router = useRouter();
 const { brand } = getSettings()
 const currentRoute = computed(() => router.currentRoute.value.name)
 const { loadComponent } = inject('dynamicComponent');
-const users = usersStore()
-const currentUser = computed(() => users.getUser())
+const currentUser = computed(() => {
+  if (!sessionStore.isLoggedIn) {
+    return { full_name: 'Guest' }
+  }
+  return usersStore().getUser()
+})
 
 const toggleSidebar = () => {
 	sidebarStore.isSidebarCollapsed = !sidebarStore.isSidebarCollapsed
@@ -121,14 +127,6 @@ const toggleSidebar = () => {
 		JSON.stringify(sidebarStore.isSidebarCollapsed)
 	)
 }
-
-const logout = createResource({
-  url: 'logout',
-  method: 'GET',
-  onSuccess(data) {
-    window.location.reload();
-  },
-});
 
 const option=[
   {
@@ -149,7 +147,7 @@ const option=[
     label: 'Logout',
     icon: () => h(FeatherIcon, { name: 'log-out' }),
     onClick: () => {
-      logout.fetch();
+      sessionStore.logout.fetch()
     },
   },
 ]

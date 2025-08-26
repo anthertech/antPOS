@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { useSessionStore } from '@/data/session'
+import { useSessionStore } from '@/stores/session'
 
 const session = useSessionStore()
 

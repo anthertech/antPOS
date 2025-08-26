@@ -43,14 +43,54 @@ def posprofile_user_query_conditions(user=None):
 @frappe.whitelist()
 def get_user_permissions():
     user = frappe.session.user
-
     permissions = {}
+    user_roles = frappe.get_roles(user)
+
+    def check_perm(doctype, permtype):
+        # Check Custom DocPerm first
+        custom_perms = frappe.get_all(
+            "Custom DocPerm",
+            filters={"parent": doctype, "role": ["in", user_roles], permtype: 1},
+            fields=["if_owner"]
+        )
+        if custom_perms:
+            return custom_perms[0]["if_owner"] == 1
+
+        # Fallback: check DocPerm entries
+        std_perms = frappe.get_all(
+            "DocPerm",
+            filters={"parent": doctype, "role": ["in", user_roles], permtype: 1},
+            fields=["if_owner"]
+        )
+        if std_perms:
+            return std_perms[0]["if_owner"] == 1
+
+        return False
 
     for doctype in ["Sales Invoice", "Payment Entry", "Sales Order"]:
+        submit_owner_restricted = check_perm(doctype, "submit")
+        
+        can_submit_global = frappe.has_permission(doctype, doc=None, ptype="submit", user=user)
+        can_create_global = frappe.has_permission(doctype, doc=None, ptype="create", user=user)
+        can_print_global = frappe.has_permission(doctype, doc=None, ptype="print", user=user)
+
+        # If submit is owner restricted, check if user owns any docs
+        has_own_docs = False
+        if submit_owner_restricted:
+            has_own_docs = frappe.db.exists({
+                "doctype": doctype,
+                "owner": user,
+                "docstatus": 0
+            }) is not None
+
+        can_submit = can_submit_global or (submit_owner_restricted and has_own_docs)
+
         permissions[doctype.lower().replace(" ", "_")] = {
-            "can_submit": frappe.has_permission(doctype, doc=None, ptype="submit", user=user),
-            "can_create": frappe.has_permission(doctype, doc=None, ptype="create", user=user),
-            "can_print": frappe.has_permission(doctype, doc=None, ptype="print", user=user),
+            "can_submit": can_submit,
+            "can_submit_owner_restricted": submit_owner_restricted,
+            "has_own_docs": has_own_docs,
+            "can_create": can_create_global,
+            "can_print": can_print_global,
         }
 
     return permissions
