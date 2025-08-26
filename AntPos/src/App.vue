@@ -19,18 +19,17 @@
 
 <script setup>
 import { FrappeUIProvider } from 'frappe-ui'
-import { onBeforeMount, provide, watch, } from 'vue';
+import { inject, watch } from 'vue';
 import { usePosProfileStore } from '@/stores/posProfile';
-import { useDynamicComponent } from '@/utils/Dialog';
-import { usePageMeta } from 'frappe-ui';  
+import { usePageMeta } from 'frappe-ui';
 import { getSettings } from '@/stores/settings';
+import { useSessionStore } from '@/stores/session';
 import Navbar from '@/components/Navbar.vue';
 import Sidebar from '@/components/Sidebar.vue';
 
 const { brand } = getSettings()
-const { currentComponent, loadComponent } = useDynamicComponent();
-  
-provide('dynamicComponent', { currentComponent, loadComponent });
+const { currentComponent, loadComponent } = inject('dynamicComponent');
+const posProfileStore = usePosProfileStore();
 
 usePageMeta(() => {
   return {
@@ -38,14 +37,12 @@ usePageMeta(() => {
   }
 })
 
-onBeforeMount(() => {
-    usePosProfileStore().fetchPosProfile();
-  });
-
-  watch(() => usePosProfileStore().hasNoData, (val) => {
-  if (val) {
-    loadComponent('OpenShift')
+watch(
+  () => posProfileStore.hasNoData,
+  (val) => {
+    if (val && useSessionStore.isLoggedIn) {
+      loadComponent('OpenShift')
+    } 
   }
-})
-
+)
 </script>

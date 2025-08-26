@@ -47,7 +47,7 @@
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2025-05-09 16:25:48.476466",
+ "modified": "2025-08-23 11:51:45.655352",
  "modified_by": "Administrator",
  "module": "Ant-Pos",
  "name": "Antpos Fields Layout",
@@ -74,6 +74,16 @@
    "report": 1,
    "role": "All",
    "share": 1
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "role": "POS Billing"
+  },
+  {
+   "export": 1,
+   "read": 1,
+   "role": "POS Cash"
   }
  ],
  "sort_field": "creation",

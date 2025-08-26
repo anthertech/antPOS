@@ -3,6 +3,8 @@ import { createApp, reactive } from 'vue'
 import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
+import translationPlugin from './translation'
+import { useDynamicComponent } from './utils/Dialog';
 import mitt from 'mitt';
 
 import {
@@ -25,6 +27,7 @@ setConfig('resourceFetcher', frappeRequest)
 
 app.use(router)
 app.use(resourcesPlugin)
+app.use(translationPlugin)
 
 app.component('Button', Button)
 app.component('Card', Card)
@@ -38,6 +41,8 @@ const base = reactive({
   invoice:{},
 })
 app.provide('base', base)
+
+app.provide('dynamicComponent', useDynamicComponent());
 
 // Provide emitter it globally
 app.provide('emitter', emitter);

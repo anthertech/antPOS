@@ -12,11 +12,20 @@
 import { computed, inject, onMounted, onUnmounted } from 'vue';
 import emitter from '@/utils/emitter'; 
 import Autocomplete from '@/components/custom_components/Autocomplete.vue';
-import { createListResource } from 'frappe-ui';
+import { createListResource,createResource } from 'frappe-ui';
 import { createToast } from '@/utils';
+import { usePosProfileStore } from '@/stores/posProfile';
 
 let base = inject('base');
 let errorHandled = false;
+
+const getCustomerGroups = computed(()=>{
+  if (!usePosProfileStore().posProfileData?.customer_groups){
+    return []
+  }
+  return usePosProfileStore().posProfileData?.customer_groups.map(item=>item.customer_group);
+
+})
 
 const customerResource = createListResource({
   doctype: 'Customer',
@@ -24,6 +33,7 @@ const customerResource = createListResource({
   filters: {
     disabled: false,
   },
+  orFilters: getCustomerGroups.value.length>0?[['customer_group', 'in', getCustomerGroups.value]]:[],
   pageLength: Number.MAX_VALUE * 2,
   auto: true,
   onSuccess(data) {

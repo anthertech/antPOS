@@ -1,0 +1,69 @@
+import { defineStore } from 'pinia'
+import { createResource } from 'frappe-ui'
+import { userResource } from '@/stores/user'
+import router from '@/router'
+import { ref, computed } from 'vue'
+import { usePosProfileStore } from '@/stores/posProfile'
+import { usePermissionStore } from '@/stores/permissionStore';
+
+export const useSessionStore = defineStore('antpos-session', () => {
+
+  const permissionStore = usePermissionStore();
+  const posProfileStore = usePosProfileStore()
+
+  function sessionUser() {
+    let cookies = new URLSearchParams(document.cookie.split('; ').join('&'))
+    let _sessionUser = cookies.get('user_id')
+    if (_sessionUser === 'Guest') {
+      _sessionUser = null
+    }
+    return _sessionUser
+  }
+
+  let user = ref(sessionUser())
+  const isLoggedIn = computed(() => !!user.value)
+
+  function initializeSession() {    
+    if (isLoggedIn.value) {
+      permissionStore.fetchPermissions()
+      posProfileStore.fetchPosProfile()
+    }
+  }
+  const login = createResource({
+    url: 'login',
+    makeParams({ email, password }) {
+      return {
+        usr: email,
+        pwd: password,
+      }
+    },
+    onError() {
+      throw new Error('Invalid email or password')
+    },
+    onSuccess() {
+      userResource.reload()
+      user.value = sessionUser()
+      initializeSession()
+      login.reset()
+      router.replace({ path: '/' })
+    },
+  })
+
+  const logout = createResource({
+    url: 'logout',
+    onSuccess() {
+      userResource.reset()
+      user.value = null
+      window.location.href = '/login?redirect-to=/antPOS'
+    },
+  })
+
+  initializeSession()
+  return {
+    user,
+    isLoggedIn,
+    login,
+    logout,
+  }
+})
+

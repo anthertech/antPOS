@@ -71,12 +71,16 @@ import { Dialog, Button, createListResource, createResource, TextInput, FeatherI
 import { ref, inject, computed, watch } from 'vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { usePermissionStore } from '@/stores/permissionStore';
+import { usersStore } from '@/stores/users';
 
 const store = usePosProfileStore();
 let base = inject('base');
 const dialogVisible = ref(true);
 const selectedInvoice = ref(null);
 const searchQuery = ref("");
+const permissionStore = usePermissionStore();
+const user = usersStore().getUser();
 let errorHandled = false;
 const selectedPageLength = ref(20);
 const handleDialogClose = () => { dialogVisible.value = false; };
@@ -199,7 +203,8 @@ const invoices = createListResource({
     orderBy: 'creation desc',
     filters: { 
         docstatus: 0, 
-        pos_profile: store.posProfileData.name, 
+        pos_profile: store.posProfileData.name,
+        owner: permissionStore.salesInvoiceCanOnlyOwn ? user.name : undefined,
     },
     orFilters: [],
     pageLength: 20,

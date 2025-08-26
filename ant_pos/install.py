@@ -1,23 +1,62 @@
 import frappe
+from frappe.core.page.permission_manager.permission_manager import add, update
 
 def before_install():
     create_roles_and_permissions()
+    set_custom_permissions(permission_matrix)
+    
+def set_custom_permissions(permission_matrix):
+    """
+    Set Custom DocPerms for all entries in permission_matrix.
+    Each entry is a tuple: (doctype, role, permissions_dict)
+    """
+    for doctype, role, perms in permission_matrix:
+        permlevel = perms.get("permlevel", 0)
+        filters = {
+            "parent": doctype,
+            "role": role,
+            "permlevel": permlevel
+        }
+        # Check if a Custom DocPerm already exists for this tuple
+        custom_perm_name = frappe.db.exists("Custom DocPerm", filters)
+        perms_for_doc = {
+            "doctype": "Custom DocPerm",
+            "parent": doctype,
+            "parenttype": "DocType",
+            "parentfield": "permissions",
+            "role": role,
+            "permlevel": permlevel,
+        }
+        perms_for_doc.update(perms)
+        # Don't set permlevel twice
+        del perms_for_doc["permlevel"]
+        
+        if not custom_perm_name:
+            # Create new Custom DocPerm
+            frappe.get_doc(perms_for_doc).insert(ignore_permissions=True)
+        else:
+            # Update existing Custom DocPerm
+            doc = frappe.get_doc("Custom DocPerm", custom_perm_name)
+            for k, v in perms_for_doc.items():
+                setattr(doc, k, v)
+            doc.save(ignore_permissions=True)
+        frappe.db.commit()
+    # Always clear cache so permission map is updated immediately
+    frappe.clear_cache()
 
 def create_roles_and_permissions():
-    # 1. Define roles to create
     roles = [
         {"role_name": "POS Billing", "desk_access": 0},
         {"role_name": "POS Cash", "desk_access": 0},
     ]
 
-    # 2. Create roles if not exists
+    # Create roles if not exist
     for role in roles:
         if not frappe.db.exists("Role", role["role_name"]):
             frappe.get_doc({"doctype": "Role", **role}).insert()
 
-    # 3. Permission Matrix: (doctype, role, permissions dict)
-    permission_matrix = [
-
+    
+permission_matrix = [
         # POS Cash user permission in Doctype
         ("POS Invoice", "POS Cash", {"permlevel":0, "if_owner":0, "select":1, "read":1, "write":1,"create":0, "delete":0, "submit": 1, "cancel":0, "amend":0, "print":1, "email":0, "report":0, "import":0, "export":1, "set_user_permissions":0, "share":0}),
         ("Customer", "POS Cash", {"permlevel":0, "if_owner":0, "select":1, "read":1, "write":1,"create":1, "delete":0, "submit": 0, "cancel":0, "amend":0, "print":0, "email":0, "report":0, "import":0, "export":1, "set_user_permissions":0, "share":0}),
@@ -64,25 +103,3 @@ def create_roles_and_permissions():
         ("Tax Category", "POS Billing", {"permlevel":0, "if_owner":0, "select":1, "read":1, "write":0,"create":0, "delete":0, "submit": 0, "cancel":0, "amend":0, "print": 0, "email":0, "report":1, "import":0, "export":1, "set_user_permissions":0, "share":0}),
         
     ]
-
-    # 4. Create DocPerm entries if not already set
-    for doctype, role, perms in permission_matrix:
-        exists = frappe.db.exists(
-            "DocPerm",
-            {"parent": doctype, "role": role, "permlevel": perms.get("permlevel", 0)}
-        )
-        if not exists:
-            perms_lower = {k.lower(): v for k, v in perms.items()}
-            doc = frappe.get_doc({
-                "doctype": "DocPerm",
-                "parent": doctype,
-                "parenttype": "DocType",
-                "parentfield": "permissions",
-                "role": role,
-                **perms_lower
-            })
-            doc.insert(ignore_permissions=True)
-
-    # 5. Clear cache so changes take effect
-    frappe.clear_cache()
-

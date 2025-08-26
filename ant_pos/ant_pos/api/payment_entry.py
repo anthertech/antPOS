@@ -62,25 +62,4 @@ def get_payments(shift):
     })
 
     return result_list
-    # invoice = frappe.db.get_all('Sales Invoice', filters={'custom_ant_opening': shift},fields=['name', 'is_pos',])
-    # for inv in invoice:
-    #     inv['payments'] = []
-    #     payments = frappe.db.get_all('Payment Entry', filters={'shift': shift}, fields=['name', 'paid_from', 'paid_to', 'paid_from_account_currency', 'paid_to_account_currency', 'amount', 'amount_in_account_currency'])
-    #     for payment in payments:
-    #         inv['payments'].append(payment)
-def get_payment_entry(invoice):
-    
-    # payments = frappe.db.sql("""
-    #     SELECT 
-    #         name, 
-    #         paid_from, 
-    #         paid_to, 
-    #         paid_from_account_currency, 
-    #         paid_to_account_currency, 
-    #         amount, 
-    #         amount_in_account_currency
-    #     FROM `tabPayment Entry`
-    #     WHERE shift = %s
-    # """, (shift,), as_dict=True)
-    
-    return invoice
+
