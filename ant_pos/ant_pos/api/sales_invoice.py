@@ -2,6 +2,7 @@ import frappe
 from frappe import _
 from frappe.model.document import Document
 from erpnext.stock.get_item_details import get_price_list_rate, get_price_list_rate_for
+from erpnext.accounts.doctype.pos_invoice.pos_invoice import POSInvoice
 
 @frappe.whitelist()
 def calculate_invoice_item_taxes(doc):
@@ -30,3 +31,10 @@ def calculate_invoice_item_taxes(doc):
             )
             item.price_list_rate=data
     return invoice.as_dict()
+
+def before_save_sales_invoice(doc, method):
+    if doc.is_pos:
+        doc.__class__ = POSInvoice
+        doc.validate_stock_availablility()
+          
+

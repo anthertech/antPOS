@@ -63,7 +63,7 @@ class AntClosingShift(Document):
         return frappe.get_all(
             "Payment Entry",
             filters={"reference_no": self.ant_opening_shift, "docstatus": 1},
-            fields=["name as payment_entry", "posting_date", "paid_amount", "payment_type"]
+            fields=["name as payment_entry","party as customer", "posting_date", "paid_amount", "payment_type"]
         )
 
     def process_pos_transactions(self, pos_transactions, tax_map):

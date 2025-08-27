@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, onUnmounted } from 'vue';
+import { computed, inject, onMounted, onUnmounted, watch } from 'vue';
 import emitter from '@/utils/emitter'; 
 import Autocomplete from '@/components/custom_components/Autocomplete.vue';
 import { createListResource,createResource } from 'frappe-ui';
@@ -17,10 +17,10 @@ import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 
 let base = inject('base');
-let errorHandled = false;
 
 const getCustomerGroups = computed(()=>{
-  if (!usePosProfileStore().posProfileData?.customer_groups){
+
+  if (usePosProfileStore()?.hasNoData){
     return []
   }
   return usePosProfileStore().posProfileData?.customer_groups.map(item=>item.customer_group);
@@ -33,14 +33,10 @@ const customerResource = createListResource({
   filters: {
     disabled: false,
   },
-  orFilters: getCustomerGroups.value.length>0?[['customer_group', 'in', getCustomerGroups.value]]:[],
+  orFilters: getCustomerGroups?.value?.length > 0 ? [['customer_group', 'in', getCustomerGroups?.value]] : [],
   pageLength: Number.MAX_VALUE * 2,
-  auto: true,
-  onSuccess(data) {
-    errorHandled = false;
-  },
+  auto: false,
   onError(error) {
-    if (!errorHandled) {
       createToast({
         title: 'error',
         message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
@@ -49,8 +45,6 @@ const customerResource = createListResource({
         position: 'top-center',
         timeout: 5,
       });
-      errorHandled = true;
-    }
   },
   transform: (data) => {
     return data.map((item) => ({
@@ -109,5 +103,10 @@ const selectedCustomer = computed({
   },
 });
 
+watch(usePosProfileStore().hasNoData, (newVal) => {
+  
+    customerResource.reload();
+
+}, { immediate: true });
 
 </script>

@@ -81,7 +81,6 @@ const selectedInvoice = ref(null);
 const searchQuery = ref("");
 const permissionStore = usePermissionStore();
 const user = usersStore().getUser();
-let errorHandled = false;
 const selectedPageLength = ref(20);
 const handleDialogClose = () => { dialogVisible.value = false; };
 
@@ -129,7 +128,6 @@ let salesInvoice = createResource({
         return data
     },
     onSuccess: async (data) => {
-        errorHandled = false;  
         if (!data.docs[0]?.items || !Array.isArray(data.docs[0].items)) {
             console.error("Invalid or missing items array", data.docs[0]?.items);
             return;
@@ -145,7 +143,6 @@ let salesInvoice = createResource({
             position: 'top-center',
             timeout: 5,
         });
-        errorHandled = true;
     }
 });
 
@@ -193,7 +190,6 @@ let get_value = createResource({
             position: 'top-center',
             timeout: 5,
         });
-        errorHandled = true;
     }
 })
 

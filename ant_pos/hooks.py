@@ -20,7 +20,7 @@ add_to_apps_screen = [
 		"has_permission": "ant_pos.ant_pos.api.user_has_posprofile",
 	}
 ]
-# Includes in <head>
+# Includes in <head	>
 # ------------------
 
 # include js, css files in header of desk.html
@@ -134,6 +134,9 @@ permission_query_conditions = {
 doc_events = {
 	"Payment Entry": {
 		"validate": "ant_pos.ant_pos.api.payment_entry.validate",
+	},
+    "Sales Invoice":{
+        "before_save":"ant_pos.ant_pos.api.sales_invoice.before_save_sales_invoice",
 	}
 }
 

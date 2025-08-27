@@ -237,7 +237,6 @@ import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
 
 let base = inject('base')
-let errorHandled = false;
 let doc = ref({})
 const store = usePosProfileStore();
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url',});
@@ -291,21 +290,17 @@ const createSaveResource = createResource({
         };
     },
     onSuccess(data) {
-        errorHandled = false;
         doc.value.doc = data.docs[0];
     },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     }
 });
 
@@ -404,20 +399,16 @@ let advance = createResource({
     onSuccess(data) {
         base.invoice = {...data.docs[0],is_pos: true}
         addPayments()
-        errorHandled = false;
     },
     onError(error) {
-            if (!errorHandled) {
-                createToast({
-                    title: 'error',
-                    message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
-                    icon: 'x-circle',
-                    iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                    position: 'top-center',
-                    timeout: 5,
-                });
-                errorHandled = true;
-            }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
 });
 
@@ -433,6 +424,7 @@ const makepayment = createResource({
                 party: params.invoice.customer,
                 paid_amount: params.payments.amount,
                 received_amount: params.payments.amount,
+                name: '',
                 references: [
                     {
                         reference_doctype: 'Sales Invoice',
@@ -449,21 +441,15 @@ const makepayment = createResource({
             action: params.method
         }
     },
-    onSuccess(data) {
-        errorHandled = false;
-    },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
 });
 

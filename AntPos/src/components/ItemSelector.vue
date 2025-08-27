@@ -47,7 +47,6 @@ const store = usePosProfileStore();
 const debounceSearch = ref('');
 const items = ref([]);
 let base = inject('base');
-let errorHandled = false;
 
 const remove_invoice = (include_customer) => {
     base.invoice = {
@@ -89,7 +88,6 @@ const searchResource = createResource({
         }
     },
     onSuccess(data) {
-        errorHandled = false;
         if (data.serial_no) {
             data.selected_serial_no = [data.serial_no];
         }
@@ -98,17 +96,14 @@ const searchResource = createResource({
         }
     },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
 });
 
@@ -128,20 +123,16 @@ const addItemsResource = createResource({
         }
     },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
     onSuccess(data) {
-        errorHandled = false;
         addItem(data);
     },
     transform(data){
@@ -171,7 +162,6 @@ const addItemsResource = createResource({
 });
 
 const fetchSearchResource = () => {
-    errorHandled = false;
     searchResource.fetch();
 };
 
@@ -278,7 +268,6 @@ const runDocMethod = createResource({
                 }
             }
         });
-        errorHandled = false;
     },
     onError(error) {
         createToast({
@@ -289,7 +278,6 @@ const runDocMethod = createResource({
             position: 'top-center',
             timeout: 5,
         });
-        errorHandled = true;
     }
 });
 

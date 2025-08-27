@@ -1,12 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { createResource } from 'frappe-ui'
+import { createResource, createListResource } from 'frappe-ui'
 import { createToast } from '@/utils';
 
 export const useInvoiceStore = defineStore('invoiceStore', () => {
     const invoice = ref({})
     const items = ref([])
-    const fetchInvoice = createResource({
+    const customer =ref({})
+    const invoiceResource = createResource({
         url: 'ant_pos.ant_pos.api.sales_invoice.calculate_invoice_item_taxes',
         method: 'POST',
         auto: false,
@@ -69,15 +70,51 @@ export const useInvoiceStore = defineStore('invoiceStore', () => {
 
     })
     
+    const customerResource = createListResource({
+        doctype: 'Customer',
+        fields: ['name', 'mobile_no','customer_group','territory','is_internal_customer'],
+        filters: {
+            disabled: false,
+        },
+        // orFilters: getCustomerGroups?.value?.length > 0 ? [['customer_group', 'in', getCustomerGroups?.value]] : [],
+        pageLength: Number.MAX_VALUE * 2,
+        auto: false,
+        onError(error) {
+            createToast({
+                title: 'error',
+                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+                icon: 'x-circle',
+                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+                position: 'top-center',
+                timeout: 5,
+            });
+        },
+        transform: (data) => {
+            return data.map((item) => ({
+            label: item.name,
+            value: item.name,
+            mobile_no: item.mobile_no,
+            name: item.name,
+            customer_group: item.customer_group,
+            territory: item.territory,
+            is_internal_customer: item.is_internal_customer,
+            }));
+        },
+    });
+    
     function refresh() {
-        return fetchInvoice.reload()
+        return invoiceResource.reload()
     }
 
     function fetchInvoice() {
-        return fetchInvoice.fetch()
+        return invoiceResource.fetch()
     }
 
-    return { 
-        invoice, items, fetchInvoice, refresh 
+    function fetchCustomer() {
+        return customerResource.fetch()
+    }
+
+    return {
+        customer, invoice, items, fetchInvoice, refresh, fetchCustomer
     }
 })
