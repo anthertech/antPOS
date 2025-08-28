@@ -94,7 +94,6 @@ const store = usePosProfileStore();
 const dialogVisible = ref(true);
 const base = inject('base');
 const data = ref(store.posProfileData.payments);
-let errorHandled = false;
 
 const totals = ref({
     opening: 0,
@@ -171,23 +170,19 @@ const handleSubmit = createResource({
         }
     },
     onSuccess(data) {
-        errorHandled = false;
         emitter.emit('remove_invoice',true);
         dialogVisible.value = false;
         store.fetchPosProfile();
     },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
 });
 

@@ -200,7 +200,6 @@ const { loadComponent } = inject('dynamicComponent');
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
 let base = inject('base');
 let status = '';
-let errorHandled = false;
 let sales_invoice = createResource({
     url: 'frappe.desk.form.save.savedocs',
     makeParams(params) {
@@ -213,7 +212,6 @@ let sales_invoice = createResource({
                     position: 'top-center',
                     timeout: 5,
                 });
-                errorHandled = true;
             }
         });
         status = params.status
@@ -234,13 +232,13 @@ let sales_invoice = createResource({
                 base_total: base.invoice.base_total && base.invoice.base_total,
                 custom_ant_opening: store.openingShift.name,
                 apply_discount_on: store.posProfileData.apply_discount_on,
-                payments:getPayments()    
+                payments:getPayments(),
+                advances:getAdvances()
             }),
             action:params.action,
         };
     },
     async onSuccess (data) {
-        errorHandled = false;
         if ( status == 'pay'){
             base.invoice = data.docs[0]
             return
@@ -258,17 +256,14 @@ let sales_invoice = createResource({
         emitter.emit('remove_invoice', true);
     },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || error || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
 });
    
@@ -283,6 +278,12 @@ const getPayments = () => {
         };
     });
     return payments;
+};
+
+const getAdvances = () => {
+    if (!base.invoice.advances) return [];
+    if (base.is_return) return [];
+    return base.invoice.advances;
 };
 
 const calcuateDiscount = () => {

@@ -75,7 +75,6 @@ import { usePermissionStore } from '@/stores/permissionStore';
 import { usersStore } from '@/stores/users';
 
 let base = inject('base');
-let errorHandled = false;
 const store = usePosProfileStore();
 const dialogVisible = ref(true);
 const selectedInvoice = ref(null);
@@ -132,7 +131,6 @@ const runDoCMethod = createResource({
         return data
     },
     onSuccess(data){
-        errorHandled = false;
         addvalues();    
     },
     onError(error) {
@@ -144,7 +142,6 @@ const runDoCMethod = createResource({
             position: 'top-center',
             timeout: 5,
         });
-        errorHandled = true;
     }
 });
 
@@ -160,7 +157,6 @@ let salesInvoice = createResource({
     },
     onSuccess: async (data) => {
         await runDoCMethod.fetch({ for_validate: true, docs: data, method: 'set_missing_values', args: { "for_validate": true } });
-        errorHandled = false;
     },
     onError(error) {
         createToast({
@@ -171,7 +167,6 @@ let salesInvoice = createResource({
             position: 'top-center',
             timeout: 5,
         });
-        errorHandled = true;
     }
 });
 
@@ -256,7 +251,6 @@ const get_value = createResource({
             position: 'top-center',
             timeout: 5,
         });
-        errorHandled = true;
     }
 
 })

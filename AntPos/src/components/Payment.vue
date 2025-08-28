@@ -154,7 +154,6 @@ const currentTab = ref('credit');
 const customerName = ref(base.customer.name);
 const selectAll = ref(false);
 const modes = ref([]);
-let errorHandled = false;
     
 const invoices = createListResource({
     doctype: 'Sales Invoice',
@@ -362,21 +361,15 @@ let save = createResource({
             action: params.action
         }
     },
-    onSuccess(data) {
-        errorHandled = false;
-    },
     onError(error) {
-        if (!errorHandled) {
-            createToast({
-                title: 'error',
-                message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
-                icon: 'x-circle',
-                iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-                position: 'top-center',
-                timeout: 5,
-            });
-            errorHandled = true;
-        }
+        createToast({
+            title: 'error',
+            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages  || 'An error occurred',
+            icon: 'x-circle',
+            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+            position: 'top-center',
+            timeout: 5,
+        });
     },
 });
 
