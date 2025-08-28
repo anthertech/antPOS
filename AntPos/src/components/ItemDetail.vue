@@ -281,9 +281,9 @@ const getPayments = () => {
 };
 
 const getAdvances = () => {
-    if (!invoiceStore.advances) return [];
-    if (invoiceStore.is_return) return [];
-    return invoiceStore.advances;
+    if (!base.invoice.advances) return [];
+    if (base.is_return) return [];
+    return base.invoice.advances;
 };
 
 const calcuateDiscount = () => {
