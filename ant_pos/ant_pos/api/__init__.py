@@ -103,3 +103,8 @@ def get_translations():
 		language = frappe.db.get_single_value("System Settings", "language")
 
 	return get_all_translations(language)
+
+@frappe.whitelist()
+def get_doc_field(doctype):
+    doc = frappe.new_doc(doctype)
+    return doc.as_dict()

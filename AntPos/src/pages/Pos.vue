@@ -6,11 +6,18 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue';
+import { computed, inject, watch } from 'vue';
 import ItemSelector from '@/components/ItemSelector.vue';
 import Invoice from '@/components/Invoice.vue';
 import ItemDetail from '@/components/ItemDetail.vue';
+import { usePosProfileStore } from '@/stores/posProfile';
+import { useSessionStore } from '@/stores/session';
+import { useInvoiceStore } from '@/stores/salesInvoice';
+
 const base = inject('base');
+const posProfileStore = usePosProfileStore();
+const sessionStore = useSessionStore();
+const invoiceStore = useInvoiceStore();
 
 const componentMap = {
   Invoice,
@@ -20,5 +27,19 @@ const componentMap = {
 const currentComponent = computed(() =>
   base?.invoice?.status ? componentMap.Invoice : componentMap.ItemSelector
 );
+console.log("sdssssa");
+invoiceStore.fetchInvoice();
+
+
+watch(
+  () => posProfileStore.hasNoData,
+  (val) => {
+    console.log("dddddddddddddddddddddddd");
+    
+    if (val && sessionStore.isLoggedIn) {
+      invoiceStore.fetchInvoice();
+    } 
+  }
+)
 
 </script>
