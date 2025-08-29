@@ -27,8 +27,8 @@ const componentMap = {
 const currentComponent = computed(() =>
   base?.invoice?.status ? componentMap.Invoice : componentMap.ItemSelector
 );
-console.log("sdssssa");
-invoiceStore.fetchInvoice();
+
+invoiceStore.invoiceResource.fetch();
 
 
 watch(
@@ -37,8 +37,8 @@ watch(
     console.log("dddddddddddddddddddddddd");
     
     if (val && sessionStore.isLoggedIn) {
-      invoiceStore.fetchInvoice();
-    } 
+      invoiceStore.invoiceResource.fetch();
+    }
   }
 )
 
