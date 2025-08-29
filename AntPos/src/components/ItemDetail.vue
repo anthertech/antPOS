@@ -287,7 +287,7 @@ const getAdvances = () => {
 };
 
 const calcuateDiscount = () => {
-    let amount = store.posProfileData?.apply_discount_on === 'grand_total' ? base.invoice.grand_total : base.invoice.base_net_total + base.invoice?.discount_amount ;
+    let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? base.invoice.base_grand_total : base.invoice.base_net_total + base.invoice?.discount_amount ;
     if (store.posProfileData?.custom_use_percentage_discount) {
         base.discount_amount= (amount * 100) / base.additional_discount_percentage;
     } else {
