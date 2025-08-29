@@ -36,5 +36,3 @@ def before_save_sales_invoice(doc, method):
     if doc.is_pos:
         doc.__class__ = POSInvoice
         doc.validate_stock_availablility()
-          
-
