@@ -287,11 +287,11 @@ const getAdvances = () => {
 };
 
 const calcuateDiscount = () => {
-    let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? base.invoice.base_grand_total : base.invoice.base_net_total + base.invoice?.discount_amount ;
+    let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? base.invoice.base_grand_total : base.invoice.base_net_total;
     if (store.posProfileData?.custom_use_percentage_discount) {
-        base.discount_amount= (amount * 100) / base.additional_discount_percentage;
+        base.discount_amount= (( amount + base.invoice?.discount_amount ) * 100) / base.additional_discount_percentage;
     } else {
-        base.additional_discount_percentage = base.discount_amount * (100 / amount);
+        base.additional_discount_percentage = base.discount_amount * (100 / ( amount + base.invoice?.discount_amount ));
     }
 };
 
