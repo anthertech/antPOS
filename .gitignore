@@ -1,9 +1,13 @@
+AntPos/dev-dist/
+
 .DS_Store
 *.pyc
 *.egg-info
 *.swp
 tags
 dev-dist
+AntPos/dev-dist/sw.js
+AntPos/dev-dist/sw.js.map
 tags
 ant_pos/docs/current
 node_modules/
