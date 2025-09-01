@@ -407,8 +407,8 @@ const add_serial_no = () =>{
 
 watch(
     () => props.items.selected_serial_no,
-    (newSerial, oldSerial) => {
-        if (((props.items.serial_no_options && newSerial !== oldSerial) || !oldSerial)) {
+    (newValue, oldValue) => {
+        if (((props.items.serial_no_options && newValue !== oldValue) || !oldValue)) {
             add_serial_no()
             adjustQtyNumbers(props.items.qty)
         }
@@ -417,8 +417,8 @@ watch(
 
 watch(
     () => props.items.price_list_rate,
-    (newSerial, oldSerial) => {
-        if (props.items.price_list_rate && newSerial !== oldSerial) {
+    (newValue, oldValue) => {
+        if (props.items.price_list_rate && newValue !== oldValue) {
             props.items.rate = props.items.price_list_rate ;
         }
     }
@@ -426,7 +426,7 @@ watch(
 
 watch(
     () => props.items.qty,
-    (newValue, oldValue)  =>  {
+    (newValue, oldValue)=>  {
         if (newValue !== oldValue)  {
             const option= get_serial_no_options()
             if (option.length > 0){
@@ -434,6 +434,7 @@ watch(
                 validateQty()
                 add_serial_no()
             }
+            // emitter.emit("calcDisco");
             emitter.emit('calctotal');          
         }
     }
@@ -499,7 +500,7 @@ base.items.forEach((items) => {
 });
 
 const  rateCalculation =  (item) => {
-    const rate = item.price_list_rate || item.rate;
+    const rate =  item.rate ;
     const discount = item.discount_percentage || 0;
     return rate - (rate * (discount / 100));
 };
@@ -521,6 +522,7 @@ watch(
     () => props.items.rate,
     (newValue, oldValue) => {
         if (newValue !== oldValue) {
+            
         calculateRateTotal();
         }
     }
@@ -529,6 +531,8 @@ watch(
 const calculateRateTotal = () => {
     props.items.rate = rateCalculation(props.items);
     calculateAmountTotal();
+    emitter.emit('calctotal');
+    
 };
 
 onMounted( async () => {
@@ -547,7 +551,7 @@ onMounted( async () => {
  
 onUnmounted(() => {    
     calculateAmountTotal();
-    emitter.emit('calctotal');          
+    emitter.emit('calctotal');
 });
 
 </script>
