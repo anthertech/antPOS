@@ -9,7 +9,7 @@
                     size="sm"
                     variant="subtle"
                     @keyup.enter="fetchSearchResource"
-                    :disabled="base.is_return"
+                    :disabled="invoiceStore.invoice.is_return"
                 >
                     <template #prefix>
                         <FeatherIcon class="w-4" name="search" />
@@ -42,28 +42,16 @@ import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import { usePosProfileStore } from '@/stores/posProfile';
 import emitter from '@/utils/emitter'; 
+import { useInvoiceStore } from '@/stores/salesInvoice';
 
 const store = usePosProfileStore();
 const debounceSearch = ref('');
 const items = ref([]);
+const invoiceStore = useInvoiceStore()
 let base = inject('base');
 
 const remove_invoice = (include_customer) => {
-    base.invoice = {
-        payments: [],
-        advances: [],
-        items: [],
-        paid_amount: 0,
-        rounded_total: 0,
-        net_total: 0,
-        total_taxes_and_charges: 0,
-        total: 0,
-        discount_amount: 0,
-        grand_total: 0,
-        base_rounded_total: 0,
-        delivery_date: '',
-    };
-    base.is_return = false
+    invoiceStore.invoiceResource.fetch()
     base.items = [];
     base.customer = include_customer ? {} : base.customer;
     base.additional_discount_percentage = 0;
@@ -256,7 +244,7 @@ const runDocMethod = createResource({
     },
 
     onSuccess(data){
-        base.invoice=data;
+        invoiceStore.invoice=data;
         data.items.forEach(n => {
             const e = base.items.find(b => b.custom_id === n.custom_id);
             if (!e) return;
@@ -288,9 +276,9 @@ const calculateAmountTotal = async () => {
         return;
     }
     await runDocMethod.fetch({doc: JSON.stringify({
-        ...base?.invoice,
+        ...invoiceStore.invoice,
         doctype: 'Sales Invoice',
-        is_pos: base.invoice.is_return ? base.invoice.is_pos : 1,
+        is_pos: invoiceStore.invoice.is_return ? invoiceStore.invoice.is_pos : 1,
         pos_profile: store.posProfileData.name,
         company: store.posProfileData.company,
         conversion_rate: 1,
@@ -300,7 +288,7 @@ const calculateAmountTotal = async () => {
         update_stock: 1,
         additional_discount_percentage: base.additional_discount_percentage ? Number(base.additional_discount_percentage) : 0 ,
         discount_amount: base.discount_amount ? Number(base.discount_amount) : 0,
-        base_total: base.invoice.base_total || 0,
+        base_total: invoiceStore.invoice.base_total || 0,
         custom_ant_opening: store.openingShift.name,
         apply_discount_on: store.posProfileData.apply_discount_on,
     })});

@@ -231,7 +231,7 @@
                                 size="sm"
                                 variant="subtle"
                                 placeholder="Batch No"
-                                :disabled="base.is_return"
+                                :disabled="invoiceStore.invoice.is_return"
                                 label="Batch No"
                                 v-model="items.selected_batch_no"
                                 :hideSearch="true"
@@ -249,9 +249,12 @@ import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vu
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { useInvoiceStore } from '@/stores/salesInvoice';
 
 let base = inject('base');
 const store = usePosProfileStore();
+const invoiceStore = useInvoiceStore()
+
     
 const props = defineProps({
     items: {
@@ -301,7 +304,7 @@ const get_serial_no = createListResource({
 const get_serial_no_options = () => {
     let serials = []
     const { has_batch_no, batch_no } = props.items;
-    if (base.is_return){
+    if (invoiceStore.invoice.is_return){
         serials=props.items._serial || []
         return serials.map(serial_no => ({
             label: serial_no,
@@ -310,7 +313,7 @@ const get_serial_no_options = () => {
     }
     serials = get_serial_no.data || [];
 
-    if (props.items.batch_no != null && !base.is_return) {
+    if (props.items.batch_no != null && !invoiceStore.invoice.is_return) {
         serials = serials.filter(serial_no => serial_no.batch_no === props.items.batch_no);
     }
     
@@ -321,7 +324,7 @@ const get_serial_no_options = () => {
 };
 
 const getbatchNo =  () => {
-    if (base.is_return) {
+    if (invoiceStore.invoice.is_return) {
         return [{
             label: props.items.batch_no,
             value: props.items.batch_no,
@@ -395,7 +398,7 @@ const validateQty = () => {
         const options = get_serial_no_options()
         if (options.length > 0 && props.items.qty > options.length) {
             showToast('warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
-            props.items.qty = base.is_return ?  -Math.abs(options.length) : options.length;
+            props.items.qty = invoiceStore.invoice.is_return ?  -Math.abs(options.length) : options.length;
         }   
     }
     return ;
@@ -445,7 +448,7 @@ const adjustQtyNumbers = () =>{
     const qty = props.items.qty
     const serialLength = props.items.selected_serial_no.length
     if (qty!=serialLength){
-        props.items.qty = base.is_return ?  -Math.abs(serialLength) : serialLength;
+        props.items.qty = invoiceStore.invoice.is_return ?  -Math.abs(serialLength) : serialLength;
     }    
 }
 
@@ -506,14 +509,14 @@ const  rateCalculation =  (item) => {
 
 const deliveryDate = computed({
   get() {
-    if (!base.invoice.delivery_date) {
+    if (!invoiceStore.invoice.delivery_date) {
       const today = dayjsLocal().format('YYYY-MM-DD')
-      base.invoice.delivery_date = today
+      invoiceStore.invoice.delivery_date = today
     }
-    return base.invoice.delivery_date
+    return invoiceStore.invoice.delivery_date
   },
   set(value) {
-    base.invoice.delivery_date = value
+    invoiceStore.invoice.delivery_date = value
   }
 })
 

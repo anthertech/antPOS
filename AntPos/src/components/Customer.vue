@@ -15,9 +15,10 @@ import Autocomplete from '@/components/custom_components/Autocomplete.vue';
 import { createListResource,createResource } from 'frappe-ui';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { useInvoiceStore } from '@/stores/salesInvoice';
 
 let base = inject('base');
-
+const invoiceStore = useInvoiceStore()
 const getCustomerGroups = computed(()=>{
 
   if (usePosProfileStore()?.hasNoData){
@@ -97,7 +98,7 @@ onUnmounted(() => {
 const selectedCustomer = computed({
   get: () => base.customer,
   set: (newVal) => {
-    if(base.is_return) return
+    if(invoiceStore.invoice.is_return) return
       base.customer = newVal;
       emitter.emit('calctotal')
   },

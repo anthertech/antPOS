@@ -73,8 +73,11 @@ import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 import { usePermissionStore } from '@/stores/permissionStore';
 import { usersStore } from '@/stores/users';
+import { useInvoiceStore } from '@/stores/salesInvoice';
+
 
 const store = usePosProfileStore();
+const invoiceStore = useInvoiceStore()
 let base = inject('base');
 const dialogVisible = ref(true);
 const selectedInvoice = ref(null);
@@ -149,8 +152,7 @@ let salesInvoice = createResource({
 const submitInvoice = () => {salesInvoice.fetch({ name: selectedInvoice.value });};
 
 const addvalues = async ()=>{
-    base.invoice =  { ...salesInvoice.data.docs[0], status: null  }
-    base.is_return =salesInvoice.data.docs[0].is_return
+    invoiceStore.invoice =  { ...salesInvoice.data.docs[0], status: null  }
     base.items = salesInvoice.data.docs[0].items;
     base.discount_amount =  salesInvoice.data.docs[0].discount_amount;
     base.additional_discount_percentage =  salesInvoice.data.docs[0].additional_discount_percentage;

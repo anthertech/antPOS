@@ -62,7 +62,7 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Total Qty"
-                    v-model="base.invoice.total_qty"
+                    v-model="invoiceStore.invoice.total_qty"
                 />
                 <FormControl
                     v-if="store.posProfileData?.custom_use_percentage_discount"
@@ -96,8 +96,8 @@
                     :disabled="true"
                     label="Net Total"
                     :class="''"
-                    :value="Number(base.invoice.net_total).toFixed(2)"
-                    v-model="base.invoice.net_total"
+                    :value="Number(invoiceStore.invoice.net_total).toFixed(2)"
+                    v-model="invoiceStore.invoice.net_total"
                 />
                 <FormControl
                     :type="'number'"
@@ -108,8 +108,8 @@
                     :disabled="true"
                     label="Total"
                     :class="''"
-                    :value="Number(base.invoice.grand_total).toFixed(2)"
-                    v-model="base.invoice.grand_total"
+                    :value="Number(invoiceStore.invoice.grand_total).toFixed(2)"
+                    v-model="invoiceStore.invoice.grand_total"
                 />
 
             </div>
@@ -191,11 +191,13 @@ import { inject , watch } from 'vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 import { usePermissionStore } from '@/stores/permissionStore';
+import { useInvoiceStore } from '@/stores/salesInvoice';
 import emitter from '@/utils/emitter'; 
 import Item from '@/components/Item.vue';
 
 const store = usePosProfileStore();
 const permissionStore = usePermissionStore();
+const invoiceStore = useInvoiceStore()
 const { loadComponent } = inject('dynamicComponent');
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
 let base = inject('base');
@@ -217,9 +219,9 @@ let sales_invoice = createResource({
         status = params.status
         return {
             doc: JSON.stringify({
-                ...base?.invoice,
+                ...invoiceStore.invoice,
                 doctype: 'Sales Invoice',
-                is_pos: base.invoice.is_return ? base.invoice.is_pos : 1,
+                is_pos: invoiceStore.invoice.is_return ? invoiceStore.invoice.is_pos : 1,
                 pos_profile: store.posProfileData.name,
                 company: store.posProfileData.company,
                 conversion_rate: 1,
@@ -229,7 +231,7 @@ let sales_invoice = createResource({
                 update_stock: 1,
                 additional_discount_percentage: Number(base.additional_discount_percentage) || 0,
                 discount_amount: Number(base.discount_amount) || 0,
-                base_total: base.invoice.base_total && base.invoice.base_total,
+                base_total: invoiceStore.invoice.base_total && invoiceStore.invoice.base_total,
                 custom_ant_opening: store.openingShift.name,
                 apply_discount_on: store.posProfileData.apply_discount_on,
                 payments:getPayments(),
@@ -240,7 +242,8 @@ let sales_invoice = createResource({
     },
     async onSuccess (data) {
         if ( status == 'pay'){
-            base.invoice = data.docs[0]
+            invoiceStore.invoice = { ...data.docs[0] ,docstatus:1 }
+            console.log(invoiceStore.invoice);
             return
 
         }else if (status == 'print'){
@@ -268,8 +271,8 @@ let sales_invoice = createResource({
 });
    
 const getPayments = () => {
-    const total = base.is_return ? -Math.abs(base.invoice.rounded_total) : base.invoice.rounded_total;
-    const payments = base.invoice.payments.map(p => {
+    const total = invoiceStore.invoice.is_return ? -Math.abs(invoiceStore.invoice.rounded_total) : invoiceStore.invoice.rounded_total;
+    const payments = invoiceStore.invoice.payments.map(p => {
         const amount = p.default ? total : 0;
         return {
             ...p,
@@ -281,17 +284,17 @@ const getPayments = () => {
 };
 
 const getAdvances = () => {
-    if (!base.invoice.advances) return [];
-    if (base.is_return) return [];
-    return base.invoice.advances;
+    if (!invoiceStore.invoice.advances) return [];
+    if (invoiceStore.invoice.is_return) return [];
+    return invoiceStore.invoice.advances;
 };
 
 const calcuateDiscount = () => {
-    let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? base.invoice.base_grand_total : base.invoice.base_net_total;
+    let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? invoiceStore.invoice.base_grand_total : invoiceStore.invoice.base_net_total;
     if (store.posProfileData?.custom_use_percentage_discount) {
-        base.discount_amount= (( amount + base.invoice?.discount_amount ) * 100) / base.additional_discount_percentage;
+        base.discount_amount= (( amount + invoiceStore.invoice?.discount_amount ) * 100) / base.additional_discount_percentage;
     } else {
-        base.additional_discount_percentage = base.discount_amount * (100 / ( amount + base.invoice?.discount_amount ));
+        base.additional_discount_percentage = base.discount_amount * (100 / ( amount + invoiceStore.invoice?.discount_amount ));
     }
 };
 

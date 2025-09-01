@@ -73,6 +73,8 @@ import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 import { usePermissionStore } from '@/stores/permissionStore';
 import { usersStore } from '@/stores/users';
+import { useInvoiceStore } from '@/stores/salesInvoice';
+
 
 let base = inject('base');
 const store = usePosProfileStore();
@@ -82,6 +84,7 @@ const searchQuery = ref("");
 const selectedPageLength = ref(20);
 const handleDialogClose = () => { dialogVisible.value = false; };
 const permissionStore = usePermissionStore();
+const invoiceStore = useInvoiceStore()
 const user = usersStore().getUser();
 
 const setPageLength = (size) => {
@@ -210,7 +213,7 @@ async function splitSerialNumbers(serialString = "") {
 }
 
 const  addvalues = async ()=>{
-    base.invoice =  { ...runDoCMethod.data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" }
+    invoiceStore.invoice =  { ...runDoCMethod.data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" }
     base.items = runDoCMethod.data.docs[0].items || [];
     base.discount_amount =  runDoCMethod.data.docs[0].discount_amount;
     base.additional_discount_percentage =  runDoCMethod.data.docs[0].additional_discount_percentage;
@@ -222,7 +225,6 @@ const  addvalues = async ()=>{
     });
     base.customer = get_value.data || {};
     searchQuery.value='';
-    base.is_return = 1; 
     handleDialogClose()
 }
 

@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { computed, inject, watch } from 'vue';
+import { computed, inject, onBeforeMount } from 'vue';
 import ItemSelector from '@/components/ItemSelector.vue';
 import Invoice from '@/components/Invoice.vue';
 import ItemDetail from '@/components/ItemDetail.vue';
@@ -25,21 +25,15 @@ const componentMap = {
 };
 
 const currentComponent = computed(() =>
-  base?.invoice?.status ? componentMap.Invoice : componentMap.ItemSelector
+  invoiceStore.invoice.docstatus ? componentMap.Invoice : componentMap.ItemSelector
 );
 
-invoiceStore.invoiceResource.fetch();
 
 
-watch(
-  () => posProfileStore.hasNoData,
-  (val) => {
-    console.log("dddddddddddddddddddddddd");
+onBeforeMount(() => {
     
-    if (val && sessionStore.isLoggedIn) {
-      invoiceStore.invoiceResource.fetch();
-    }
-  }
-)
+  invoiceStore.invoiceResource.fetch()
+  
+});
 
 </script>

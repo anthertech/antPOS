@@ -2,6 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { createResource } from 'frappe-ui'
 
+function generateTempName(doctype) {
+    const suffix = Math.random().toString(36).substring(2, 10)
+    return `new-${doctype.toLowerCase().replace(/\s/g, "-")}-${suffix}`
+}
 // Factory function (can also be extracted to a separate file)
 function createDoctypeResource(doctype, onSuccessCallback) {
     return createResource({
@@ -27,7 +31,7 @@ export const useInvoiceStore = defineStore('salesInvoice', () => {
     const items = ref([])
 
     const invoiceResource = createDoctypeResource('Sales Invoice', (data) => {
-        invoice.value = data
+        invoice.value = { ...data,name:generateTempName(data.doctype)}
         console.log(invoice.value,"invoicevalue");
         
     })
