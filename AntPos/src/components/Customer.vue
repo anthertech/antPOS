@@ -12,7 +12,7 @@
 import { computed, inject, onMounted, onUnmounted, watch } from 'vue';
 import emitter from '@/utils/emitter'; 
 import Autocomplete from '@/components/custom_components/Autocomplete.vue';
-import { createListResource,createResource } from 'frappe-ui';
+import { createListResource } from 'frappe-ui';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 
