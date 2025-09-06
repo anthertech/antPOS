@@ -177,7 +177,7 @@
                     theme="gray"
                     @click="sales_invoice.fetch({ action:'Save', status:'print' })"
                 >
-                    SAVE & PRINT
+                SAVE & PRINT
                 </Button>
             </div>
         </div>
@@ -186,9 +186,9 @@
 
 <script setup>
 import Customer from '@/components/Customer.vue';
-import { Button, FeatherIcon , FormControl , createResource,} from 'frappe-ui';
+import { Button, FeatherIcon, FormControl, createResource, debounce} from 'frappe-ui';
 import { inject , watch } from 'vue';
-import { createToast } from '@/utils';
+import { createToast, showToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 import { usePermissionStore } from '@/stores/permissionStore';
 import { useInvoiceStore } from '@/stores/salesInvoice';
@@ -256,6 +256,7 @@ let sales_invoice = createResource({
                 "_blank"
             );
         }
+        showToast('success', 'Sales Invoice Drafted Successfully')
         emitter.emit('remove_invoice', true);
     },
     onError(error) {
@@ -291,6 +292,7 @@ const getAdvances = () => {
 
 const calcuateDiscount = () => {
     let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? invoiceStore.invoice.base_grand_total : invoiceStore.invoice.base_net_total;
+
     if (store.posProfileData?.custom_use_percentage_discount) {
         base.discount_amount= (( amount + invoiceStore.invoice?.discount_amount ) * 100) / base.additional_discount_percentage;
     } else {
@@ -298,11 +300,13 @@ const calcuateDiscount = () => {
     }
 };
 
+const debouncedDiscount = debounce(calculateDiscount, 300);
+
 watch(
     () => base.discount_amount,
     (newVal,oldVal) => {
         if (!store.posProfileData?.custom_use_percentage_discount && newVal !== oldVal) {
-            calcuateDiscount();
+            calculateDiscount();
             emitter.emit('calctotal');
         }
     },
@@ -310,14 +314,16 @@ watch(
 );
 
 watch(
-    () => base.additional_discount_percentage,
-    (newVal,oldVal) => {
-        if (store.posProfileData?.custom_use_percentage_discount && newVal !== oldVal) {
-            calcuateDiscount();
-            emitter.emit('calctotal');
-        }
-    },
-    { flush: 'post' }
+  [() => base.invoice.grand_total, () => base.invoice.net_total],
+  (newValues, oldValues) => {
+    const [newGrand, newNet] = newValues;
+    const [oldGrand, oldNet] = oldValues;
+
+    if (newGrand !== oldGrand || newNet !== oldNet) {
+      debouncedDiscount();
+    }
+  }
 );
+
 
 </script>

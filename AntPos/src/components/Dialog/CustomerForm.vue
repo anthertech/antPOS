@@ -65,6 +65,8 @@
 import { ref, computed, inject } from 'vue';
 import { Dialog, createListResource, Button, FormControl, createResource } from 'frappe-ui';
 import emitter from '@/utils/emitter';
+import { showToast } from '@/utils';
+
 import { usePosProfileStore } from '@/stores/posProfile';
 
 const store = usePosProfileStore();
@@ -135,6 +137,7 @@ const createCustomer = createResource ({
     },
     onSuccess(data) {
       emitter.emit("customerCreated",data);
+      showToast('success', 'New Customer Created')
       handleDialogClose();
     },
     onError(err) {
