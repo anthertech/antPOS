@@ -275,7 +275,7 @@ const get_batch = createResource({
             ...params
         }
     }
-})
+});
 
 
 const get_serial_no = createListResource({
@@ -283,9 +283,9 @@ const get_serial_no = createListResource({
     method: 'POST',
     auto: false,
     doctype: 'Serial No',
-    fields: ['name as serial_no', 'batch_no' ],
+    fields: ['name as serial_no', 'batch_no'],
     filters: {
-    warehouse: store.posProfileData.warehouse,
+        warehouse: store.posProfileData.warehouse,
         item_code: props.items.item_code,
     },
     pageLength: Number.MAX_VALUE * 2,
@@ -320,6 +320,10 @@ const get_serial_no_options = () => {
     }));
 };
 
+const validateInvoice = debounce(() => {
+    emitter.emit('calctotal');
+}, 500)
+
 const getbatchNo =  () => {
     if (base.is_return) {
         return [{
@@ -340,7 +344,7 @@ watch(
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
             
             let find = validateitems();
-            const option = get_serial_no_options()
+            const option = get_serial_no_options();
             if (!find && option.length > 0) {
                 props.items.selected_serial_no = [];
                 props.items.serial_no_options = props.items.serial_no_options.filter((serial_no) => serial_no.batch_no == newBatchNo)
@@ -355,7 +359,7 @@ watch(
             props.items.stock_qty = batch ? batch.stock_qty : 0;
             props.items.expiry_date = batch ? batch.expiry_date : null;
             props.items.batch_no = typeof newBatchNo === 'object' ? newBatchNo?.value : newBatchNo;
-            emitter.emit('calctotal')
+            validateInvoice();
         
         }
     }
@@ -398,7 +402,7 @@ const validateQty = () => {
             props.items.qty = base.is_return ?  -Math.abs(options.length) : options.length;
         }   
     }
-    return ;
+    return;
 };
 
 const add_serial_no = () =>{  
@@ -419,7 +423,7 @@ watch(
     () => props.items.price_list_rate,
     (newValue, oldValue) => {
         if (props.items.price_list_rate && newValue !== oldValue) {
-            props.items.rate = props.items.price_list_rate ;
+            props.items.rate = props.items.price_list_rate -  (props.items.price_list_rate * props.items.discount_percentage)/100;
         }
     }
 );
@@ -434,8 +438,7 @@ watch(
                 validateQty()
                 add_serial_no()
             }
-            // emitter.emit("calcDisco");
-            emitter.emit('calctotal');          
+            validateInvoice();
         }
     }
 );
@@ -476,32 +479,20 @@ const adjustSerialNumbers = (newQty) => {
 watch(
     () => props.items.discount_percentage,
     (newValue, oldValue) => {
-        if (newValue !== oldValue || !oldValue) {
-            discountCalculation()
+        if (Number(newValue) !== Number(oldValue) || !oldValue) {
+            discountCalculation();
         }
     }
 );
 
 const discountCalculation = debounce(() => {
     props.items.rate = rateCalculation(props.items);
-    props.items.amount = props.items.rate* Math.abs(props.items.qty); 
-    props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty)     
-    emitter.emit('calctotal')
-},300);
-
-base.items.forEach((items) => {
-    watch(
-        () => items,
-        () => {
-            calculateAmountTotal();
-        },
-        { deep: true }
-    );
-});
+    validateInvoice();
+},500);
 
 const  rateCalculation =  (item) => {
-    const rate =  item.rate ;
-    const discount = item.discount_percentage || 0;
+    const rate =  Number(item.price_list_rate) ;
+    const discount = Number(item.discount_percentage) || 0;
     return rate - (rate * (discount / 100));
 };
 
@@ -521,19 +512,20 @@ const deliveryDate = computed({
 watch(
     () => props.items.rate,
     (newValue, oldValue) => {
-        if (newValue !== oldValue) {
-            
-        calculateRateTotal();
+        if (Number(newValue) !== Number(oldValue)) {
+            props.items.base_rate = Number(newValue)
+            props.items.margin_rate_or_amount = 0
+            calculateRateTotal();
         }
     }
 );
 
-const calculateRateTotal = () => {
-    props.items.rate = rateCalculation(props.items);
+const calculateRateTotal = debounce(() => {
     calculateAmountTotal();
-    emitter.emit('calctotal');
-    
-};
+    props.items.discount_amount = props.items.price_list_rate - props.items.rate
+    validateInvoice();
+
+},500);
 
 onMounted( async () => {
     calculateRateTotal();
@@ -544,14 +536,13 @@ onMounted( async () => {
         item_code: props.items.item_code,
         warehouse: store.posProfileData.warehouse,
     })
-    await get_serial_no.fetch()
-    emitter.emit('calctotal');    
-    
+    await get_serial_no.fetch();
+    validateInvoice();
 });
  
 onUnmounted(() => {    
     calculateAmountTotal();
-    emitter.emit('calctotal');
+    validateInvoice();
 });
 
 </script>

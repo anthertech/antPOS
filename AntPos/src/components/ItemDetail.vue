@@ -311,8 +311,15 @@ watch(
 );
 
 watch(
-    [() => base.invoice.grand_total, () => base.invoice.net_total],
-    debouncedDiscount
+  [() => base.invoice.grand_total, () => base.invoice.net_total],
+  (newValues, oldValues) => {
+    const [newGrand, newNet] = newValues;
+    const [oldGrand, oldNet] = oldValues;
+
+    if (newGrand !== oldGrand || newNet !== oldNet) {
+      debouncedDiscount();
+    }
+  }
 );
 
 
