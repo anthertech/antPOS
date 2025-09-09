@@ -103,7 +103,7 @@ import { inject, h, computed } from 'vue';
 import { getSettings } from '@/stores/settings'
 import { usersStore } from '@/stores/users';
 import { useSidebar } from '@/stores/sidebar';
-import { usePermissionStore } from '@/stores/permissionStore';
+import { usePermissionStore } from '@/stores/permission';
 import { useSessionStore } from '@/stores/session';
 
 const sidebarStore = useSidebar()

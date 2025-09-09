@@ -14,8 +14,8 @@
             {{ currentRoute }}
           </div>
         </div>
-        <div class="flex  float-right gap-4">
-          <div class="flex flex-row items-center">
+        <div  class="flex  float-right gap-4">
+          <div v-if="currentRoute === 'Pos'" class="flex flex-row items-center">
             <Switch
                 v-if="store.posProfileData?.custom_create_sales_order"    
                 size="sm"
@@ -53,14 +53,16 @@
   </template>
   
 <script setup>
-import { inject, computed } from 'vue';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { Switch, Badge, FeatherIcon } from 'frappe-ui';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { useInvoiceStore } from '@/stores/pos';
 
-const base = inject('base');
 const store = usePosProfileStore();
 const router = useRouter();
+const invoiceStore = useInvoiceStore()
+
 const currentRoute = computed(() => router.currentRoute.value.name)
 import { useSidebar } from '@/stores/sidebar';
 let sidebarStore = useSidebar()
@@ -86,20 +88,20 @@ const toggleSidebar = () => {
 
 const badgeComponent = computed(() => {
   
-  if (base.items.length === 0) {
+  if (invoiceStore.items.length === 0) {
     return {
       label: 'New',
       theme: 'green',
       class:"'text-xs font-semibold text-gray-500'"
     };
   }
-  if (base?.is_return) {
+  if (invoiceStore.invoice?.is_return) {
     return {
       label: 'Return',
       theme: 'yellow',
       class:"'text-xs font-semibold text-yellow-300'"
     };
-  } else if (base?.invoice?.status) {
+  } else if (invoiceStore?.invoice?.status) {
     return {
       label: 'Draft',
       theme: 'red',

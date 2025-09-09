@@ -20,7 +20,7 @@
                 {{ items.amount ? items.amount.toFixed(2) : '0.00' }}
             </div>
             <div class="w-[8%] flex items-center justify-center">
-                <FeatherIcon name="trash-2" class="w-5 h-5 rounded hover:bg-red-400 fill-red-700" @click="base.items.splice(index, 1)" />
+                <FeatherIcon name="trash-2" class="w-5 h-5 rounded hover:bg-red-400 fill-red-700" @click="invoiceStore.items.splice(index, 1)" />
             </div>
         </div>
         <div v-if="items.custom_open" class="flex flex-col bg-gray-200 w-full py-1 px-3 rounded-b-2xl justify-between">
@@ -231,7 +231,7 @@
                                 size="sm"
                                 variant="subtle"
                                 placeholder="Batch No"
-                                :disabled="base.is_return"
+                                :disabled="invoiceStore.invoice.is_return"
                                 label="Batch No"
                                 v-model="items.selected_batch_no"
                                 :hideSearch="true"
@@ -249,9 +249,11 @@ import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vu
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { useInvoiceStore } from '@/stores/pos';
 
-let base = inject('base');
 const store = usePosProfileStore();
+const invoiceStore = useInvoiceStore()
+
     
 const props = defineProps({
     items: {
@@ -275,7 +277,7 @@ const get_batch = createResource({
             ...params
         }
     }
-})
+});
 
 
 const get_serial_no = createListResource({
@@ -283,9 +285,9 @@ const get_serial_no = createListResource({
     method: 'POST',
     auto: false,
     doctype: 'Serial No',
-    fields: ['name as serial_no', 'batch_no' ],
+    fields: ['name as serial_no', 'batch_no'],
     filters: {
-    warehouse: store.posProfileData.warehouse,
+        warehouse: store.posProfileData.warehouse,
         item_code: props.items.item_code,
     },
     pageLength: Number.MAX_VALUE * 2,
@@ -301,7 +303,7 @@ const get_serial_no = createListResource({
 const get_serial_no_options = () => {
     let serials = []
     const { has_batch_no, batch_no } = props.items;
-    if (base.is_return){
+    if (invoiceStore.invoice.is_return){
         serials=props.items._serial || []
         return serials.map(serial_no => ({
             label: serial_no,
@@ -310,7 +312,7 @@ const get_serial_no_options = () => {
     }
     serials = get_serial_no.data || [];
 
-    if (props.items.batch_no != null && !base.is_return) {
+    if (props.items.batch_no != null && !invoiceStore.invoice.is_return) {
         serials = serials.filter(serial_no => serial_no.batch_no === props.items.batch_no);
     }
     
@@ -320,8 +322,12 @@ const get_serial_no_options = () => {
     }));
 };
 
+const validateInvoice = () => {
+    emitter.emit('calctotal');
+}
+
 const getbatchNo =  () => {
-    if (base.is_return) {
+    if (invoiceStore.invoice.is_return) {
         return [{
             label: props.items.batch_no,
             value: props.items.batch_no,
@@ -340,7 +346,7 @@ watch(
         if (newBatchNo && (newBatchNo.value !== oldBatchNo?.value) || !oldBatchNo) {
             
             let find = validateitems();
-            const option = get_serial_no_options()
+            const option = get_serial_no_options();
             if (!find && option.length > 0) {
                 props.items.selected_serial_no = [];
                 props.items.serial_no_options = props.items.serial_no_options.filter((serial_no) => serial_no.batch_no == newBatchNo)
@@ -355,7 +361,7 @@ watch(
             props.items.stock_qty = batch ? batch.stock_qty : 0;
             props.items.expiry_date = batch ? batch.expiry_date : null;
             props.items.batch_no = typeof newBatchNo === 'object' ? newBatchNo?.value : newBatchNo;
-            emitter.emit('calctotal')
+            validateInvoice();
         
         }
     }
@@ -364,12 +370,12 @@ watch(
 const validateitems = () => {
     if (!store.posProfileData.custom_new_items_on_new_line) {
         let find = false;
-        for (let index = 0; index < base.items.length; index++) {
-            if (props.index !== index && base.items[props.index].item_code === base.items[index].item_code &&
-                ((base.items[props.index].has_batch_no && base.items[props.index].batch_no === base.items[index].batch_no && !base.items[props.index].is_return) || 
-                !base.items[props.index].has_batch_no)) { 
-                    base.items.selected_serial_no= mergeSerial_no(base.items[props.index].selected_serial_no,base.items[index].selected_serial_no)
-                    base.items.splice(props.index, 1);
+        for (let index = 0; index < invoiceStore.items.length; index++) {
+            if (props.index !== index && invoiceStore.items[props.index].item_code === invoiceStore.items[index].item_code &&
+                ((invoiceStore.items[props.index].has_batch_no && invoiceStore.items[props.index].batch_no === invoiceStore.items[index].batch_no && !invoiceStore.items[props.index].is_return) || 
+                !invoiceStore.items[props.index].has_batch_no)) { 
+                    invoiceStore.items.selected_serial_no= mergeSerial_no(invoiceStore.items[props.index].selected_serial_no,invoiceStore.items[index].selected_serial_no)
+                    invoiceStore.items.splice(props.index, 1);
                     find = true;
                     return find;
             }
@@ -395,10 +401,10 @@ const validateQty = () => {
         const options = get_serial_no_options()
         if (options.length > 0 && props.items.qty > options.length) {
             showToast('warning', 'Qty is greater than available serial no', 'alert-circle', '#ffcc00','#ffffff')
-            props.items.qty = base.is_return ?  -Math.abs(options.length) : options.length;
+            props.items.qty = invoiceStore.invoice.is_return ?  -Math.abs(options.length) : options.length;
         }   
     }
-    return ;
+    return;
 };
 
 const add_serial_no = () =>{  
@@ -419,7 +425,7 @@ watch(
     () => props.items.price_list_rate,
     (newValue, oldValue) => {
         if (props.items.price_list_rate && newValue !== oldValue) {
-            props.items.rate = props.items.price_list_rate ;
+            props.items.rate = props.items.price_list_rate -  (props.items.price_list_rate * props.items.discount_percentage)/100;
         }
     }
 );
@@ -434,8 +440,7 @@ watch(
                 validateQty()
                 add_serial_no()
             }
-            // emitter.emit("calcDisco");
-            emitter.emit('calctotal');          
+            validateInvoice();
         }
     }
 );
@@ -446,7 +451,7 @@ const adjustQtyNumbers = () =>{
     const qty = props.items.qty
     const serialLength = props.items.selected_serial_no.length
     if (qty!=serialLength){
-        props.items.qty = base.is_return ?  -Math.abs(serialLength) : serialLength;
+        props.items.qty = invoiceStore.invoice.is_return ?  -Math.abs(serialLength) : serialLength;
     }    
 }
 
@@ -476,64 +481,52 @@ const adjustSerialNumbers = (newQty) => {
 watch(
     () => props.items.discount_percentage,
     (newValue, oldValue) => {
-        if (newValue !== oldValue || !oldValue) {
-            discountCalculation()
+        if (Number(newValue) !== Number(oldValue) || !oldValue) {
+            discountCalculation();
         }
     }
 );
 
-const discountCalculation = debounce(() => {
+const discountCalculation =() => {
     props.items.rate = rateCalculation(props.items);
-    props.items.amount = props.items.rate* Math.abs(props.items.qty); 
-    props.items.discount_amount= (props.items.price_list_rate - props.items.rate) * Math.abs(props.items.qty)     
-    emitter.emit('calctotal')
-},300);
-
-base.items.forEach((items) => {
-    watch(
-        () => items,
-        () => {
-            calculateAmountTotal();
-        },
-        { deep: true }
-    );
-});
+    validateInvoice();
+}
 
 const  rateCalculation =  (item) => {
-    const rate =  item.rate ;
-    const discount = item.discount_percentage || 0;
+    const rate =  Number(item.price_list_rate) ;
+    const discount = Number(item.discount_percentage) || 0;
     return rate - (rate * (discount / 100));
 };
 
 const deliveryDate = computed({
   get() {
-    if (!base.invoice.delivery_date) {
+    if (!invoiceStore.invoice.delivery_date) {
       const today = dayjsLocal().format('YYYY-MM-DD')
-      base.invoice.delivery_date = today
+      invoiceStore.invoice.delivery_date = today
     }
-    return base.invoice.delivery_date
+    return invoiceStore.invoice.delivery_date
   },
   set(value) {
-    base.invoice.delivery_date = value
+    invoiceStore.invoice.delivery_date = value
   }
 })
 
 watch(
     () => props.items.rate,
     (newValue, oldValue) => {
-        if (newValue !== oldValue) {
-            
-        calculateRateTotal();
+        if (Number(newValue) !== Number(oldValue)) {
+            props.items.base_rate = Number(newValue)
+            props.items.margin_rate_or_amount = 0
+            calculateRateTotal();
         }
     }
 );
 
 const calculateRateTotal = () => {
-    props.items.rate = rateCalculation(props.items);
     calculateAmountTotal();
-    emitter.emit('calctotal');
-    
-};
+    props.items.discount_amount = props.items.price_list_rate - props.items.rate
+    validateInvoice();
+}
 
 onMounted( async () => {
     calculateRateTotal();
@@ -544,14 +537,13 @@ onMounted( async () => {
         item_code: props.items.item_code,
         warehouse: store.posProfileData.warehouse,
     })
-    await get_serial_no.fetch()
-    emitter.emit('calctotal');    
-    
+    await get_serial_no.fetch();
+    validateInvoice();
 });
  
 onUnmounted(() => {    
     calculateAmountTotal();
-    emitter.emit('calctotal');
+    validateInvoice();
 });
 
 </script>

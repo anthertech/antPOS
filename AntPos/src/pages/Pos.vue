@@ -6,11 +6,13 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue';
+import { computed, inject, onBeforeMount } from 'vue';
 import ItemSelector from '@/components/ItemSelector.vue';
 import Invoice from '@/components/Invoice.vue';
 import ItemDetail from '@/components/ItemDetail.vue';
-const base = inject('base');
+import { useInvoiceStore } from '@/stores/pos';
+
+const invoiceStore = useInvoiceStore();
 
 const componentMap = {
   Invoice,
@@ -18,7 +20,15 @@ const componentMap = {
 };
 
 const currentComponent = computed(() =>
-  base?.invoice?.status ? componentMap.Invoice : componentMap.ItemSelector
+  invoiceStore.invoice.docstatus ? componentMap.Invoice : componentMap.ItemSelector
 );
+
+
+
+onBeforeMount(() => {
+    
+  invoiceStore.invoiceResource.fetch()
+  
+});
 
 </script>

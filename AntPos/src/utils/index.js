@@ -1,4 +1,4 @@
-import { toast } from 'frappe-ui'
+import { toast, createResource } from 'frappe-ui'
 
 export function createToast(options) {
 	toast.create({
@@ -32,3 +32,28 @@ function htmlToText(html) {
     div.innerHTML = html;
     return div.textContent || div.innerText || "";
 }
+
+export function generateTempName(doctype) {
+    const suffix = Math.random().toString(36).substring(2, 10)
+    return `new-${doctype.toLowerCase().replace(/\s/g, "-")}-${suffix}`
+};
+
+// Factory function (can also be extracted to a separate file)
+export function createDoctypeResource(doctype, onSuccessCallback) {
+    return createResource({
+        url: 'ant_pos.ant_pos.api.get_doc_field',
+        method: 'POST',
+        auto: false,
+        makeParams(params) {
+            return {
+                doctype,
+                ...params
+            }
+        },
+        onSuccess(data) {
+            if (data) {
+                onSuccessCallback(data)
+            }
+        }
+    })
+};

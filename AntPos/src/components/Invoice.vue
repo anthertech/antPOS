@@ -10,8 +10,8 @@
                     placeholder="Placeholder"
                     :disabled="true"
                     label="Amount Paid"
-                    :value="Number(base.invoice.paid_amount).toFixed(2)"
-                    v-model="base.invoice.paid_amount" 
+                    :value="Number(invoiceStore.invoice.paid_amount).toFixed(2)"
+                    v-model="invoiceStore.invoice.paid_amount" 
                 />
                 <FormControl
                     :type="'number'"
@@ -21,12 +21,12 @@
                     placeholder="Placeholder"
                     :disabled="true"
                     label="To Be Paid"
-                    :value="Number(base.invoice.rounded_total).toFixed(2)"
+                    :value="Number(invoiceStore.invoice.rounded_total).toFixed(2)"
 
-                    v-model="base.invoice.rounded_total"
+                    v-model="invoiceStore.invoice.rounded_total"
                 />
                 <FormControl
-                    v-if="base.invoice.paid_amount > base.invoice.rounded_total" 
+                    v-if="invoiceStore.invoice.paid_amount > invoiceStore.invoice.rounded_total" 
                     :type="'number'"
                     :ref_for="true"
                     size="sm"
@@ -34,25 +34,25 @@
                     placeholder="Placeholder"
                     :disabled="true"
                     label="Paid Change"
-                    :value="Number(base.invoice.paid_amount - base.invoice.rounded_total).toFixed(2)"
+                    :value="Number(invoiceStore.invoice.paid_amount - invoiceStore.invoice.rounded_total).toFixed(2)"
                 />
             </div>
             <div class="grid grid-cols-2 gap-4 p-2 items-center" v-for="(mode, index) in store.posProfileData?.payments" :key="index">
 
                 <FormControl
-                    v-if="base.invoice?.payments?.[index] && base.invoice?.payments?.[index].amount !== undefined"
+                    v-if="invoiceStore.invoice?.payments?.[index] && invoiceStore.invoice?.payments?.[index].amount !== undefined"
                     type="number"
                     size="sm"
                     variant="subtle"
                     placeholder="0.00"
                     :disabled="false"
                     :label="mode.mode_of_payment"
-                    :value="Number(base.invoice.payments[index].amount).toFixed(2)"
-                    v-model="base.invoice.payments[index].amount"
+                    :value="Number(invoiceStore.invoice.payments[index].amount).toFixed(2)"
+                    v-model="invoiceStore.invoice.payments[index].amount"
                     @change="changePaymentAmount($event)"
                 />
                 <Button
-                    v-if="base.invoice?.payments?.[index] && base.invoice?.payments?.[index].amount !== undefined"
+                    v-if="invoiceStore.invoice?.payments?.[index] && invoiceStore.invoice?.payments?.[index].amount !== undefined"
                     class="w-full h-full"
                     :variant="'solid'"
                     theme="gray"
@@ -74,8 +74,8 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Net Total"
-                    :value="Number(base.invoice.net_total).toFixed(2)"
-                    v-model="base.invoice.net_total"
+                    :value="Number(invoiceStore.invoice.net_total).toFixed(2)"
+                    v-model="invoiceStore.invoice.net_total"
                 />
                 <FormControl
                     :type="'number'"
@@ -85,8 +85,8 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Tax and Charges"
-                    :value="Number(base.invoice.total_taxes_and_charges).toFixed(2)"
-                    v-model="base.invoice.total_taxes_and_charges"
+                    :value="Number(invoiceStore.invoice.total_taxes_and_charges).toFixed(2)"
+                    v-model="invoiceStore.invoice.total_taxes_and_charges"
                 />
                 <FormControl
                     :type="'number'"
@@ -96,8 +96,8 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Total Amount"
-                    :value="Number(base.invoice.total).toFixed(2)"
-                    v-model="base.invoice.total"
+                    :value="Number(invoiceStore.invoice.total).toFixed(2)"
+                    v-model="invoiceStore.invoice.total"
                 />
                 <FormControl
                     :type="'number'"
@@ -107,8 +107,8 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Discount Amount"
-                    :value="Number(base.invoice.discount_amount).toFixed(2)"
-                    v-model="base.invoice.discount_amount"
+                    :value="Number(invoiceStore.invoice.discount_amount).toFixed(2)"
+                    v-model="invoiceStore.invoice.discount_amount"
                 />
                 <FormControl
                     :type="'number'"
@@ -118,8 +118,8 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Grand Total"
-                    :value="Number(base.invoice.grand_total).toFixed(2)"
-                    v-model="base.invoice.grand_total"
+                    :value="Number(invoiceStore.invoice.grand_total).toFixed(2)"
+                    v-model="invoiceStore.invoice.grand_total"
                 />
                 <FormControl
                     :type="'number'"
@@ -129,11 +129,11 @@
                     placeholder="0.00"
                     :disabled="true"
                     label="Rounded Total"
-                    :value="Number(base.invoice.rounded_total).toFixed(2)"
-                    v-model="base.invoice.rounded_total"
+                    :value="Number(invoiceStore.invoice.rounded_total).toFixed(2)"
+                    v-model="invoiceStore.invoice.rounded_total"
                 />
             </div>
-            <div v-for="(credit, index) in base.invoice.advances" :key="index">
+            <div v-for="(credit, index) in invoiceStore.invoice.advances" :key="index">
                 <div class="grid grid-cols-3 gap-4 p-2">
                     <FormControl
                         :type="'text'"
@@ -235,45 +235,47 @@ import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
+import { useInvoiceStore } from '@/stores/pos';
 
-let base = inject('base')
+
 let doc = ref({})
 const store = usePosProfileStore();
+const invoiceStore = useInvoiceStore()
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url',});
 const addPayments = () => {
-    base.invoice.paid_amount = base.invoice.base_rounded_total
+    invoiceStore.invoice.paid_amount = invoiceStore.invoice.base_rounded_total
     store.posProfileData.payments.forEach(element => {
-        if (!base.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment) && (base.is_return && element.allow_in_returns || !base.is_return )) {
-            base.invoice.payments.push({
+        if (!invoiceStore.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment) && (invoiceStore.invoice.is_return && element.allow_in_returns || !invoiceStore.invoice.is_return )) {
+            invoiceStore.invoice.payments.push({
                 "mode_of_payment": element.mode_of_payment,
-                "amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
-                "base_amount": Number(element.default) ? Number(base.invoice.base_rounded_total) : 0.00,
+                "amount": Number(element.default) ? Number(invoiceStore.invoice.base_rounded_total) : 0.00,
+                "base_amount": Number(element.default) ? Number(invoiceStore.invoice.base_rounded_total) : 0.00,
             })
         }
     })
 }
 
 const changemode = (index) => {
-    base.invoice.payments.forEach((element, i) => {
+    invoiceStore.invoice.payments.forEach((element, i) => {
         if (i === index) {
-            element.amount = base.invoice.base_rounded_total
+            element.amount = invoiceStore.invoice.base_rounded_total
         } else {
             element.amount = 0
         }
     })
-    base.invoice.paid_amount = base.invoice.base_rounded_total
+    invoiceStore.invoice.paid_amount = invoiceStore.invoice.base_rounded_total
 }
 
 const deliveryDate = computed({
   get() {
-    if (!base.invoice.delivery_date) {
+    if (!invoiceStore.invoice.delivery_date) {
       const today = dayjsLocal().format('YYYY-MM-DD')
-      base.invoice.delivery_date = today
+      invoiceStore.invoice.delivery_date = today
     }
-    return base.invoice.delivery_date
+    return invoiceStore.invoice.delivery_date
   },
   set(value) {
-    base.invoice.delivery_date = value
+    invoiceStore.invoice.delivery_date = value
   }
 })
 
@@ -305,17 +307,17 @@ const createSaveResource = createResource({
 });
 
 const changePaymentAmount = () => {
-    base.invoice.paid_amount = 0;
-    base.invoice.payments.forEach((element) => {
+    invoiceStore.invoice.paid_amount = 0;
+    invoiceStore.invoice.payments.forEach((element) => {
         element.amount = Number(element.amount);
-        base.invoice.paid_amount += element.amount;
+        invoiceStore.invoice.paid_amount += element.amount;
     });
 
-    if (Array.isArray(base.invoice.advances)) {
-        base.invoice.advances.forEach((element) => {
+    if (Array.isArray(invoiceStore.invoice.advances)) {
+        invoiceStore.invoice.advances.forEach((element) => {
             if (element.allocated_amount > 0) {
                 element.allocated_amount = Number(element.allocated_amount);
-                base.invoice.paid_amount += element.allocated_amount;
+                invoiceStore.invoice.paid_amount += element.allocated_amount;
             }
         });
     }
@@ -328,16 +330,16 @@ const saveAndSubmit = async (doc) => {
 
 const submitInvoice = async (action = null) => {
     if(!store.posProfileData.custom_allow_credit){
-        if (base.invoice.paid_amount<base.invoice.rounded_total)return showToast('warning', 'Credit Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
+        if (invoiceStore.invoice.paid_amount< invoiceStore.invoice.rounded_total) return showToast('warning', 'Credit Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
     }
     if(!store.posProfileData.custom_allow_partial_payments){
-        if ((base.invoice.paid_amount - base.invoice.rounded_total)>0)return showToast('warning', 'Partial payment  Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
+        if ((invoiceStore.invoice.paid_amount - invoiceStore.invoice.rounded_total) > 0 ) return showToast('warning', 'Partial payment  Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
     }
-    let invoice = { ...base.invoice };
-    if (await validatePaymentBeforeSave(base)) {
+    let invoice = { ...invoiceStore.invoice };
+    if (await validatePaymentBeforeSave()) {
         if (store.posProfileData.custom_set_sales_order) {
             const salesOrder = {
-                ...base.invoice,
+                ...invoiceStore.invoice,
                 doctype: 'Sales Order',
                 name: '',
                 naming_series: ''
@@ -346,13 +348,13 @@ const submitInvoice = async (action = null) => {
             doc.value = { doc: salesOrder };
             await saveAndSubmit(doc);
             const orderName = doc.value.doc.name;
-            base.invoice.items.forEach((item, index) => {
+            invoiceStore.invoice.items.forEach((item, index) => {
                 item.so_detail = doc.value.doc.items?.[index]?.name || "";
                 item.sales_order = orderName;
             });
         }
         doc.value = {
-            doc: base.invoice
+            doc: invoiceStore.invoice
         }
         await saveAndSubmit(doc);
         emitter.emit('remove_invoice',true);
@@ -392,12 +394,12 @@ let advance = createResource({
     auto: true,
     makeParams(params) {        
         return {
-            docs: {...base.invoice,is_pos: false,custom_ant_opening:store.openingShift.name,},
+            docs: { ...invoiceStore.invoice, is_pos: false, custom_ant_opening:store.openingShift.name },
             method: 'set_advances'
         }
     },
     onSuccess(data) {
-        base.invoice = {...data.docs[0],is_pos: true}
+        invoiceStore.invoice = {...data.docs[0],is_pos: true}
         addPayments()
     },
     onError(error) {
@@ -457,22 +459,22 @@ const validatePaymentBeforeSave = async () => {
     let advance = 0
     let payment = 0
     
-    base.invoice.advances.forEach((element) => {
+    invoiceStore.invoice.advances.forEach((element) => {
         element.allocated_amount = Number(element.allocated_amount)
         advance += element.allocated_amount
     })
 
-    base.invoice.payments.forEach((element) => {
+    invoiceStore.invoice.payments.forEach((element) => {
         payment += Number(element.amount)
     })
 
     if (advance > 0) {
-        if (base.invoice.paid_amount > base.invoice.rounded_total) {
+        if (invoiceStore.invoice.paid_amount > invoiceStore.invoice.rounded_total) {
             showToast('warning', 'Paid amount is greater than rounded total', 'alert-circle', '#ffcc00','#ffffff');
             return false;
         }
-        base.invoice.payments = []
-        base.invoice.is_pos = false
+        invoiceStore.invoice.payments = []
+        invoiceStore.invoice.is_pos = false
     }
 
     return true;
@@ -480,7 +482,7 @@ const validatePaymentBeforeSave = async () => {
 
 watch(
     () => {
-        const advances = base?.invoice?.advances;
+        const advances = invoiceStore.invoice?.advances;
         return Array.isArray(advances) ? advances.map(advance => advance.allocated_amount) : [];
     },
     (newValues, oldValues) => {

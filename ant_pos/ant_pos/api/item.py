@@ -22,7 +22,7 @@ def _update_item_info(scan_result: dict[str, str | None]) -> dict[str, str | Non
 	return scan_result
 
 @frappe.whitelist()
-def scan_barcode(search_value: str) -> Dict[str, Any]:
+def scan_barcode(search_value: str, search_itemname:bool) -> Dict[str, Any]:
     """Scans barcode, serial no, batch no, or item code and returns item details with HTTP status codes."""
 
     def set_cache(data: Dict[str, Any]):
@@ -88,8 +88,18 @@ def scan_barcode(search_value: str) -> Dict[str, Any]:
         "Item",
         search_value,
         ["name as item_code"],
-        as_dict=True,
+       as_dict=True,
     )
+
+    # Search by item name only if it's search_itemname
+    if search_itemname and not item_data:
+        item_data = frappe.db.get_value(
+            "Item",
+            {"item_name": search_value},
+            ["name as item_code"],
+            as_dict=True
+        )
+    
     if item_data:
         item_data["item"] = frappe.db.get_value("Item", item_data["item_code"], ["*"], as_dict=True)
         _update_item_info(item_data)
@@ -134,7 +144,8 @@ def items(pos_profile, search_value, customer):
         serial_nos = frappe.get_all(
             "Serial No",
             filters={"item_code": item_code, "warehouse": pos_profile_doc.warehouse},
-            fields=["name as serial_no", "batch_no"]
+            fields=["name as serial_no", "batch_no"],
+            order_by="creation"
         )
 
     # If batch info is needed
@@ -154,33 +165,38 @@ def items(pos_profile, search_value, customer):
             HAVING stock_qty > 0
         """, (item_code, pos_profile_doc.warehouse, item_code), as_dict=True)
 
-    # Condition 1: Check if batch exists but no matching serial no in that batch
-    if has_serial_no and has_batch_no and selected_batch_no:
-        serials_for_batch = any(s["batch_no"] == selected_batch_no for s in serial_nos)
-        if not serials_for_batch:
-            frappe.throw(_("No serial numbers found in warehouse {0} for batch {1}").format(
-                pos_profile_doc.warehouse, selected_batch_no
-            ))
-
     # Condition 2: No batch with stock exists
     if has_batch_no and not selected_batch_no:
         batches_with_qty = frappe.db.sql("""
             SELECT sle.batch_no
             FROM `tabStock Ledger Entry` sle
+            JOIN `tabBatch` b ON sle.batch_no = b.name
             WHERE sle.item_code = %s
-              AND sle.warehouse = %s
-              AND sle.batch_no IS NOT NULL
+            AND sle.warehouse = %s
+            AND sle.batch_no IS NOT NULL
             GROUP BY sle.batch_no
             HAVING SUM(sle.actual_qty) > 0
+            ORDER BY b.creation
         """, (item_code, pos_profile_doc.warehouse), as_dict=True)
 
         if not batches_with_qty:
             frappe.throw(_("No batch with available stock found for item {0} in warehouse {1}").format(
                 item_code, pos_profile_doc.warehouse
             ))
+        else:
+            selected_batch_no = batches_with_qty[0].batch_no
 
+    # Condition 1: Check if batch exists but no matching serial no in that batch
+    if has_serial_no and has_batch_no and selected_batch_no:
+        serials_for_batch = [s["serial_no"] for s in serial_nos if s["batch_no"] == selected_batch_no]
+        if serials_for_batch:
+            if not selected_serial_no:
+                selected_serial_no = serials_for_batch[0]
+        else:
+            frappe.throw(_("No serial numbers found in warehouse {0} for batch {1}").format(
+                pos_profile_doc.warehouse, selected_batch_no
+            ))
     company = frappe.db.get_value('Company', pos_profile_doc.company, ['default_currency', 'name'], as_dict=True)
-
     item_args = {
         "item_code": item_code,
         "barcode": search_values.get("barcode"),
@@ -196,6 +212,7 @@ def items(pos_profile, search_value, customer):
         "cost_center": pos_profile_doc.cost_center,
         "tax_category": pos_profile_doc.tax_category,
         "batch_no": selected_batch_no,
+        "serial_no":"\n".join(selected_serial_no),
         "warehouse": pos_profile_doc.warehouse,
         "is_pos": 1,
     }
@@ -231,6 +248,7 @@ def items(pos_profile, search_value, customer):
             ))
     item_details["serial_no"] = selected_serial_no if has_serial_no else None
     item_details["serial_no_options"] = [s["serial_no"] for s in serial_nos] if has_serial_no else []
+    item_details["rate"]= item_details["price_list_rate"]
     return item_details
 
 @frappe.whitelist()

@@ -9,7 +9,7 @@
                     size="sm"
                     variant="subtle"
                     @keyup.enter="fetchSearchResource"
-                    :disabled="base.is_return"
+                    :disabled="invoiceStore.invoice.is_return"
                 >
                     <template #prefix>
                         <FeatherIcon class="w-4" name="search" />
@@ -37,37 +37,20 @@
 
 <script setup>
 import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
-import { ref, inject, onMounted } from 'vue';
+import { ref, inject, onMounted, onUnmounted } from 'vue';
 import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import { usePosProfileStore } from '@/stores/posProfile';
 import emitter from '@/utils/emitter'; 
+import { useInvoiceStore } from '@/stores/pos';
 
 const store = usePosProfileStore();
 const debounceSearch = ref('');
 const items = ref([]);
-let base = inject('base');
+const invoiceStore = useInvoiceStore()
 
-const remove_invoice = (include_customer) => {
-    base.invoice = {
-        payments: [],
-        advances: [],
-        items: [],
-        paid_amount: 0,
-        rounded_total: 0,
-        net_total: 0,
-        total_taxes_and_charges: 0,
-        total: 0,
-        discount_amount: 0,
-        grand_total: 0,
-        base_rounded_total: 0,
-        delivery_date: '',
-    };
-    base.is_return = false
-    base.items = [];
-    base.customer = include_customer ? {} : base.customer;
-    base.additional_discount_percentage = 0;
-    base.discount_amount = 0;
+const remove_invoice = ( include_customer = false ) => {
+    invoiceStore.unmountAndRefresh(include_customer)
 };
 
 const searchResource = createResource({
@@ -77,10 +60,11 @@ const searchResource = createResource({
     makeParams() {
         return {
             search_value: debounceSearch.value,
+            search_itemname:store.posProfileData.custom_allow_item_name_in_in_item_search
         };
     },
     validate(params) {
-        if (!base.customer.name) {
+        if (!invoiceStore.invoiceCustomer.name) {
             return 'Customer is required'
         }    
         if (!params.search_value) {
@@ -114,7 +98,7 @@ const addItemsResource = createResource({
         return {
             pos_profile: store.posProfileData.name,
             search_value: params.search_value,
-            customer: base.customer.name,
+            customer: invoiceStore.invoiceCustomer.name,
         };
     },
     validate(params) {
@@ -186,7 +170,7 @@ const addItem = (data) => {
 const addItemIfExists = (data) => {
     let found = false;
     if (!store.posProfileData.custom_new_items_on_new_line) {
-        base.items.forEach((element, index) => {     
+        invoiceStore.items.forEach((element, index) => {     
             if (!element.is_return && data.item_code === element.item_code &&
             ((data.has_batch_no && element.batch_no && data.batch_no === (element.batch_no.value || element.batch_no)) || !data.has_batch_no)) {
                 found = true;
@@ -206,7 +190,7 @@ const addItemIfExists = (data) => {
                     showToast('warning', 'Batch already entered')
                     return found
                 }
-                base.items[index].qty += 1;
+                invoiceStore.items[index].qty += 1;
                 debounceSearch.value = '';
             }
         });
@@ -215,7 +199,7 @@ const addItemIfExists = (data) => {
 };
 
 const addNewLine = async (data) => {
-    base.items.push(data);
+    invoiceStore.items.push(data);
     debounceSearch.value = '';
 };
 
@@ -256,9 +240,19 @@ const runDocMethod = createResource({
     },
 
     onSuccess(data){
-        base.invoice=data;
+        for (const key in data) {
+            if (key === 'items') continue;
+
+            const existingValue = invoiceStore.invoice[key];
+            const newValue = data[key];
+
+            // Check for changes or new keys
+            if (JSON.stringify(existingValue) !== JSON.stringify(newValue)) {
+                invoiceStore.invoice[key] = newValue;
+            }
+        }
         data.items.forEach(n => {
-            const e = base.items.find(b => b.custom_id === n.custom_id);
+            const e = invoiceStore.items.find(b => b.custom_id === n.custom_id);
             if (!e) return;
             for (const k in n) {
                 if (k !== 'custom_id' && e[k] !== n[k]) {
@@ -283,24 +277,23 @@ const runDocMethod = createResource({
 
 
 const calculateAmountTotal = async () => {
-    if (base.items.length === 0 ) {
+    if (invoiceStore.items.length === 0 ) {
         remove_invoice(false);
         return;
     }
     await runDocMethod.fetch({doc: JSON.stringify({
-        ...base?.invoice,
+        ...invoiceStore.invoice,
         doctype: 'Sales Invoice',
-        is_pos: base.invoice.is_return ? base.invoice.is_pos : 1,
+        is_pos: invoiceStore.invoice.is_return ? invoiceStore.invoice.is_pos : 1,
         pos_profile: store.posProfileData.name,
         company: store.posProfileData.company,
-        conversion_rate: 1,
         selling_price_list: store.posProfileData.selling_price_list,
-        items: base.items,
-        customer: base.customer.name,
+        items: invoiceStore.items,
+        customer: invoiceStore.invoiceCustomer.name,
         update_stock: 1,
-        additional_discount_percentage: base.additional_discount_percentage ? Number(base.additional_discount_percentage) : 0 ,
-        discount_amount: base.discount_amount ? Number(base.discount_amount) : 0,
-        base_total: base.invoice.base_total || 0,
+        additional_discount_percentage: invoiceStore.invoice._additional_discount_percentage ? Number(invoiceStore.invoice._additional_discount_percentage) : 0 ,
+        discount_amount: invoiceStore.invoice._discount_amount ? Number(invoiceStore.invoice._discount_amount) : 0,
+        base_total: invoiceStore.invoice.base_total || 0,
         custom_ant_opening: store.openingShift.name,
         apply_discount_on: store.posProfileData.apply_discount_on,
     })});
@@ -320,6 +313,10 @@ onMounted(() => {
     emitter.on('remove_invoice', (include_customer) => {
         remove_invoice(include_customer);
     });
+})
+
+onUnmounted(()=>{
+    invoiceStore.unmount()
 })
 
 </script> 

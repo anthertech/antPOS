@@ -52,7 +52,7 @@
                         :disabled="invoices.loading"
                     
                     >
-                        Next
+                        Load more
                     </Button>
                 </div>
             </div>
@@ -71,11 +71,13 @@ import { Dialog, Button, createListResource, createResource, TextInput, FeatherI
 import { ref, inject, computed, watch } from 'vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
-import { usePermissionStore } from '@/stores/permissionStore';
+import { usePermissionStore } from '@/stores/permission';
 import { usersStore } from '@/stores/users';
+import { useInvoiceStore } from '@/stores/pos';
+
 
 const store = usePosProfileStore();
-let base = inject('base');
+const invoiceStore = useInvoiceStore()
 const dialogVisible = ref(true);
 const selectedInvoice = ref(null);
 const searchQuery = ref("");
@@ -149,18 +151,17 @@ let salesInvoice = createResource({
 const submitInvoice = () => {salesInvoice.fetch({ name: selectedInvoice.value });};
 
 const addvalues = async ()=>{
-    base.invoice =  { ...salesInvoice.data.docs[0], status: null  }
-    base.is_return =salesInvoice.data.docs[0].is_return
-    base.items = salesInvoice.data.docs[0].items;
-    base.discount_amount =  salesInvoice.data.docs[0].discount_amount;
-    base.additional_discount_percentage =  salesInvoice.data.docs[0].additional_discount_percentage;
-    base.total =  salesInvoice.data.docs[0].net_total;
+    invoiceStore.invoice =  { ...salesInvoice.data.docs[0], status: null  }
+    invoiceStore.items = salesInvoice.data.docs[0].items;
+    invoiceStore.invoice._discount_amount =  salesInvoice.data.docs[0].discount_amount;
+    invoiceStore.invoice._additional_discount_percentage =  salesInvoice.data.docs[0].additional_discount_percentage;
+    invoiceStore.invoice._total =  salesInvoice.data.docs[0].net_total;
     await get_value.fetch({
         doctype: "Customer",
         filters: { "name": salesInvoice.data.docs[0].customer },
         fieldname: ['name', 'mobile_no', 'customer_group', 'territory', 'is_internal_customer'],
     });
-    base.customer = get_value.data || {};
+    invoiceStore.invoiceCustomer = get_value.data || {};
     searchQuery.value=''
     handleDialogClose()
 }

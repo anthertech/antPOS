@@ -103,3 +103,17 @@ def get_translations():
 		language = frappe.db.get_single_value("System Settings", "language")
 
 	return get_all_translations(language)
+
+@frappe.whitelist()
+def get_doc_field():
+    doctype = frappe.form_dict.get('doctype')
+    
+    if not doctype:
+        frappe.throw("Missing 'doctype' parameter")
+    
+    try:
+        doc = frappe.new_doc(doctype)
+        return doc.as_dict()
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "get_doc_field error")
+        frappe.throw(f"Unable to create doc for {doctype}: {str(e)}")

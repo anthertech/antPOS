@@ -92,7 +92,6 @@ import emitter from '@/utils/emitter';
 
 const store = usePosProfileStore();
 const dialogVisible = ref(true);
-const base = inject('base');
 const data = ref(store.posProfileData.payments);
 
 const totals = ref({

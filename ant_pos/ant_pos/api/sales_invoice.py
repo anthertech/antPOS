@@ -19,7 +19,7 @@ def calculate_invoice_item_taxes(doc):
     invoice.calculate_taxes_and_totals()
     if not invoice.ignore_pricing_rule:
         for item in invoice.items:
-            data=get_price_list_rate_for(
+            data = get_price_list_rate_for(
                 {
                     'price_list': 'Standard Selling', 
                     "customer": invoice.customer,
