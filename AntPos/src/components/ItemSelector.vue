@@ -41,7 +41,7 @@ import { ref, inject, onMounted, onUnmounted } from 'vue';
 import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import { usePosProfileStore } from '@/stores/posProfile';
-import emitter from '@/utils/emitter'; 
+import emitter from '@/utils/emitter';
 import { useInvoiceStore } from '@/stores/pos';
 
 const store = usePosProfileStore();

@@ -168,16 +168,16 @@
 <script setup>
 
 import { createListResource, TextInput, FormControl, FeatherIcon, createResource, TabButtons } from 'frappe-ui';
-import { ref, inject, computed, watch, onBeforeMount } from 'vue';
+import { ref, computed, watch, onBeforeMount, onMounted } from 'vue';
 import Customer from '@/components/Customer.vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 import { usePaymentStore } from '@/stores/payment'
+import emitter from '@/utils/emitter'; 
 const store = usePosProfileStore();
 const paymentStore = usePaymentStore();
 const searchQuery = ref("");
 const currentTab = ref('credit');
-const customerName = ref(paymentStore.paymentCustomer.name);
 const selectAll = ref(false);
 const selectedPageLength = ref(20);
 const modes = ref([]);
@@ -196,7 +196,7 @@ const invoices = createListResource({
         outstanding_amount: [">", 0],
         docstatus: 1, 
         is_return: 0, 
-        customer: customerName.value
+        customer: paymentStore.paymentCustomer.name
     },
     orderBy: 'creation asc',
     pageLength: 20,
@@ -210,7 +210,7 @@ const invoices = createListResource({
 });
 
 const filteredInvoices = computed(() => {
-    if (!invoices.data || !customerName.value) {
+    if (!invoices.data || !paymentStore.paymentCustomer.name) {
         return [];
     }
     if (!searchQuery.value) {
@@ -224,13 +224,13 @@ const filteredInvoices = computed(() => {
 
 const hasSelectedInvoice = computed(() => {
     if (currentTab.value === 'credit') return invoices.data?.some(inv => inv.selected);
-    else if (currentTab.value === 'advanced') return customerName.value && modes.value.some(mode => mode.amount > 0);
+    else if (currentTab.value === 'advanced') return paymentStore.paymentCustomer.name && modes.value.some(mode => mode.amount > 0);
     else return false;
 });
 
 const calculateAmountTotal = () => {
     let total = invoices.data.reduce((sum, invoice) => {
-        return invoice.selected ? sum + invoice.grand_total : sum;
+        return invoice.selected ? sum + invoice.outstanding_amount : sum;
     }, 0);
     paymentStore.payment.paymentAmount = total;
 };
@@ -268,14 +268,15 @@ const addPayments = () => {
     paymentStore.payment.diff=0;
 };
 
-const clearPayments = () => {
-    paymentStore.unmountAndRefresh(false)
-    modes.value.forEach(mode => {
+const clearPayments = async (params) => {
+    paymentStore.unmountAndRefresh(params)
+    modes?.value?.forEach(mode => {
         mode.amount = 0;
     });
-    invoices.data.forEach(invoice => {
+    invoices?.data?.forEach(invoice => {
         invoice.selected = false;
     });
+    await invoices.reload()
     selectAll.value = false;
     invoices.reload();
 };
@@ -290,10 +291,6 @@ const changemode = (index) => {
     });
     paymentStore.payment.paid_amount = paymentStore.payment.paymentAmount;
 };
-
-onBeforeMount(() => {
-    addPayments();
-});
 
 const now = () => {
     const today = new Date();
@@ -409,7 +406,7 @@ watch(
     () => paymentStore.paymentCustomer,
     (newValue, oldValue) => {
         if (oldValue != null && newValue.name !== oldValue.name) {
-            customerName.value = newValue.name;
+            paymentStore.paymentCustomer.name = newValue.name;
             invoices.filters.customer = newValue.name;
             invoices.fetch();
         }
@@ -432,7 +429,7 @@ watch(searchQuery, (newQuery) => {
         outstanding_amount: [">", 0],
         docstatus: 1, 
         is_return: 0, 
-        customer: customerName.value
+        customer: paymentStore.paymentCustomer.name
     },
     orFilters: newQuery
       ? [
@@ -441,6 +438,17 @@ watch(searchQuery, (newQuery) => {
       : []
   });
   invoices.reload();
+});
+
+onMounted(()=>{
+    emitter.on('clear', (params) => {
+            clearPayments(params)
+        });
+
+})
+
+onBeforeMount(() => {
+    addPayments();
 });
    
 </script>

@@ -242,7 +242,6 @@ let sales_invoice = createResource({
     async onSuccess (data) {
         if ( status == 'pay'){
             invoiceStore.invoice = { ...data.docs[0] ,docstatus:1 }
-            console.log(invoiceStore.invoice);
             return
 
         }else if (status == 'print'){

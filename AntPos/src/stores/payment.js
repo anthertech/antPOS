@@ -20,7 +20,7 @@ export const usePaymentStore = defineStore('PaymentEntry', () => {
 
   async function unmountAndRefresh(includeCustomer) {
     payment.value = {};
-    if (!includeCustomer) {
+    if (includeCustomer) {
       paymentCustomer.value = {};
     }
     await paymentResource.fetch();
