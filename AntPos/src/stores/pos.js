@@ -20,12 +20,12 @@ export const useInvoiceStore = defineStore('salesInvoice', () => {
     invoiceCustomer.value = {};
   }
 
-  async function unmountAndRefresh(includeCustomer) {
+  async function unmountAndRefresh(includeCustomer) {    
     invoice.value = {};
     items.value = [];
     await invoiceResource.fetch();
 
-    if (!includeCustomer) {
+    if (includeCustomer) {
       invoiceCustomer.value = {};
     }
   }

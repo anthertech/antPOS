@@ -124,11 +124,11 @@
 <script setup>
 import { Dialog, Button, FeatherIcon ,FormControl, Badge, ErrorMessage } from 'frappe-ui';
 import ImageUploader from '@/components/Controls/ImageUploader.vue'
-import { ref, inject } from 'vue';
+import { ref, onBeforeMount } from 'vue';
 import { getSettings } from '@/stores/settings'
 
 const dialogVisible = ref(true);
-const { setting: settings, setupBrand } = getSettings()
+const { setting, settings, setupBrand } = getSettings()
 
 function updateSettings() {
     settings.save.submit(null, {
@@ -137,5 +137,11 @@ function updateSettings() {
         },
     })
 }
+onBeforeMount(()=>{
+    settings.get
+    // setupBrand()
+
+    
+})
 
 </script>
