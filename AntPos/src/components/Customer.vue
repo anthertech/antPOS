@@ -107,6 +107,8 @@ const selectedCustomer = computed({
     if(invoiceStore.invoice.is_return) return
       emit('update:customer', newVal);
       emitter.emit('calctotal')
+      emitter.emit('clear',false)
+      
   },
 });
 
