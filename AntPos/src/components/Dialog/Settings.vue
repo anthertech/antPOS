@@ -127,7 +127,6 @@ import ImageUploader from '@/components/Controls/ImageUploader.vue'
 import { ref, inject } from 'vue';
 import { getSettings } from '@/stores/settings'
 
-let base = inject('base');
 const dialogVisible = ref(true);
 const { setting: settings, setupBrand } = getSettings()
 

@@ -235,10 +235,9 @@ import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
-import { useInvoiceStore } from '@/stores/salesInvoice';
+import { useInvoiceStore } from '@/stores/pos';
 
 
-let base = inject('base')
 let doc = ref({})
 const store = usePosProfileStore();
 const invoiceStore = useInvoiceStore()
@@ -337,7 +336,7 @@ const submitInvoice = async (action = null) => {
         if ((invoiceStore.invoice.paid_amount - invoiceStore.invoice.rounded_total) > 0 ) return showToast('warning', 'Partial payment  Not Allowed', 'alert-circle', '#ffcc00','#ffffff');
     }
     let invoice = { ...invoiceStore.invoice };
-    if (await validatePaymentBeforeSave(base)) {
+    if (await validatePaymentBeforeSave()) {
         if (store.posProfileData.custom_set_sales_order) {
             const salesOrder = {
                 ...invoiceStore.invoice,
@@ -483,7 +482,7 @@ const validatePaymentBeforeSave = async () => {
 
 watch(
     () => {
-        const advances = base?.invoice?.advances;
+        const advances = invoiceStore.invoice?.advances;
         return Array.isArray(advances) ? advances.map(advance => advance.allocated_amount) : [];
     },
     (newValues, oldValues) => {

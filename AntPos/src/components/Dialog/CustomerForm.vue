@@ -71,7 +71,6 @@ import { usePosProfileStore } from '@/stores/posProfile';
 
 const store = usePosProfileStore();
 const dialogVisible = ref(true);
-const base = inject('base');
 
 const customer = ref({
   customer_name: '',

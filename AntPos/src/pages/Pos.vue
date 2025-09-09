@@ -10,13 +10,8 @@ import { computed, inject, onBeforeMount } from 'vue';
 import ItemSelector from '@/components/ItemSelector.vue';
 import Invoice from '@/components/Invoice.vue';
 import ItemDetail from '@/components/ItemDetail.vue';
-import { usePosProfileStore } from '@/stores/posProfile';
-import { useSessionStore } from '@/stores/session';
-import { useInvoiceStore } from '@/stores/salesInvoice';
+import { useInvoiceStore } from '@/stores/pos';
 
-const base = inject('base');
-const posProfileStore = usePosProfileStore();
-const sessionStore = useSessionStore();
 const invoiceStore = useInvoiceStore();
 
 const componentMap = {

@@ -4,7 +4,7 @@ import { userResource } from '@/stores/user'
 import router from '@/router'
 import { ref, computed } from 'vue'
 import { usePosProfileStore } from '@/stores/posProfile'
-import { usePermissionStore } from '@/stores/permissionStore';
+import { usePermissionStore } from '@/stores/permission';
 
 export const useSessionStore = defineStore('antpos-session', () => {
 

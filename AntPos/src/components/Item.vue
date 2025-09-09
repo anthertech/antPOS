@@ -20,7 +20,7 @@
                 {{ items.amount ? items.amount.toFixed(2) : '0.00' }}
             </div>
             <div class="w-[8%] flex items-center justify-center">
-                <FeatherIcon name="trash-2" class="w-5 h-5 rounded hover:bg-red-400 fill-red-700" @click="base.items.splice(index, 1)" />
+                <FeatherIcon name="trash-2" class="w-5 h-5 rounded hover:bg-red-400 fill-red-700" @click="invoiceStore.items.splice(index, 1)" />
             </div>
         </div>
         <div v-if="items.custom_open" class="flex flex-col bg-gray-200 w-full py-1 px-3 rounded-b-2xl justify-between">
@@ -249,9 +249,8 @@ import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vu
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';
-import { useInvoiceStore } from '@/stores/salesInvoice';
+import { useInvoiceStore } from '@/stores/pos';
 
-let base = inject('base');
 const store = usePosProfileStore();
 const invoiceStore = useInvoiceStore()
 
@@ -323,9 +322,9 @@ const get_serial_no_options = () => {
     }));
 };
 
-const validateInvoice = debounce(() => {
+const validateInvoice = () => {
     emitter.emit('calctotal');
-}, 500)
+}
 
 const getbatchNo =  () => {
     if (invoiceStore.invoice.is_return) {
@@ -371,12 +370,12 @@ watch(
 const validateitems = () => {
     if (!store.posProfileData.custom_new_items_on_new_line) {
         let find = false;
-        for (let index = 0; index < base.items.length; index++) {
-            if (props.index !== index && base.items[props.index].item_code === base.items[index].item_code &&
-                ((base.items[props.index].has_batch_no && base.items[props.index].batch_no === base.items[index].batch_no && !base.items[props.index].is_return) || 
-                !base.items[props.index].has_batch_no)) { 
-                    base.items.selected_serial_no= mergeSerial_no(base.items[props.index].selected_serial_no,base.items[index].selected_serial_no)
-                    base.items.splice(props.index, 1);
+        for (let index = 0; index < invoiceStore.items.length; index++) {
+            if (props.index !== index && invoiceStore.items[props.index].item_code === invoiceStore.items[index].item_code &&
+                ((invoiceStore.items[props.index].has_batch_no && invoiceStore.items[props.index].batch_no === invoiceStore.items[index].batch_no && !invoiceStore.items[props.index].is_return) || 
+                !invoiceStore.items[props.index].has_batch_no)) { 
+                    invoiceStore.items.selected_serial_no= mergeSerial_no(invoiceStore.items[props.index].selected_serial_no,invoiceStore.items[index].selected_serial_no)
+                    invoiceStore.items.splice(props.index, 1);
                     find = true;
                     return find;
             }
@@ -488,10 +487,10 @@ watch(
     }
 );
 
-const discountCalculation = debounce(() => {
+const discountCalculation =() => {
     props.items.rate = rateCalculation(props.items);
     validateInvoice();
-},500);
+}
 
 const  rateCalculation =  (item) => {
     const rate =  Number(item.price_list_rate) ;
@@ -523,12 +522,11 @@ watch(
     }
 );
 
-const calculateRateTotal = debounce(() => {
+const calculateRateTotal = () => {
     calculateAmountTotal();
     props.items.discount_amount = props.items.price_list_rate - props.items.rate
     validateInvoice();
-
-},500);
+}
 
 onMounted( async () => {
     calculateRateTotal();

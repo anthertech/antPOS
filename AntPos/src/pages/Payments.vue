@@ -5,12 +5,15 @@
 </template>
 <script setup>
 import Payment from '@/components/Payment.vue';
-import { usePermissionStore } from '@/stores/permissionStore';
-import { onBeforeMount } from 'vue';
+import { usePermissionStore } from '@/stores/permission';
+import { usePaymentStore } from '@/stores/payment'
+import { onBeforeMount, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
 const permissionStore = usePermissionStore();
+const paymentStore = usePaymentStore();
+
 
 onBeforeMount(() => {
     if (
@@ -24,5 +27,9 @@ onBeforeMount(() => {
             router.push('/'); // Fallback to homepage
         }
     }
+    paymentStore.paymentResource.fetch()
 });
+onUnmounted(()=>{
+    paymentStore.unmount()
+})
 </script>

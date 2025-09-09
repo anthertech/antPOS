@@ -2,7 +2,7 @@
     <div class="md:w-7/12 w-full h-full flex flex-col gap-2" >
         <div class="h-[80%] w-full rounded-lg shadow-2xl px-2 pt-2">
             <div class="flex gap-4 h-[5%]">
-                <Customer />
+               <Customer v-model:customer="invoiceStore.invoiceCustomer" />
                 <Button
                     class="w-1/12"
                     @click="loadComponent('CustomerForm');"
@@ -46,7 +46,7 @@
                         </div>
                     </div>
                 </div>
-                <div v-for="(item, key) in base.items" :key="item.custom_id" class="flex flex-col justify-between mb-2 w-full ">
+                <div v-for="(item, key) in invoiceStore.items" :key="item.custom_id" class="flex flex-col justify-between mb-2 w-full ">
                     <Item :items="item" :index="key"  />                   
                 </div>
             </div>
@@ -73,7 +73,7 @@
                     placeholder="0.00"
                     :disabled="!store.posProfileData?.allow_discount_change"
                     label="Additional Discount (%)"
-                    v-model="base.additional_discount_percentage"
+                    v-model="invoiceStore.invoice._additional_discount_percentage"
                 />
                 <FormControl
                     v-else
@@ -84,8 +84,8 @@
                     placeholder="0.00"
                     :disabled="!store.posProfileData?.allow_discount_change"
                     :label="`Additional Discount (${store.posProfileData?.currency})`"
-                    v-model="base.discount_amount"
-                    :value="Number(base.discount_amount).toFixed(2)"
+                    v-model="invoiceStore.invoice._discount_amount"
+                    :value="Number(invoiceStore.invoice._discount_amount).toFixed(2)"
                     />
                 <FormControl
                     :type="'number'"
@@ -190,8 +190,8 @@ import { Button, FeatherIcon, FormControl, createResource, debounce} from 'frapp
 import { inject , watch } from 'vue';
 import { createToast, showToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
-import { usePermissionStore } from '@/stores/permissionStore';
-import { useInvoiceStore } from '@/stores/salesInvoice';
+import { usePermissionStore } from '@/stores/permission';
+import { useInvoiceStore } from '@/stores/pos';
 import emitter from '@/utils/emitter'; 
 import Item from '@/components/Item.vue';
 
@@ -200,12 +200,11 @@ const permissionStore = usePermissionStore();
 const invoiceStore = useInvoiceStore()
 const { loadComponent } = inject('dynamicComponent');
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url'});
-let base = inject('base');
 let status = '';
 let sales_invoice = createResource({
     url: 'frappe.desk.form.save.savedocs',
     makeParams(params) {
-        base.items.forEach((item) => {                
+        invoiceStore.items.forEach((item) => {                
             if (item.has_serial_no && item.selected_serial_no.length !== item.qty) {
                 createToast({
                     title: 'error',
@@ -226,11 +225,11 @@ let sales_invoice = createResource({
                 company: store.posProfileData.company,
                 conversion_rate: 1,
                 selling_price_list: store.posProfileData.selling_price_list,
-                items: base.items,
-                customer: base.customer.name,
+                items: invoiceStore.items,
+                customer: invoiceStore.invoiceCustomer.name,
                 update_stock: 1,
-                additional_discount_percentage: Number(base.additional_discount_percentage) || 0,
-                discount_amount: Number(base.discount_amount) || 0,
+                additional_discount_percentage: Number(invoiceStore.invoice._additional_discount_percentage) || 0,
+                discount_amount: Number(invoiceStore.invoice._discount_amount) || 0,
                 base_total: invoiceStore.invoice.base_total && invoiceStore.invoice.base_total,
                 custom_ant_opening: store.openingShift.name,
                 apply_discount_on: store.posProfileData.apply_discount_on,
@@ -290,20 +289,20 @@ const getAdvances = () => {
     return invoiceStore.invoice.advances;
 };
 
-const calcuateDiscount = () => {
+const calculateDiscount = () => {
     let amount = store.posProfileData?.apply_discount_on === 'Grand Total' ? invoiceStore.invoice.base_grand_total : invoiceStore.invoice.base_net_total;
 
     if (store.posProfileData?.custom_use_percentage_discount) {
-        base.discount_amount= (( amount + invoiceStore.invoice?.discount_amount ) * 100) / base.additional_discount_percentage;
+        invoiceStore.invoice._discount_amount= (( amount + invoiceStore.invoice?.discount_amount ) * 100) / invoiceStore.invoice._additional_discount_percentage;
     } else {
-        base.additional_discount_percentage = base.discount_amount * (100 / ( amount + invoiceStore.invoice?.discount_amount ));
+        invoiceStore.invoice._additional_discount_percentage = invoiceStore.invoice._discount_amount * (100 / ( amount + invoiceStore.invoice?.discount_amount ));
     }
 };
 
 const debouncedDiscount = debounce(calculateDiscount, 300);
 
 watch(
-    () => base.discount_amount,
+    () => invoiceStore.invoice._discount_amount,
     (newVal,oldVal) => {
         if (!store.posProfileData?.custom_use_percentage_discount && newVal !== oldVal) {
             calculateDiscount();
@@ -314,7 +313,7 @@ watch(
 );
 
 watch(
-  [() => base.invoice.grand_total, () => base.invoice.net_total],
+  [() => invoiceStore.invoice.grand_total, () => invoiceStore.invoice.net_total],
   (newValues, oldValues) => {
     const [newGrand, newNet] = newValues;
     const [oldGrand, oldNet] = oldValues;

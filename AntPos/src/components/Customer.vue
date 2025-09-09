@@ -9,15 +9,21 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, onUnmounted, watch } from 'vue';
+import { computed, inject, onMounted, onUnmounted, watch, defineProps } from 'vue';
 import emitter from '@/utils/emitter'; 
 import Autocomplete from '@/components/custom_components/Autocomplete.vue';
 import { createListResource } from 'frappe-ui';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
-import { useInvoiceStore } from '@/stores/salesInvoice';
+import { useInvoiceStore } from '@/stores/pos';
+const emit = defineEmits(['update:customer']);
 
-let base = inject('base');
+const props = defineProps({
+    customer: {
+        type: Object,
+        required: true,
+    },
+});
 const invoiceStore = useInvoiceStore()
 const getCustomerGroups = computed(()=>{
 
@@ -96,10 +102,10 @@ onUnmounted(() => {
 });
 
 const selectedCustomer = computed({
-  get: () => base.customer,
+  get: () => props.customer,
   set: (newVal) => {
     if(invoiceStore.invoice.is_return) return
-      base.customer = newVal;
+      emit('update:customer', newVal);
       emitter.emit('calctotal')
   },
 });

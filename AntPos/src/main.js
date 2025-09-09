@@ -35,13 +35,6 @@ app.component('Input', Input)
 
 app.use(pinia)
 
-const base = reactive({
-  customer: {},
-  items:[],
-  invoice:{},
-})
-app.provide('base', base)
-
 app.provide('dynamicComponent', useDynamicComponent());
 
 // Provide emitter it globally

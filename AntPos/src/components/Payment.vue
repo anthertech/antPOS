@@ -5,7 +5,7 @@
                 <div class="w-[65%] h-full">
                     <div class="w-full h-full shadow-2xl p-4 rounded">
                         <div class="h-[6%]">
-                            <Customer/>
+                            <Customer  v-model:customer="paymentStore.paymentCustomer" />
                         </div>
                         <div class="w-full h-[94%] flex flex-col gap-4">
                             <TextInput type="text" v-model="searchQuery" placeholder="Search">
@@ -40,6 +40,32 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="flex justify-between items-center mt-4">
+                                <div class="flex gap-2">
+                                    <Button
+                                        v-for="size in [20, 100, 500, 2500]"
+                                        :key="size"
+                                        :variant="selectedPageLength === size ? 'solid' : 'ghost'"
+                                        @click="setPageLength(size)"
+                                        :ref_for="true"
+                                        :loading="invoices.loading"
+                                        :disabled="invoices.loading"
+                                        :link="null"
+                                    >
+                                        {{ size }}
+                                    </Button>
+
+                                </div>
+                                <Button 
+                                    @click="invoices.next()" 
+                                    variant="solid"
+                                    :loading="invoices.loading"
+                                    :disabled="invoices.loading"
+                                
+                                >
+                                    Load more
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -73,7 +99,7 @@
                                 placeholder="0"
                                 :disabled="false"
                                 label="Credit To Redeem"
-                                v-model="base.paymentAmount"
+                                v-model="paymentStore.payment.paymentAmount"
                                 @change="calculateAmountTotal"
                                 />
                             </div>
@@ -112,7 +138,7 @@
                                     variant="subtle"
                                     placeholder="0"
                                     :disabled="true"
-                                    v-model="base.diff"
+                                    v-model="paymentStore.payment.diff"
                                     label="Difference:"
                                 />
                             </div>
@@ -146,15 +172,23 @@ import { ref, inject, computed, watch, onBeforeMount } from 'vue';
 import Customer from '@/components/Customer.vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
-
+import { usePaymentStore } from '@/stores/payment'
 const store = usePosProfileStore();
-let base = inject('base');
+const paymentStore = usePaymentStore();
 const searchQuery = ref("");
 const currentTab = ref('credit');
-const customerName = ref(base.customer.name);
+const customerName = ref(paymentStore.paymentCustomer.name);
 const selectAll = ref(false);
+const selectedPageLength = ref(20);
 const modes = ref([]);
-    
+
+const setPageLength = (size) => {
+    if (selectedPageLength.value !== size) {
+        selectedPageLength.value = size;
+        invoices.update({ pageLength: size, start: 0 }); 
+        invoices.reload();
+    }
+};
 const invoices = createListResource({
     doctype: 'Sales Invoice',
     fields: ['name', 'customer', 'grand_total', 'outstanding_amount'],
@@ -165,7 +199,7 @@ const invoices = createListResource({
         customer: customerName.value
     },
     orderBy: 'creation asc',
-    pageLength: Number.MAX_VALUE * 2,
+    pageLength: 20,
     transform(data) {
         for (let d of data) {
             d.selected= false
@@ -198,7 +232,7 @@ const calculateAmountTotal = () => {
     let total = invoices.data.reduce((sum, invoice) => {
         return invoice.selected ? sum + invoice.grand_total : sum;
     }, 0);
-    base.paymentAmount = total;
+    paymentStore.payment.paymentAmount = total;
 };
 
 const toggleAllSelection = (event) => {
@@ -230,17 +264,15 @@ const addPayments = () => {
             "base_amount": 0.00,
         })
     })
-    base.paid_amount=0;
-    base.diff=0;
+    paymentStore.payment.paid_amount=0;
+    paymentStore.payment.diff=0;
 };
 
 const clearPayments = () => {
+    paymentStore.unmountAndRefresh(false)
     modes.value.forEach(mode => {
         mode.amount = 0;
     });
-    base.paymentAmount = 0;
-    base.paid_amount = 0;
-    base.diff = 0;
     invoices.data.forEach(invoice => {
         invoice.selected = false;
     });
@@ -251,12 +283,12 @@ const clearPayments = () => {
 const changemode = (index) => {
     modes.value.forEach((element, i) => {
         if (i === index) {
-            element.amount = base.paymentAmount;
+            element.amount = paymentStore.payment.paymentAmount;
         } else {
             element.amount = 0;
         }
     });
-    base.paid_amount = base.paymentAmount;
+    paymentStore.payment.paid_amount = paymentStore.payment.paymentAmount;
 };
 
 onBeforeMount(() => {
@@ -345,7 +377,7 @@ let save = createResource({
                     posting_date:now(),
                     party_type:'Customer',
                     mode_of_payment:params.mode,
-                    party: base.customer.name,
+                    party: paymentStore.paymentCustomer.name,
                     paid_from_account_currency:store.posProfileData?.currency,
                     paid_from:'Debtors - FITPL',
                     paid_to:"MGR Cash - FITPL",
@@ -374,7 +406,7 @@ let save = createResource({
 });
 
 watch(
-    () => base.customer,
+    () => paymentStore.paymentCustomer,
     (newValue, oldValue) => {
         if (oldValue != null && newValue.name !== oldValue.name) {
             customerName.value = newValue.name;
@@ -389,9 +421,26 @@ watch(
     () => modes.value.map(mode => mode.amount),
     (newAmounts) => {
         const total = newAmounts.reduce((sum, val) => sum + Number(val || 0), 0);
-        base.diff =   Number(base.paymentAmount || 0) - total;
+        paymentStore.payment.diff =   Number(paymentStore.payment.paymentAmount || 0) - total;
     },
     { immediate: true }
 );
+
+watch(searchQuery, (newQuery) => {
+  invoices.update({
+    filters: {
+        outstanding_amount: [">", 0],
+        docstatus: 1, 
+        is_return: 0, 
+        customer: customerName.value
+    },
+    orFilters: newQuery
+      ? [
+          ['name', 'like', `%${newQuery}%`],
+        ]
+      : []
+  });
+  invoices.reload();
+});
    
 </script>
