@@ -6,7 +6,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onBeforeMount } from 'vue';
+import { computed, onBeforeMount,onUnmounted } from 'vue';
 import ItemSelector from '@/components/ItemSelector.vue';
 import Invoice from '@/components/Invoice.vue';
 import ItemDetail from '@/components/ItemDetail.vue';
@@ -26,9 +26,12 @@ const currentComponent = computed(() =>
 
 
 onBeforeMount(() => {
-    
+
   invoiceStore.invoiceResource.fetch()
   
 });
+onUnmounted(()=>{
+    invoiceStore.unmount()
+})
 
 </script>

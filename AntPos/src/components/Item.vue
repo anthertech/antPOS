@@ -245,7 +245,7 @@
 </template>
 <script setup>
 import { FeatherIcon, FormControl, Autocomplete, DatePicker, dayjsLocal, createResource, createListResource,debounce } from 'frappe-ui';
-import { inject, watch, defineProps, onMounted, onUnmounted, computed } from 'vue';
+import { watch, defineProps, onMounted, onUnmounted, computed } from 'vue';
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
 import { usePosProfileStore } from '@/stores/posProfile';

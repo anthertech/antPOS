@@ -97,7 +97,7 @@
 </template>
 
 <script setup>
-import { FeatherIcon, Dropdown, createResource, Button } from 'frappe-ui';
+import { FeatherIcon, Dropdown, Button } from 'frappe-ui';
 import { useRouter } from 'vue-router';
 import { inject, h, computed } from 'vue';
 import { getSettings } from '@/stores/settings'
@@ -134,6 +134,13 @@ const option=[
     icon: () => h(FeatherIcon, { name: 'file-minus' }),
     onClick: () => {
       loadComponent('CloseShift')
+    },
+  },
+  {
+    label: 'Desk',
+    icon: () => h(FeatherIcon, { name: 'home' }),
+    onClick: () => {
+       window.location.href = '/app'
     },
   },
   {

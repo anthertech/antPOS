@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { ref, computed, inject } from 'vue';
+import { ref, computed } from 'vue';
 import { Dialog, createListResource, Button, FormControl, createResource } from 'frappe-ui';
 import emitter from '@/utils/emitter';
 import { showToast } from '@/utils';

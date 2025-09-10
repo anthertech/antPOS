@@ -9,7 +9,7 @@
 </template>
 
 <script setup>
-import { computed, inject, onMounted, onUnmounted, watch, defineProps } from 'vue';
+import { computed, onMounted, onUnmounted, watch, defineProps } from 'vue';
 import emitter from '@/utils/emitter'; 
 import Autocomplete from '@/components/custom_components/Autocomplete.vue';
 import { createListResource } from 'frappe-ui';

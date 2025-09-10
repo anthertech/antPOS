@@ -68,7 +68,7 @@
 
 <script setup>
 import { Dialog, Button, createListResource, createResource, TextInput, debounce, FeatherIcon } from 'frappe-ui';
-import { ref, inject, computed, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
 import { usePermissionStore } from '@/stores/permission';
