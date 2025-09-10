@@ -37,7 +37,7 @@
 
 <script setup>
 import { FormControl, FeatherIcon, createResource } from 'frappe-ui';
-import { ref, inject, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import { usePosProfileStore } from '@/stores/posProfile';
@@ -313,10 +313,6 @@ onMounted(() => {
     emitter.on('remove_invoice', (include_customer) => {
         remove_invoice(include_customer);
     });
-})
-
-onUnmounted(()=>{
-    invoiceStore.unmount()
 })
 
 </script> 

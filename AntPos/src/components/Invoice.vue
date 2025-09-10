@@ -230,7 +230,7 @@
 
 <script setup>
 import { Button, FormControl, createResource, DatePicker, dayjsLocal  } from 'frappe-ui'
-import { ref, inject, onMounted , watch, computed } from 'vue'
+import { ref, onMounted , watch, computed } from 'vue'
 import { createToast } from '@/utils';
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter';
@@ -244,6 +244,7 @@ const invoiceStore = useInvoiceStore()
 const baseurl = createResource({url: 'ant_pos.ant_pos.utils.get_domain_url',});
 const addPayments = () => {
     invoiceStore.invoice.paid_amount = invoiceStore.invoice.base_rounded_total
+    if (!invoiceStore.invoice.payments) invoiceStore.invoice.payments = []
     store.posProfileData.payments.forEach(element => {
         if (!invoiceStore.invoice.payments.some(payment => payment.mode_of_payment === element.mode_of_payment) && (invoiceStore.invoice.is_return && element.allow_in_returns || !invoiceStore.invoice.is_return )) {
             invoiceStore.invoice.payments.push({
@@ -277,10 +278,6 @@ const deliveryDate = computed({
   set(value) {
     invoiceStore.invoice.delivery_date = value
   }
-})
-
-onMounted(() => {
-    addPayments()
 })
 
 const createSaveResource = createResource({
@@ -389,7 +386,7 @@ const createPrint = async (name) =>{
     }
 }
 
-let advance = createResource({
+createResource({
     url: 'run_doc_method',
     auto: true,
     makeParams(params) {        
@@ -399,7 +396,16 @@ let advance = createResource({
         }
     },
     onSuccess(data) {
-        invoiceStore.invoice = {...data.docs[0],is_pos: true}
+        for (const key in data.docs[0]) {
+           
+            const existingValue = invoiceStore.invoice[key];
+            const newValue = data.docs[0][key];
+
+            // Check for changes or new keys
+            if (key !== 'is_pos' && key !== 'docstatus' && JSON.stringify(existingValue) !== JSON.stringify(newValue)) {
+                invoiceStore.invoice[key] = newValue;
+            }
+        }
         addPayments()
     },
     onError(error) {
@@ -491,4 +497,7 @@ watch(
     { deep: true }
 );
 
+onMounted(() => {
+    addPayments()
+})
 </script>

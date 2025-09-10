@@ -84,7 +84,7 @@
 
 
 <script setup>
-import { ref, inject, defineEmits, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { Button, Dialog, FormControl, createResource, debounce,Spinner} from 'frappe-ui';
 import { createToast } from '@/utils';
 import { usePosProfileStore } from '@/stores/posProfile';
