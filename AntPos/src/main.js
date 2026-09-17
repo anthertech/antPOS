@@ -8,6 +8,7 @@ import { useDynamicComponent } from './utils/Dialog'
 import { handleStaleBuild, isStaleBuildError } from './utils/staleBuild'
 import mitt from 'mitt'
 import { withLoginRedirect } from './utils/login'
+import './utils/pwaInstall'
 
 import { Button, setConfig, frappeRequest, resourcesPlugin } from 'frappe-ui'
 

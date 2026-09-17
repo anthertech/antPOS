@@ -64,6 +64,8 @@ import LucideSettings from '~icons/lucide/settings'
 import LucideLayoutGrid from '~icons/lucide/layout-grid'
 import LucideLogOut from '~icons/lucide/log-out'
 import LucideChevronRight from '~icons/lucide/chevron-right'
+import LucideSmartphone from '~icons/lucide/smartphone'
+import { installApp, pwa } from '@/utils/pwaInstall'
 import BottomSheet from '@/components/mobile/BottomSheet.vue'
 import { useMobileView } from '@/stores/mobile'
 import { usePosProfileStore } from '@/stores/posProfile'
@@ -111,6 +113,15 @@ const items = computed(() => [
     icon: markRaw(LucideSettings),
     run: () => openSettings('profile'),
   },
+  ...(pwa.installed
+    ? []
+    : [
+        {
+          label: 'Install app',
+          icon: markRaw(LucideSmartphone),
+          run: installApp,
+        },
+      ]),
   {
     label: 'Go to desk',
     icon: markRaw(LucideLayoutGrid),

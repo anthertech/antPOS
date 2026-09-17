@@ -97,6 +97,8 @@
 import { computed, h, inject, markRaw } from 'vue'
 import { useRouter } from 'vue-router'
 import { Dropdown, createResource } from 'frappe-ui'
+import LucideMonitorDown from '~icons/lucide/monitor-down'
+import { installApp, pwa } from '@/utils/pwaInstall'
 import { getSettings, settingsPage } from '@/stores/settings'
 import { usersStore } from '@/stores/users'
 import { useSidebar } from '@/stores/sidebar'
@@ -207,6 +209,12 @@ const menuItems = computed(() => [
         label: 'Settings',
         icon: markRaw(LucideSettings),
         onClick: () => openSettings('profile'),
+      },
+      {
+        label: 'Install app',
+        icon: markRaw(LucideMonitorDown),
+        condition: () => !pwa.installed,
+        onClick: installApp,
       },
     ],
   },
