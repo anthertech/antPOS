@@ -136,8 +136,9 @@ doc_events = {
 		# accounts this fills in.
 		"before_validate": "ant_pos.ant_pos.api.payment_entry.validate",
 	},
+	# ERPNext's own POS checks, run on the Sales Invoices antPOS writes.
 	"Sales Invoice": {
-		"before_save": "ant_pos.ant_pos.api.sales_invoice.before_save_sales_invoice",
+		"validate": "ant_pos.ant_pos.api.pos_invoice_rules.validate",
 	},
 	# The POS item list is cached per POS Profile; drop it when anything it shows
 	# changes. Stock levels are deliberately not hooked (every sale would clear

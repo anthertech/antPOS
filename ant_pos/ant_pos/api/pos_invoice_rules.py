@@ -1,0 +1,92 @@
+"""ERPNext's POS checks, applied to the Sales Invoices antPOS writes.
+
+antPOS sells with ordinary Sales Invoices instead of POS Invoices, so none of
+the checks ERPNext runs on a POS Invoice applied to a POS sale: payment rows
+could have the wrong sign, change could be handed out with no account to book
+it to, and an invoice could be written against a different company than its POS
+Profile.
+
+Rather than copy those rules, the same `POSInvoice` methods are called with our
+document, so ERPNext's fixes and improvements reach antPOS with `bench update`.
+The document stays a Sales Invoice: the old code assigned `POSInvoice` to
+`doc.__class__`, which left every later hook in the save running against a
+different class than the rest of the site expects.
+
+Not every POS Invoice check fits a Sales Invoice. Those are listed in
+SKIPPED below, with the reason and what covers them instead.
+"""
+
+import frappe
+from erpnext.accounts.doctype.pos_invoice.pos_invoice import POSInvoice
+from frappe.utils import cint
+
+# ERPNext methods run against our invoice, in ERPNext's own order.
+# `needs_payments` ones are skipped when the invoice carries no payment table
+# (a sale settled from customer credit is saved with is_pos = 0).
+ERPNEXT_CHECKS = (
+	("validate_company_with_pos_company", False),
+	("validate_mode_of_payment", True),
+	("validate_payment_amount", False),
+	("validate_change_amount", True),
+	("validate_change_account", True),
+	("validate_serialised_or_batched_item", False),
+	("validate_stock_availablility", False),
+)
+
+# POS Invoice checks deliberately not called:
+SKIPPED = {
+	# Queries `tabPOS Invoice Item` for the serials of the original invoice, so
+	# it rejects every antPOS return. ERPNext's own Sales Invoice return
+	# validation (controllers/sales_and_purchase_return.py) covers return
+	# quantities and serials for us.
+	"validate_return_items_qty": "reads POS Invoice Item; Sales Invoice returns are validated by ERPNext already",
+	# Looks for a POS Opening Entry. antPOS has its own shift documents.
+	"validate_pos_opening_entry": "antPOS uses Ant Opening Shift",
+	# Reads POS Profile.allow_partial_payment, which antPOS does not use yet.
+	"validate_full_payment": "antPOS still has its own credit settings",
+	# Loyalty programs are not offered by the POS screens.
+	"validate_loyalty_transaction": "loyalty is not part of antPOS",
+}
+
+
+def validate(doc, method=None):
+	"""Run ERPNext's POS checks on a POS sale."""
+	if not doc.get("pos_profile"):
+		return
+
+	_prepare_tracked_rows(doc)
+	has_payments = bool(doc.get("payments"))
+
+	for name, needs_payments in ERPNEXT_CHECKS:
+		if needs_payments and not has_payments:
+			continue
+		getattr(POSInvoice, name)(doc)
+
+
+def _prepare_tracked_rows(doc):
+	"""Describe serial and batch tracking the way ERPNext's check expects.
+
+	Two things are missing on a Sales Invoice row:
+
+	- `has_serial_no` / `has_batch_no`. POS Invoice Item carries them, Sales
+	  Invoice Item does not, so without them the check passes on every line.
+	- `use_serial_batch_fields`, which says the row gives its serials and
+	  batches in the plain fields instead of a Serial and Batch Bundle.
+	  ERPNext sets it itself in stock_controller.make_bundle_using_old_serial_
+	  batch_fields, but only on submit, long after this check runs. Applying
+	  the same rule here keeps the check honest: it then only complains about a
+	  tracked item with no serial or batch at all.
+	"""
+	for item in doc.get("items") or []:
+		if not item.item_code:
+			continue
+		tracking = frappe.get_cached_value(
+			"Item", item.item_code, ["has_serial_no", "has_batch_no"], as_dict=True
+		)
+		if not tracking:
+			continue
+		item.set("has_serial_no", cint(tracking.has_serial_no))
+		item.set("has_batch_no", cint(tracking.has_batch_no))
+
+		if (item.get("serial_no") or item.get("batch_no")) and not item.get("serial_and_batch_bundle"):
+			item.use_serial_batch_fields = 1

@@ -1,5 +1,4 @@
 import frappe
-from erpnext.accounts.doctype.pos_invoice.pos_invoice import POSInvoice
 from erpnext.stock.get_item_details import get_price_list_rate_for
 from frappe import _
 from frappe.utils import flt
@@ -61,9 +60,3 @@ def refresh_price_list_rates(invoice):
 			item.item_code,
 		)
 		item.price_list_rate = flt(rate) * to_invoice_currency
-
-
-def before_save_sales_invoice(doc, method):
-	if doc.is_pos:
-		doc.__class__ = POSInvoice
-		doc.validate_stock_availablility()
