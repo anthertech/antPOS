@@ -18,7 +18,10 @@ SKIPPED below, with the reason and what covers them instead.
 
 import frappe
 from erpnext.accounts.doctype.pos_invoice.pos_invoice import POSInvoice
-from frappe.utils import cint
+from frappe import _
+from frappe.utils import cint, get_link_to_form
+
+from ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift import is_shift_manager
 
 # ERPNext methods run against our invoice, in ERPNext's own order.
 # `needs_payments` ones are skipped when the invoice carries no payment table
@@ -50,10 +53,11 @@ SKIPPED = {
 
 
 def validate(doc, method=None):
-	"""Run ERPNext's POS checks on a POS sale."""
+	"""Run ERPNext's POS checks on a POS sale, and tie it to a shift."""
 	if not doc.get("pos_profile"):
 		return
 
+	validate_shift(doc)
 	_prepare_tracked_rows(doc)
 	has_payments = bool(doc.get("payments"))
 
@@ -90,3 +94,86 @@ def _prepare_tracked_rows(doc):
 
 		if (item.get("serial_no") or item.get("batch_no")) and not item.get("serial_and_batch_bundle"):
 			item.use_serial_batch_fields = 1
+
+
+def validate_shift(doc):
+	"""A POS sale belongs to one open shift, the seller's own.
+
+	ERPNext does the same for POS Invoices in
+	`POSInvoice.validate_pos_opening_entry`; antPOS keeps its own shift
+	documents, so the rule lives here.
+
+	Drafts carry no accounting, so a sale held in a shift that has since closed
+	moves to the cashier's current shift instead of being refused.
+	"""
+	if doc.get("is_consolidated"):
+		return
+
+	shift = doc.get("custom_ant_opening")
+	open_shift = _open_shift_for(frappe.session.user)
+
+	if doc.docstatus == 0 and (not shift or not _is_usable(shift, doc)):
+		# Held sales and new drafts follow the cashier to their current shift.
+		doc.custom_ant_opening = open_shift or shift
+
+	shift = doc.get("custom_ant_opening")
+	if not shift:
+		frappe.throw(
+			_("Open a shift before selling."),
+			title=_("No Open Shift"),
+		)
+
+	details = frappe.db.get_value(
+		"Ant Opening Shift",
+		shift,
+		["name", "status", "docstatus", "cashier", "pos_profile", "company"],
+		as_dict=True,
+	)
+	if not details:
+		frappe.throw(_("Shift {0} does not exist.").format(frappe.bold(shift)))
+
+	if details.docstatus != 1 or details.status != "Open":
+		frappe.throw(
+			_("Shift {0} is not open. Open a new shift to keep selling.").format(frappe.bold(shift)),
+			title=_("Shift Not Open"),
+		)
+
+	if details.cashier != frappe.session.user and not is_shift_manager():
+		frappe.throw(
+			_("Shift {0} belongs to {1}.").format(frappe.bold(shift), frappe.bold(details.cashier)),
+			frappe.PermissionError,
+		)
+
+	if details.pos_profile != doc.pos_profile:
+		frappe.throw(
+			_("Shift {0} is open on POS Profile {1}, not {2}.").format(
+				frappe.bold(shift), frappe.bold(details.pos_profile), frappe.bold(doc.pos_profile)
+			)
+		)
+
+	if details.company != doc.company:
+		frappe.throw(
+			_("Shift {0} belongs to company {1}, not {2}.").format(
+				frappe.bold(shift), frappe.bold(details.company), frappe.bold(doc.company)
+			)
+		)
+
+
+def _open_shift_for(user):
+	return frappe.db.get_value(
+		"Ant Opening Shift",
+		{"cashier": user, "status": "Open", "docstatus": 1},
+		"name",
+		order_by="creation desc",
+	)
+
+
+def _is_usable(shift, doc):
+	details = frappe.db.get_value(
+		"Ant Opening Shift", shift, ["status", "docstatus", "cashier", "pos_profile"], as_dict=True
+	)
+	if not details or details.docstatus != 1 or details.status != "Open":
+		return False
+	if details.pos_profile != doc.pos_profile:
+		return False
+	return details.cashier == frappe.session.user or is_shift_manager()

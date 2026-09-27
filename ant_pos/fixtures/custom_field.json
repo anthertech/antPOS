@@ -35,7 +35,7 @@
   "modified": "2025-03-13 15:55:45.740713",
   "module": "Ant-Pos",
   "name": "Sales Invoice-custom_ant_opening",
-  "no_copy": 0,
+  "no_copy": 1,
   "non_negative": 0,
   "options": "Ant Opening Shift",
   "permlevel": 0,

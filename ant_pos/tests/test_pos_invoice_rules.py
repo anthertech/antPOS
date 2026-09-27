@@ -48,15 +48,19 @@ class TestRulesApplyToPosSalesOnly(FrappeTestCase):
 
 	def test_invoices_without_a_pos_profile_are_untouched(self):
 		doc = self.invoice(pos_profile=None)
-		with patch.object(POSInvoice, "validate_payment_amount") as check:
+		with (
+			patch.object(POSInvoice, "validate_payment_amount") as check,
+			patch(f"{MODULE}.validate_shift") as shift_check,
+		):
 			pos_invoice_rules.validate(doc)
 		check.assert_not_called()
+		shift_check.assert_not_called()
 
 	def test_pos_sales_run_the_erpnext_checks(self):
 		doc = self.invoice()
 		doc.append("payments", {"mode_of_payment": "Cash", "amount": 100})
 		called = []
-		with patch(f"{MODULE}._prepare_tracked_rows"):
+		with patch(f"{MODULE}._prepare_tracked_rows"), patch(f"{MODULE}.validate_shift"):
 			for name, _needs in pos_invoice_rules.ERPNEXT_CHECKS:
 				patcher = patch.object(POSInvoice, name, lambda d, n=name: called.append(n))
 				patcher.start()
@@ -70,7 +74,7 @@ class TestRulesApplyToPosSalesOnly(FrappeTestCase):
 		payment rows; ERPNext would refuse it for having no mode of payment."""
 		doc = self.invoice()
 		called = []
-		with patch(f"{MODULE}._prepare_tracked_rows"):
+		with patch(f"{MODULE}._prepare_tracked_rows"), patch(f"{MODULE}.validate_shift"):
 			for name, _needs in pos_invoice_rules.ERPNEXT_CHECKS:
 				patcher = patch.object(POSInvoice, name, lambda d, n=name: called.append(n))
 				patcher.start()
@@ -163,3 +167,109 @@ class TestTrackingFlags(FrappeTestCase):
 		doc = frappe.new_doc("Sales Invoice")
 		doc.append("items", {})
 		pos_invoice_rules._prepare_tracked_rows(doc)  # must not raise
+
+
+class TestShiftBinding(FrappeTestCase):
+	"""A POS sale belongs to one open shift, the seller's own."""
+
+	CASHIER = "cashier-a@example.com"
+
+	def invoice(self, docstatus=0, **values):
+		doc = frappe.new_doc("Sales Invoice")
+		doc.update(
+			{
+				"pos_profile": "Till 1",
+				"company": "Company A",
+				"custom_ant_opening": "SHIFT-A",
+				"docstatus": docstatus,
+				**values,
+			}
+		)
+		return doc
+
+	def shift(self, **values):
+		return frappe._dict(
+			{
+				"name": "SHIFT-A",
+				"status": "Open",
+				"docstatus": 1,
+				"cashier": self.CASHIER,
+				"pos_profile": "Till 1",
+				"company": "Company A",
+				**values,
+			}
+		)
+
+	def setUp(self):
+		previous = frappe.session.user
+		frappe.set_user(self.CASHIER)
+		self.addCleanup(frappe.set_user, previous)
+
+	def run_with(self, doc, shift, open_shift="SHIFT-A", manager=False):
+		with (
+			patch("frappe.db.get_value", return_value=shift),
+			patch(f"{MODULE}._open_shift_for", return_value=open_shift),
+			patch(f"{MODULE}.is_shift_manager", return_value=manager),
+		):
+			pos_invoice_rules.validate_shift(doc)
+
+	def test_a_submitted_sale_cannot_use_a_closed_shift(self):
+		doc = self.invoice(docstatus=1)
+		with self.assertRaises(frappe.ValidationError):
+			self.run_with(doc, self.shift(status="Closed"), open_shift=None)
+
+	def test_a_submitted_sale_cannot_use_a_draft_shift(self):
+		doc = self.invoice(docstatus=1)
+		with self.assertRaises(frappe.ValidationError):
+			self.run_with(doc, self.shift(docstatus=0), open_shift=None)
+
+	def test_another_cashiers_shift_is_refused(self):
+		doc = self.invoice(docstatus=1)
+		with self.assertRaises(frappe.PermissionError):
+			self.run_with(doc, self.shift(cashier="someone-else@example.com"))
+
+	def test_a_manager_may_sell_into_another_cashiers_shift(self):
+		doc = self.invoice(docstatus=1)
+		self.run_with(doc, self.shift(cashier="someone-else@example.com"), manager=True)
+
+	def test_a_shift_on_another_profile_is_refused(self):
+		doc = self.invoice(docstatus=1)
+		with self.assertRaises(frappe.ValidationError):
+			self.run_with(doc, self.shift(pos_profile="Till 2"))
+
+	def test_a_shift_of_another_company_is_refused(self):
+		doc = self.invoice(docstatus=1)
+		with self.assertRaises(frappe.ValidationError):
+			self.run_with(doc, self.shift(company="Company B"))
+
+	def test_a_new_draft_gets_the_cashiers_open_shift(self):
+		doc = self.invoice(custom_ant_opening=None)
+		self.run_with(doc, self.shift(), open_shift="SHIFT-A")
+		self.assertEqual(doc.custom_ant_opening, "SHIFT-A")
+
+	def test_a_held_draft_moves_to_the_current_shift(self):
+		"""A sale held in a shift that has since closed is picked up later in
+		the cashier's new shift; a draft carries no accounting."""
+		doc = self.invoice(custom_ant_opening="SHIFT-OLD")
+		usable = {"SHIFT-OLD": False, "SHIFT-B": True}
+		with (
+			patch(f"{MODULE}._is_usable", side_effect=lambda s, d: usable[s]),
+			patch(f"{MODULE}._open_shift_for", return_value="SHIFT-B"),
+			patch("frappe.db.get_value", return_value=self.shift(name="SHIFT-B")),
+			patch(f"{MODULE}.is_shift_manager", return_value=False),
+		):
+			pos_invoice_rules.validate_shift(doc)
+
+		self.assertEqual(doc.custom_ant_opening, "SHIFT-B")
+
+	def test_selling_without_any_shift_is_refused(self):
+		doc = self.invoice(custom_ant_opening=None)
+		with (
+			patch(f"{MODULE}._open_shift_for", return_value=None),
+		):
+			with self.assertRaises(frappe.ValidationError):
+				pos_invoice_rules.validate_shift(doc)
+
+	def test_the_shift_field_is_not_copied(self):
+		"""Duplicating an invoice used to carry its shift onto the new sale."""
+		self.assertTrue(frappe.get_meta("Sales Invoice").get_field("custom_ant_opening").no_copy)

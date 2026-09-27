@@ -5,3 +5,4 @@ ant_pos.patches.v0_1_0.backfill_closing_shift_links
 ant_pos.patches.v0_1_0.add_shift_lookup_indexes
 ant_pos.patches.v0_1_0.remove_duplicate_edit_rate_field
 ant_pos.patches.v0_1_0.restore_standard_permissions
+ant_pos.patches.v0_2_0.no_copy_on_shift_field
