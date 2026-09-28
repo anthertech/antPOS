@@ -292,7 +292,7 @@ import {
 import Customer from '@/components/Customer.vue'
 import PaneResizer from '@/components/PaneResizer.vue'
 import { useBreakpoint } from '@/composables/useBreakpoint'
-import { createToast } from '@/utils'
+import { createToast, errorMessage } from '@/utils'
 import { usePosProfileStore } from '@/stores/posProfile'
 import { usePaymentStore } from '@/stores/payment'
 import emitter from '@/utils/emitter'
@@ -419,14 +419,6 @@ const changemode = (index) => {
   paymentStore.payment.paid_amount = paymentStore.payment.paymentAmount
 }
 
-const now = () => {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, '0')
-  const day = String(today.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
 // One recording at a time: a second tap while entries are being submitted
 // would record the same payment twice.
 const recording = ref(false)
@@ -460,16 +452,17 @@ const planCreditPayments = () => {
       const allocated = Math.min(left, outstanding)
       remaining.set(name, outstanding - allocated)
       left -= allocated
-      references.push({
-        reference_doctype: 'Sales Invoice',
-        reference_name: name,
-        allocated_amount: allocated,
-        outstanding_amount: outstanding,
-      })
+      references.push({ invoice: name, allocated_amount: allocated })
     }
     const amount = (Number(mode.amount) || 0) - left
     if (amount > 0 && references.length) {
-      plan.push({ mode: mode.mode_of_payment, amount, references })
+      plan.push({
+        mode_of_payment: mode.mode_of_payment,
+        amount,
+        references,
+        customer: paymentStore.paymentCustomer?.name,
+        shift: store.openingShift.name,
+      })
     }
   }
   return plan
@@ -479,9 +472,11 @@ const planOnAccountPayments = () =>
   modes.value
     .filter((mode) => Number(mode.amount) > 0)
     .map((mode) => ({
-      mode: mode.mode_of_payment,
+      mode_of_payment: mode.mode_of_payment,
       amount: Number(mode.amount),
       references: [],
+      customer: paymentStore.paymentCustomer?.name,
+      shift: store.openingShift.name,
     }))
 
 const createpayment = async () => {
@@ -502,7 +497,7 @@ const createpayment = async () => {
   let recorded = 0
   try {
     for (const entry of plan) {
-      await save.fetch({ action: 'Submit', ...entry })
+      await save.fetch(entry)
       recorded++
     }
   } catch {
@@ -520,41 +515,17 @@ const createpayment = async () => {
   if (recorded) clearPayments()
 }
 
+// ERPNext builds the Payment Entry (accounts, currency, exchange rates,
+// allocation); antPOS says who paid, how much, against which invoices and in
+// which shift.
 let save = createResource({
-  url: 'frappe.desk.form.save.savedocs',
-  makeParams(params) {
-    return {
-      doc: JSON.stringify({
-        doctype: 'Payment Entry',
-        payment_type: 'Receive',
-        posting_date: now(),
-        party_type: 'Customer',
-        mode_of_payment: params.mode,
-        party: paymentStore.paymentCustomer?.name,
-        company: store.posProfileData?.company,
-        cost_center: store.posProfileData?.cost_center,
-        // paid_from / paid_to and their currencies are company-specific
-        // and are resolved server-side in ant_pos.ant_pos.api.payment_entry.validate
-        paid_amount: params.amount,
-        base_paid_amount: params.amount,
-        received_amount: params.amount,
-        base_received_amount: params.amount,
-        references: params.references.length > 0 ? params.references : [],
-        reference_no: store.openingShift.name,
-        reference_date: now(),
-      }),
-      action: params.action,
-    }
-  },
+  url: 'ant_pos.ant_pos.api.payment_entry.record_payment',
+  method: 'POST',
   onError(error) {
     createToast({
-      title: 'error',
-      message: Array.isArray(error?.messages)
-        ? error.messages[0]
-        : error?.messages || 'An error occurred',
-      icon: 'x-circle',
-      iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-      position: 'top-center',
+      title: 'Payment not recorded',
+      message: errorMessage(error),
+      type: 'error',
       timeout: 5,
     })
   },

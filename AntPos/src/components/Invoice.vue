@@ -224,7 +224,7 @@ import {
 } from 'frappe-ui'
 import { useSaleMode } from '@/composables/useSaleMode'
 import { ref, onMounted, watch, computed } from 'vue'
-import { createToast } from '@/utils'
+import { createToast, errorMessage } from '@/utils'
 import { showToast } from '@/utils'
 import emitter from '@/utils/emitter'
 import { openInvoicePrint } from '@/utils/print'
@@ -383,6 +383,27 @@ const changePaymentAmount = () => {
   }
 }
 
+// What the server owns once a document has been saved. Sending back a stale
+// `modified` is refused with "Document has been modified after you have opened
+// it", so a sale whose Submit failed (not enough stock, no change account, a
+// serial problem) could not be retried at all: the cashier had to cancel it.
+const SERVER_FIELDS = [
+  'name',
+  'modified',
+  'modified_by',
+  'docstatus',
+  'creation',
+  'owner',
+  'naming_series',
+]
+
+const rememberSaved = (saved) => {
+  if (!saved || saved.doctype !== 'Sales Invoice') return
+  for (const field of SERVER_FIELDS) {
+    if (saved[field] !== undefined) invoiceStore.invoice[field] = saved[field]
+  }
+}
+
 const saveAndSubmit = async (doc) => {
   await createSaveResource.fetch({ action: 'Save', doc: doc.value.doc })
   // A failed Save leaves doc.value.doc on the client-side temp name; submitting
@@ -390,7 +411,9 @@ const saveAndSubmit = async (doc) => {
   if (!doc.value.doc?.name || doc.value.doc.name.startsWith('new-')) {
     return false
   }
+  rememberSaved(doc.value.doc)
   await createSaveResource.fetch({ action: 'Submit', doc: doc.value.doc })
+  rememberSaved(doc.value.doc)
   return true
 }
 
@@ -423,11 +446,17 @@ const submitInvoice = async (action = null) => {
         naming_series: '',
       }
 
-      doc.value = { doc: salesOrder }
-      if (!(await saveAndSubmit(doc))) return
-      const orderName = doc.value.doc.name
+      // A retry after a failed invoice must not submit a second order.
+      let orderName = invoiceStore.invoice._sales_order
+      if (!orderName) {
+        doc.value = { doc: salesOrder }
+        if (!(await saveAndSubmit(doc))) return
+        orderName = doc.value.doc.name
+        invoiceStore.invoice._sales_order = orderName
+      }
+      const orderItems = doc.value.doc?.items || []
       invoiceStore.invoice.items.forEach((item, index) => {
-        item.so_detail = doc.value.doc.items?.[index]?.name || ''
+        item.so_detail = orderItems[index]?.name || item.so_detail || ''
         item.sales_order = orderName
       })
     }
@@ -443,8 +472,22 @@ const submitInvoice = async (action = null) => {
     invoice.name = saved.name
     invoice.due_date = saved.due_date ?? invoice.due_date
 
+    // Payments first: clearing the cart before they are recorded meant a
+    // failure here left cash taken and nothing to show for it.
+    try {
+      await createPayments(invoice)
+    } catch (error) {
+      showToast(
+        'warning',
+        `Invoice ${saved.name} is submitted, but the payment was not recorded: ${errorMessage(error)}`,
+        'alert-circle',
+        '#ffcc00',
+        '#ffffff',
+      )
+      return
+    }
+
     emitter.emit('remove_invoice', true)
-    await createPayments(invoice)
     showToast(
       'success',
       'Invoice submitted successfully',
@@ -457,19 +500,25 @@ const submitInvoice = async (action = null) => {
   }
 }
 
+// When customer credit covers part of a sale, the rest is taken as a Payment
+// Entry against the invoice. ERPNext builds it (accounts, currency, exchange
+// rates); antPOS only says which invoice, how much and in which shift.
 const createPayments = async (invoice) => {
-  if (
-    (invoice.advances || []).some((element) => element.allocated_amount > 0)
-  ) {
-    for (const element of invoice.payments) {
-      if (element.amount > 0) {
-        await makepayment.fetch({
-          payments: element,
-          invoice: invoice,
-          method: 'Submit',
-          change: true,
-        })
-      }
+  const usesCredit = (invoice.advances || []).some(
+    (element) => element.allocated_amount > 0,
+  )
+  if (!usesCredit) return
+
+  for (const element of invoice.payments || []) {
+    if (element.amount > 0) {
+      await recordPayment.fetch({
+        mode_of_payment: element.mode_of_payment,
+        amount: element.amount,
+        references: [
+          { invoice: invoice.name, allocated_amount: element.amount },
+        ],
+        shift: store.openingShift.name,
+      })
     }
   }
 }
@@ -519,51 +568,9 @@ createResource({
   },
 })
 
-const makepayment = createResource({
-  url: 'frappe.desk.form.save.savedocs',
-  makeParams(params) {
-    return {
-      doc: JSON.stringify({
-        ...params.payments,
-        doctype: 'Payment Entry',
-        payment_type: 'Receive',
-        party_type: 'Customer',
-        party: params.invoice.customer,
-        paid_amount: params.payments.amount,
-        received_amount: params.payments.amount,
-        name: '',
-        references: [
-          {
-            reference_doctype: 'Sales Invoice',
-            reference_name: params.invoice.name,
-            due_date: params.invoice.due_date,
-            allocated_amount: params.payments.amount,
-          },
-        ],
-        target_exchange_rate: 1,
-        company: params.invoice.company,
-        cost_center: params.invoice.cost_center,
-        branch: params.invoice.branch,
-        // Ant Closing Shift collects payments by reference_no; without
-        // this, advance payments never appear in the shift totals.
-        reference_no: store.openingShift.name,
-        reference_date: params.invoice.posting_date,
-      }),
-      action: params.method,
-    }
-  },
-  onError(error) {
-    createToast({
-      title: 'error',
-      message: Array.isArray(error?.messages)
-        ? error.messages[0]
-        : error?.messages || 'An error occurred',
-      icon: 'x-circle',
-      iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-      position: 'top-center',
-      timeout: 5,
-    })
-  },
+const recordPayment = createResource({
+  url: 'ant_pos.ant_pos.api.payment_entry.record_payment',
+  method: 'POST',
 })
 
 const validatePaymentBeforeSave = async () => {
