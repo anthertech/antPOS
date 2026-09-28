@@ -318,3 +318,64 @@ class TestPartialPayment(FrappeTestCase):
 
 		self.assertNotIn("POS Profile-custom_allow_credit", fields)
 		self.assertNotIn("POS Profile-custom_allow_partial_payments", fields)
+
+
+class TestCancelGuard(FrappeTestCase):
+	"""Four sales in a shift, the shift is closed, the cashier is now in
+	another one: cancelling one of those sales is refused."""
+
+	def closed(self, closing="CLOSE-1"):
+		return frappe._dict(status="Closed", ant_closing_shift_detail=closing)
+
+	def invoice(self, shift="SHIFT-A"):
+		doc = frappe.new_doc("Sales Invoice")
+		doc.custom_ant_opening = shift
+		return doc
+
+	def test_cancelling_a_sale_from_a_closed_shift_is_refused(self):
+		with (
+			patch("frappe.db.exists", return_value=True),
+			patch("frappe.db.get_value", return_value=self.closed()),
+		):
+			with self.assertRaises(frappe.ValidationError) as caught:
+				pos_invoice_rules.before_cancel(self.invoice())
+
+		message = str(caught.exception)
+		self.assertIn("CLOSE-1", message)
+		self.assertIn("return", message.lower())
+
+	def test_cancelling_a_sale_from_an_open_shift_is_allowed(self):
+		with (
+			patch("frappe.db.exists", return_value=True),
+			patch("frappe.db.get_value", return_value=frappe._dict(status="Open")),
+		):
+			pos_invoice_rules.before_cancel(self.invoice())
+
+	def test_an_invoice_with_no_shift_is_untouched(self):
+		pos_invoice_rules.before_cancel(self.invoice(shift=None))
+
+	def test_payments_taken_in_a_closed_shift_cannot_be_cancelled(self):
+		entry = frappe.new_doc("Payment Entry")
+		entry.reference_no = "SHIFT-A"
+		with (
+			patch("frappe.db.exists", return_value=True),
+			patch("frappe.db.get_value", return_value=self.closed()),
+		):
+			with self.assertRaises(frappe.ValidationError):
+				pos_invoice_rules.before_cancel_payment_entry(entry)
+
+	def test_a_reference_that_is_not_a_shift_is_ignored(self):
+		"""Payment Entries elsewhere in ERPNext use reference_no for cheque
+		numbers and the like."""
+		entry = frappe.new_doc("Payment Entry")
+		entry.reference_no = "CHQ-99"
+		with patch("frappe.db.exists", return_value=False):
+			pos_invoice_rules.before_cancel_payment_entry(entry)
+
+	def test_both_guards_are_wired_in(self):
+		events = frappe.get_hooks("doc_events")
+		self.assertIn(f"{MODULE}.before_cancel", events["Sales Invoice"].get("before_cancel", []))
+		self.assertIn(
+			f"{MODULE}.before_cancel_payment_entry",
+			events["Payment Entry"].get("before_cancel", []),
+		)

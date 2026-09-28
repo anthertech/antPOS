@@ -135,10 +135,12 @@ doc_events = {
 		# Before ERPNext's validate, which works out exchange rates from the
 		# accounts this fills in.
 		"before_validate": "ant_pos.ant_pos.api.payment_entry.validate",
+		"before_cancel": "ant_pos.ant_pos.api.pos_invoice_rules.before_cancel_payment_entry",
 	},
 	# ERPNext's own POS checks, run on the Sales Invoices antPOS writes.
 	"Sales Invoice": {
 		"validate": "ant_pos.ant_pos.api.pos_invoice_rules.validate",
+		"before_cancel": "ant_pos.ant_pos.api.pos_invoice_rules.before_cancel",
 	},
 	# The POS item list is cached per POS Profile; drop it when anything it shows
 	# changes. Stock levels are deliberately not hooked (every sale would clear

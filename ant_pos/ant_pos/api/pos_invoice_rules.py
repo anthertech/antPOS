@@ -176,3 +176,47 @@ def _is_usable(shift, doc):
 	if details.pos_profile != doc.pos_profile:
 		return False
 	return details.cashier == frappe.session.user or is_shift_manager()
+
+
+def before_cancel(doc, method=None):
+	"""A sale in a closed shift cannot be cancelled.
+
+	The shift's closing recorded this invoice, the expected cash and what the
+	cashier counted; cancelling afterwards would leave a submitted closing that
+	no longer matches its invoices. ERPNext refuses the same way for an invoice
+	already pulled into a POS Closing Entry
+	(`POSInvoice.before_cancel`): cancel the closing first.
+
+	Day to day the answer is a return in the current shift, which takes the
+	refund out of today's drawer instead of rewriting a counted one.
+	"""
+	_refuse_if_shift_closed(doc.get("custom_ant_opening"), _("invoice"))
+
+
+def before_cancel_payment_entry(doc, method=None):
+	"""Payments are tied to a shift by reference_no, and count in its cash."""
+	_refuse_if_shift_closed(doc.get("reference_no"), _("payment"))
+
+
+def _refuse_if_shift_closed(shift, what):
+	if not shift or not frappe.db.exists("Ant Opening Shift", shift):
+		return
+
+	details = frappe.db.get_value(
+		"Ant Opening Shift", shift, ["status", "ant_closing_shift_detail"], as_dict=True
+	)
+	if details.status != "Closed":
+		return
+
+	closing = details.ant_closing_shift_detail
+	where = (
+		_("Cancel closing shift {0} first.").format(get_link_to_form("Ant Closing Shift", closing))
+		if closing
+		else _("Reopen shift {0} first.").format(frappe.bold(shift))
+	)
+	frappe.throw(
+		_(
+			"This {0} belongs to shift {1}, which is closed. {2} To refund a customer, take a return instead."
+		).format(what, frappe.bold(shift), where),
+		title=_("Shift Closed"),
+	)
