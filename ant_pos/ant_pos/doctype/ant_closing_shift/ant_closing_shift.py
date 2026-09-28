@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 from frappe.model.document import Document
+from frappe.utils import flt
 
 from ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift import is_shift_manager
 
@@ -49,6 +50,44 @@ class AntClosingShift(Document):
 
 		for payment in self.get_pos_payments():
 			self.append("pos_payments", payment)
+
+		self.reconcile_payments(opening_shift_doc)
+
+	def reconcile_payments(self, opening_shift_doc):
+		"""Work out the cash count here rather than trusting the screen.
+
+		The Close Shift screen used to send the opening float, the expected amount
+		and the difference along with what the cashier counted, and all four were
+		stored as sent, so a shortage could be hidden by sending an expected amount
+		that matched the count.
+
+		Only `closing`, the counted amount, comes from the cashier now. This
+		mirrors ERPNext's POS Closing Entry, which builds its reconciliation from
+		the opening entry and the invoices
+		(pos_closing_entry.make_closing_entry_from_opening).
+		"""
+		from ant_pos.ant_pos.api.payment_entry import shift_payment_totals
+
+		counted = {row.mode_of_payment: flt(row.closing) for row in self.payment_reconciliation}
+		opening = {
+			row.mode_of_payment: flt(row.opening_amount) for row in opening_shift_doc.opening_balance_details
+		}
+		taken = shift_payment_totals(self.ant_opening_shift)
+
+		self.payment_reconciliation = []
+		for mode in _ordered_modes(opening_shift_doc, opening, taken, counted):
+			expected = flt(opening.get(mode, 0)) + flt(taken.get(mode, 0))
+			closing = flt(counted.get(mode, 0))
+			self.append(
+				"payment_reconciliation",
+				{
+					"mode_of_payment": mode,
+					"opening": flt(opening.get(mode, 0)),
+					"expected": expected,
+					"closing": closing,
+					"difference": closing - expected,
+				},
+			)
 
 	def validate_opening_shift(self, opening):
 		"""Only an open, submitted shift can be closed, once, by its cashier
@@ -209,3 +248,22 @@ class AntClosingShift(Document):
 			self.ant_opening_shift,
 			{"status": "Open", "ant_closing_shift_detail": None},
 		)
+
+
+def _ordered_modes(opening_shift_doc, *sources):
+	"""Every payment method of the shift, in the profile's own order."""
+	modes = []
+	profile_modes = frappe.get_all(
+		"POS Payment Method",
+		filters={"parent": opening_shift_doc.pos_profile},
+		pluck="mode_of_payment",
+		order_by="idx asc",
+	)
+	for mode in profile_modes:
+		if mode not in modes:
+			modes.append(mode)
+	for source in sources:
+		for mode in source:
+			if mode and mode not in modes:
+				modes.append(mode)
+	return modes

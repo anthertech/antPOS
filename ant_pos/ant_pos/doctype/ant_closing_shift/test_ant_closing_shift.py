@@ -9,6 +9,8 @@ from frappe.tests.utils import FrappeTestCase
 
 MODULE = "ant_pos.ant_pos.doctype.ant_closing_shift.ant_closing_shift"
 
+from ant_pos.ant_pos.doctype.ant_closing_shift import ant_closing_shift
+
 
 def as_user(test, user):
 	"""Run as `user` until the test ends (the session is not patchable)."""
@@ -142,3 +144,63 @@ class TestClosingOwnership(FrappeTestCase):
 			):
 				doc.on_cancel()
 			set_value.assert_called_once()
+
+
+class TestCashCount(FrappeTestCase):
+	"""The screen used to send the opening, expected and difference amounts
+	along with the count, and they were stored as sent."""
+
+	def closing(self, counted, opening_rows, taken):
+		doc = frappe.new_doc("Ant Closing Shift")
+		doc.ant_opening_shift = "SHIFT-A"
+		for mode, amount in counted.items():
+			doc.append(
+				"payment_reconciliation",
+				{"mode_of_payment": mode, "closing": amount, "expected": amount, "difference": 0},
+			)
+		opening_shift = frappe._dict(
+			pos_profile="Till 1",
+			opening_balance_details=[
+				frappe._dict(mode_of_payment=mode, opening_amount=amount)
+				for mode, amount in opening_rows.items()
+			],
+		)
+		order = list(dict.fromkeys([*opening_rows, *taken, *counted]))
+		with (
+			patch(
+				"ant_pos.ant_pos.api.payment_entry.shift_payment_totals",
+				return_value=taken,
+			),
+			patch(f"{MODULE}._ordered_modes", return_value=order),
+		):
+			doc.reconcile_payments(opening_shift)
+		return {row.mode_of_payment: row for row in doc.payment_reconciliation}
+
+	def test_expected_is_the_float_plus_what_was_taken(self):
+		rows = self.closing({"Cash": 500}, {"Cash": 100}, {"Cash": 400})
+		self.assertEqual(rows["Cash"].opening, 100)
+		self.assertEqual(rows["Cash"].expected, 500)
+		self.assertEqual(rows["Cash"].difference, 0)
+
+	def test_a_shortage_cannot_be_hidden(self):
+		"""The cashier counts 450 and claims it matches; it does not."""
+		rows = self.closing({"Cash": 450}, {"Cash": 100}, {"Cash": 400})
+		self.assertEqual(rows["Cash"].expected, 500)
+		self.assertEqual(rows["Cash"].closing, 450)
+		self.assertEqual(rows["Cash"].difference, -50)
+
+	def test_a_method_with_no_count_still_gets_a_row(self):
+		rows = self.closing({}, {"Cash": 100}, {"Cash": 0, "Card": 250})
+		self.assertEqual(rows["Card"].expected, 250)
+		self.assertEqual(rows["Card"].closing, 0)
+		self.assertEqual(rows["Card"].difference, -250)
+
+
+class TestPaymentMethodOrder(FrappeTestCase):
+	def test_the_profiles_own_order_comes_first(self):
+		opening_shift = frappe._dict(pos_profile="Till 1")
+		frappe.get_meta("Ant Closing Shift")  # warm the cache before patching
+		with patch("frappe.get_all", return_value=["Cash", "Card"]):
+			modes = ant_closing_shift._ordered_modes(opening_shift, {"Voucher": 1}, {"Card": 2})
+
+		self.assertEqual(modes, ["Cash", "Card", "Voucher"])
