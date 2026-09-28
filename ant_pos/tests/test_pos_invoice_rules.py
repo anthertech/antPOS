@@ -273,3 +273,48 @@ class TestShiftBinding(FrappeTestCase):
 	def test_the_shift_field_is_not_copied(self):
 		"""Duplicating an invoice used to carry its shift onto the new sale."""
 		self.assertTrue(frappe.get_meta("Sales Invoice").get_field("custom_ant_opening").no_copy)
+
+
+class TestPartialPayment(FrappeTestCase):
+	"""antPOS had its own credit settings; ERPNext's allow_partial_payment now
+	decides, and ERPNext's own check enforces it."""
+
+	def invoice(self, paid, total=100, is_return=0):
+		doc = frappe.new_doc("Sales Invoice")
+		doc.update(
+			{
+				"pos_profile": "Till 1",
+				"company": "Company A",
+				"is_pos": 1,
+				"is_return": is_return,
+				"docstatus": 1,
+				"grand_total": total,
+				"rounded_total": total,
+				"paid_amount": paid,
+			}
+		)
+		return doc
+
+	def test_the_check_is_wired_in(self):
+		self.assertIn(("validate_full_payment", False), pos_invoice_rules.ERPNEXT_CHECKS)
+		self.assertNotIn("validate_full_payment", pos_invoice_rules.SKIPPED)
+
+	def test_an_unpaid_sale_is_refused_when_partial_payment_is_off(self):
+		doc = self.invoice(paid=40)
+		with patch("frappe.db.get_value", return_value=0):
+			with self.assertRaises(frappe.ValidationError):
+				POSInvoice.validate_full_payment(doc)
+
+	def test_an_unpaid_sale_is_allowed_when_partial_payment_is_on(self):
+		doc = self.invoice(paid=40)
+		with patch("frappe.db.get_value", return_value=1):
+			POSInvoice.validate_full_payment(doc)
+
+	def test_the_custom_settings_are_gone(self):
+		import json
+
+		with open(frappe.get_app_path("ant_pos", "fixtures", "custom_field.json")) as fixture:
+			fields = {f["name"] for f in json.load(fixture)}
+
+		self.assertNotIn("POS Profile-custom_allow_credit", fields)
+		self.assertNotIn("POS Profile-custom_allow_partial_payments", fields)

@@ -395,19 +395,15 @@ const saveAndSubmit = async (doc) => {
 }
 
 // Paying more than is due is fine: the difference is change. Paying less
-// leaves the rest on credit, which the POS Profile has to allow. Without
-// "Allow partial payments" a credit sale must be entirely on credit.
+// leaves the rest unpaid, which the POS Profile has to allow ("Allow Partial
+// Payment", ERPNext's own setting; the server enforces the same rule).
 // Returns are negative on both sides, so sizes are compared.
 const paymentProblem = () => {
-  const profile = store.posProfileData
   const due = Math.abs(toPay.value)
   const paidNow = Math.abs(paid.value)
   if (due - paidNow < 0.005) return null
-  if (!profile.custom_allow_credit) {
-    return `Credit is not allowed. Collect ${money(due - paidNow)} more.`
-  }
-  if (!profile.custom_allow_partial_payments && paidNow >= 0.005) {
-    return 'Partial payments are not allowed. Take the full amount or leave it all on credit.'
+  if (!store.posProfileData.allow_partial_payment) {
+    return `Collect ${money(due - paidNow)} more, or allow partial payment on the POS Profile.`
   }
   return null
 }

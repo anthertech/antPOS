@@ -32,6 +32,7 @@ ERPNEXT_CHECKS = (
 	("validate_payment_amount", False),
 	("validate_change_amount", True),
 	("validate_change_account", True),
+	("validate_full_payment", False),
 	("validate_serialised_or_batched_item", False),
 	("validate_stock_availablility", False),
 )
@@ -45,8 +46,6 @@ SKIPPED = {
 	"validate_return_items_qty": "reads POS Invoice Item; Sales Invoice returns are validated by ERPNext already",
 	# Looks for a POS Opening Entry. antPOS has its own shift documents.
 	"validate_pos_opening_entry": "antPOS uses Ant Opening Shift",
-	# Reads POS Profile.allow_partial_payment, which antPOS does not use yet.
-	"validate_full_payment": "antPOS still has its own credit settings",
 	# Loyalty programs are not offered by the POS screens.
 	"validate_loyalty_transaction": "loyalty is not part of antPOS",
 }
