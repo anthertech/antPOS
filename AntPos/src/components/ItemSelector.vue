@@ -146,10 +146,12 @@ const addFromList = (item) => {
   if (addItemIfExists(scan)) return
 
   pendingTaps.set(item.item_code, 0)
+  invoiceStore.startAdd()
   addItemsResource
     .fetch({ search_value: JSON.stringify(scan) })
     .catch(() => {})
     .finally(() => {
+      invoiceStore.finishAdd()
       const extra = pendingTaps.get(item.item_code) || 0
       pendingTaps.delete(item.item_code)
       if (!extra) return
@@ -181,11 +183,16 @@ const scanOptions = {
     }
   },
   onSuccess(data) {
+    if (invoiceStore.takingPayment) return
     if (data.serial_no) {
       data.selected_serial_no = [data.serial_no]
     }
     if (!addItemIfExists(data)) {
-      addItemsResource.fetch({ search_value: JSON.stringify(data) })
+      invoiceStore.startAdd()
+      addItemsResource
+        .fetch({ search_value: JSON.stringify(data) })
+        .catch(() => {})
+        .finally(() => invoiceStore.finishAdd())
     }
   },
   onError(error) {
@@ -233,6 +240,7 @@ const addItemsResource = createResource({
     })
   },
   onSuccess(data) {
+    if (invoiceStore.takingPayment) return
     addItem(data)
   },
   transform(data) {
@@ -263,7 +271,10 @@ const addItemsResource = createResource({
 })
 
 const fetchSearchResource = () => {
-  searchResource.fetch()
+  invoiceStore.startAdd()
+  Promise.resolve(searchResource.fetch())
+    .catch(() => {})
+    .finally(() => invoiceStore.finishAdd())
 }
 
 // Camera scanning (phones). Needs HTTPS; hidden where there is no camera API.
@@ -285,7 +296,11 @@ const openCamera = () => {
 // A code from the camera goes the same way as one typed and entered.
 const scanCode = (code) => {
   // Failures are shown by the resource's onError.
-  cameraScanResource.fetch({ search_value: code }).catch(() => {})
+  invoiceStore.startAdd()
+  cameraScanResource
+    .fetch({ search_value: code })
+    .catch(() => {})
+    .finally(() => invoiceStore.finishAdd())
 }
 
 const addItem = (data) => {

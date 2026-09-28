@@ -149,7 +149,11 @@
               ? 'bg-surface-green-3 text-ink-white active:bg-green-800'
               : 'bg-surface-gray-2 text-ink-gray-4'
           "
-          :disabled="!invoiceStore.items.length || sales_invoice.loading"
+          :disabled="
+            !invoiceStore.items.length ||
+            sales_invoice.loading ||
+            invoiceStore.adding
+          "
           @click="saveDraft('pay')"
         >
           Pay <span class="num">{{ payableTotal }}</span>
@@ -190,7 +194,11 @@
             variant="outline"
             theme="gray"
             size="lg"
-            :disabled="!invoiceStore.items.length || sales_invoice.loading"
+            :disabled="
+              !invoiceStore.items.length ||
+              sales_invoice.loading ||
+              invoiceStore.adding
+            "
             @click="saveDraft('save_new')"
           >
             Hold sale
@@ -203,7 +211,11 @@
             variant="solid"
             theme="gray"
             size="lg"
-            :disabled="!invoiceStore.items.length || sales_invoice.loading"
+            :disabled="
+              !invoiceStore.items.length ||
+              sales_invoice.loading ||
+              invoiceStore.adding
+            "
             @click="saveDraft('print')"
           >
             <template #prefix
@@ -220,7 +232,11 @@
                 ? 'bg-surface-green-3 text-ink-white hover:bg-green-700 active:bg-green-800'
                 : 'bg-surface-gray-2 text-ink-gray-4'
             "
-            :disabled="!invoiceStore.items.length || sales_invoice.loading"
+            :disabled="
+              !invoiceStore.items.length ||
+              sales_invoice.loading ||
+              invoiceStore.adding
+            "
             @click="saveDraft('pay')"
           >
             Pay <span class="num">{{ payableTotal }}</span>
@@ -323,7 +339,13 @@ let sales_invoice = createResource({
 // Every draft save goes through here: one request at a time, so a double tap
 // on Pay, Hold sale or Save & print cannot create two invoices.
 const saveDraft = (nextStatus) => {
-  if (sales_invoice.loading || !invoiceStore.items.length) return
+  // An item still being looked up would land after the invoice is saved.
+  if (
+    sales_invoice.loading ||
+    invoiceStore.adding ||
+    !invoiceStore.items.length
+  )
+    return
   // Return lines come from the original invoice; ERPNext checks their serials.
   const missingSerials =
     !invoiceStore.invoice.is_return &&
@@ -369,7 +391,8 @@ const { canEdit: canEditDiscount, byPercent: usePercentDiscount } =
   useDiscountMode()
 
 const mobileActions = computed(() => {
-  const busy = !invoiceStore.items.length || sales_invoice.loading
+  const busy =
+    !invoiceStore.items.length || sales_invoice.loading || invoiceStore.adding
   const list = []
   if (permissionStore.salesInvoiceCanCreate) {
     list.push({

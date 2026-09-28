@@ -35,6 +35,23 @@ export const useInvoiceStore = defineStore('salesInvoice', () => {
     { flush: 'sync' },
   )
 
+  // Items being looked up or added right now. Pressing Pay while one is in
+  // flight used to save the invoice without it: the line still appeared in the
+  // cart, so the customer could walk out with an item that was never charged.
+  const addsInFlight = ref(0)
+  const adding = computed(() => addsInFlight.value > 0)
+
+  function startAdd() {
+    addsInFlight.value += 1
+  }
+
+  function finishAdd() {
+    addsInFlight.value = Math.max(0, addsInFlight.value - 1)
+  }
+
+  // Nothing may be added once the sale has moved to the payment screen.
+  const takingPayment = computed(() => Boolean(invoice.value?.docstatus))
+
   const invoiceResource = createDoctypeResource('Sales Invoice', (data) => {
     invoice.value = {
       ...data,
@@ -80,6 +97,10 @@ export const useInvoiceStore = defineStore('salesInvoice', () => {
     totalsFor,
     cartSignature,
     totalsPending,
+    adding,
+    takingPayment,
+    startAdd,
+    finishAdd,
     invoiceResource,
     removeLine,
     unmount,
