@@ -176,6 +176,15 @@ const addvalues = async () => {
     status: null,
     name: generateTempName('Sales Invoice'),
   }
+  // ERPNext copies the original sale's payment rows onto the return. When the
+  // customer had overpaid, that copy is the change they were given (a positive
+  // amount on a refund), which ERPNext itself then refuses. The refund is
+  // entered on the payment screen, so start the rows empty.
+  invoiceStore.invoice.payments = (invoiceStore.invoice.payments || []).map(
+    (payment) => ({ ...payment, amount: 0, base_amount: 0 }),
+  )
+  invoiceStore.invoice.paid_amount = 0
+
   // A loaded sale starts from the profile's sales-order default.
   invoiceStore.salesOrderChoice = null
   invoiceStore.items = runDoCMethod.data.docs[0].items || []
