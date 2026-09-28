@@ -80,3 +80,52 @@ class TestShiftPaymentTotals(FrappeTestCase):
 			totals,
 			[{"mode_of_payment": "Cash", "total": 100.0}, {"mode_of_payment": "Total", "total": 100.0}],
 		)
+
+
+class TestWhatAShiftTook(FrappeTestCase):
+	"""One calculation for what a shift took, used by the Close Shift screen
+	and by the closing document."""
+
+	def totals(self, invoice_rows=(), entry_rows=(), change=None):
+		from unittest.mock import patch
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		with (
+			patch("frappe.db.sql", side_effect=[list(invoice_rows), list(entry_rows)]),
+			patch.object(payment_entry, "_change_given", return_value=change or {}),
+		):
+			return payment_entry.shift_payment_totals("SHIFT-A")
+
+	def test_invoice_payments_count(self):
+		rows = [frappe._dict(mode_of_payment="Cash", total=300)]
+		self.assertEqual(self.totals(invoice_rows=rows), {"Cash": 300})
+
+	def test_payments_taken_in_the_shift_count_even_with_no_invoice(self):
+		"""An advance settles no invoice; the old query counted it nowhere."""
+		entries = [frappe._dict(mode_of_payment="Cash", total=50)]
+		self.assertEqual(self.totals(entry_rows=entries), {"Cash": 50})
+
+	def test_a_settlement_and_a_sale_add_up(self):
+		invoices = [frappe._dict(mode_of_payment="Cash", total=100)]
+		entries = [frappe._dict(mode_of_payment="Cash", total=40)]
+		self.assertEqual(self.totals(invoice_rows=invoices, entry_rows=entries), {"Cash": 140})
+
+	def test_change_is_taken_off(self):
+		invoices = [frappe._dict(mode_of_payment="Cash", total=120)]
+		self.assertEqual(self.totals(invoice_rows=invoices, change={"Cash": 20}), {"Cash": 100})
+
+	def test_returns_reduce_the_total(self):
+		invoices = [frappe._dict(mode_of_payment="Cash", total=-50)]
+		self.assertEqual(self.totals(invoice_rows=invoices), {"Cash": -50})
+
+	def test_payments_are_read_by_the_shift_they_were_taken_in(self):
+		"""Not by the shift of the invoice they pay: cash collected today for
+		last week's invoice belongs in today's drawer."""
+		import inspect
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		source = inspect.getsource(payment_entry.shift_payment_totals)
+		self.assertIn("reference_no = %s", source)
+		self.assertNotIn("tabPayment Entry Reference", source)

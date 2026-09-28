@@ -1,6 +1,7 @@
 import frappe
 from erpnext.accounts.party import get_party_account
 from frappe import _
+from frappe.utils import flt
 
 
 def get_mode_of_payment_account(mode_of_payment: str, company: str) -> str | None:
@@ -47,64 +48,70 @@ def validate(doc, method=None):
 
 @frappe.whitelist()
 def get_payments(shift):
-	"""Total received per mode of payment for one opening shift."""
-	frappe.has_permission("Ant Opening Shift", "read", throw=True)
+	"""What one shift took, per mode of payment, for the Close Shift screen."""
+	frappe.has_permission("Ant Opening Shift", "read", doc=shift, throw=True)
 
-	# Query 1: Payment Entry Reference
-	payment_entry = frappe.db.sql(
+	totals = shift_payment_totals(shift)
+	rows = [{"mode_of_payment": mode, "total": total} for mode, total in totals.items()]
+	rows.append({"mode_of_payment": "Total", "total": sum(totals.values())})
+	return rows
+
+
+def shift_payment_totals(shift) -> dict:
+	"""Money taken during a shift, per mode of payment.
+
+	The one source used by both the Close Shift screen and the closing document
+	itself. They used to disagree: the screen credited a payment to the shift of
+	the *invoice* it paid, so cash collected today against last week's invoice
+	landed in a shift that was already closed, and a payment on account, which
+	settles no invoice at all, was counted nowhere.
+
+	A payment belongs to the shift it was taken in, which antPOS records in the
+	Payment Entry's `reference_no`, exactly as the closing document reads it.
+
+	Counted here:
+
+	- payment rows on the shift's invoices (an ordinary POS sale, and returns,
+	  which carry negative amounts and net off);
+	- submitted Payment Entries received during the shift, whether they settle
+	  an invoice or sit on the customer's account;
+	- less change handed back, which is not in the drawer any more.
+
+	An opening float is not included; the closing document adds it.
+	"""
+	totals = {}
+
+	invoice_payments = frappe.db.sql(
 		"""
-        SELECT
-            pe.mode_of_payment,
-            SUM(per.allocated_amount) AS total
-        FROM `tabPayment Entry Reference` per
-        JOIN `tabSales Invoice` si ON per.reference_name = si.name
-        JOIN `tabPayment Entry` pe ON per.parent = pe.name
-        WHERE per.reference_doctype = 'Sales Invoice'
-          AND pe.docstatus = 1
-          AND si.custom_ant_opening = %s
-        GROUP BY pe.mode_of_payment
-    """,
+		SELECT p.mode_of_payment, SUM(p.amount) AS total
+		FROM `tabSales Invoice Payment` p
+		JOIN `tabSales Invoice` si ON p.parent = si.name
+		WHERE si.custom_ant_opening = %s AND si.docstatus = 1
+		GROUP BY p.mode_of_payment
+		""",
 		(shift,),
 		as_dict=True,
 	)
+	for row in invoice_payments:
+		totals[row.mode_of_payment] = totals.get(row.mode_of_payment, 0) + flt(row.total)
 
-	# Query 2: Sales Invoice Payment
-	sales_payment = frappe.db.sql(
+	entries = frappe.db.sql(
 		"""
-        SELECT
-            p.mode_of_payment,
-            SUM(p.amount) AS total
-        FROM `tabSales Invoice Payment` p
-        JOIN `tabSales Invoice` si ON p.parent = si.name
-        WHERE si.custom_ant_opening = %s
-          AND si.docstatus = 1
-        GROUP BY p.mode_of_payment
-    """,
+		SELECT mode_of_payment, SUM(paid_amount) AS total
+		FROM `tabPayment Entry`
+		WHERE reference_no = %s AND docstatus = 1 AND payment_type = 'Receive'
+		GROUP BY mode_of_payment
+		""",
 		(shift,),
 		as_dict=True,
 	)
+	for row in entries:
+		totals[row.mode_of_payment] = totals.get(row.mode_of_payment, 0) + flt(row.total)
 
-	# Merge and calculate totals
-	result_map = {}
+	for mode, change in _change_given(shift, list(totals)).items():
+		totals[mode] = totals.get(mode, 0) - change
 
-	for entry in payment_entry:
-		mop = entry["mode_of_payment"]
-		result_map[mop] = float(entry["total"] or 0)
-
-	for payment in sales_payment:
-		mop = payment["mode_of_payment"]
-		result_map[mop] = result_map.get(mop, 0) + float(payment["total"] or 0)
-
-	# The invoice payment rows hold what was tendered; change handed back is
-	# stored separately and paid from the change account's payment method.
-	for mop, change in _change_given(shift, list(result_map)).items():
-		result_map[mop] = result_map.get(mop, 0) - change
-
-	result_list = [{"mode_of_payment": mop, "total": total} for mop, total in result_map.items()]
-
-	result_list.append({"mode_of_payment": "Total", "total": sum(result_map.values())})
-
-	return result_list
+	return totals
 
 
 def _change_given(shift, modes):
