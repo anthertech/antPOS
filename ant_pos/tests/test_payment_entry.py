@@ -129,3 +129,60 @@ class TestWhatAShiftTook(FrappeTestCase):
 		source = inspect.getsource(payment_entry.shift_payment_totals)
 		self.assertIn("reference_no = %s", source)
 		self.assertNotIn("tabPayment Entry Reference", source)
+
+
+class TestRecordPayment(FrappeTestCase):
+	"""Payment Entries are built by ERPNext's own get_payment_entry; antPOS
+	says who paid, how much, against what, and in which shift."""
+
+	def setUp(self):
+		frappe.db.begin()
+		self.addCleanup(frappe.db.rollback)
+
+	def test_an_amount_is_required(self):
+		from ant_pos.ant_pos.api.payment_entry import record_payment
+
+		with self.assertRaises(frappe.ValidationError):
+			record_payment(mode_of_payment="Cash", amount=0, customer="A")
+
+	def test_allocations_must_add_up_to_the_amount_paid(self):
+		from ant_pos.ant_pos.api.payment_entry import _entry_for_invoices
+
+		with self.assertRaises(frappe.ValidationError):
+			_entry_for_invoices([{"invoice": "SINV-1", "allocated_amount": 40}], 100)
+
+	def test_settling_nothing_is_refused(self):
+		from ant_pos.ant_pos.api.payment_entry import _entry_for_invoices
+
+		with self.assertRaises(frappe.ValidationError):
+			_entry_for_invoices([{"invoice": "SINV-1", "allocated_amount": 0}], 0)
+
+	def test_a_payment_belongs_to_the_users_own_shift(self):
+		from unittest.mock import patch
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		with (
+			patch("ant_pos.ant_pos.api.pos_invoice_rules._open_shift_for", return_value="SHIFT-A"),
+			patch(
+				"ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift.is_shift_manager",
+				return_value=False,
+			),
+		):
+			self.assertEqual(payment_entry._shift_for_payment(None), "SHIFT-A")
+			self.assertEqual(payment_entry._shift_for_payment("SHIFT-A"), "SHIFT-A")
+			with self.assertRaises(frappe.PermissionError):
+				payment_entry._shift_for_payment("SHIFT-B")
+
+	def test_the_client_no_longer_builds_payment_entries(self):
+		"""Both screens used to assemble the whole document and post it through
+		savedocs, guessing accounts, currencies and exchange rates."""
+		import os
+
+		app_root = os.path.dirname(frappe.get_app_path("ant_pos"))
+		app = os.path.join(app_root, "AntPos", "src", "components")
+		for screen in ("Invoice.vue", "Payment.vue"):
+			with open(f"{app}/{screen}") as source:
+				text = source.read()
+			self.assertIn("record_payment", text, screen)
+			self.assertNotIn("doctype: 'Payment Entry'", text, screen)

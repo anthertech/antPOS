@@ -148,3 +148,107 @@ def _mode_for_account(account, company, modes):
 		"Mode of Payment", filters={"name": ["in", modes or [""]], "type": "Cash"}, pluck="name"
 	)
 	return cash[0] if cash else None
+
+
+@frappe.whitelist(methods=["POST"])
+def record_payment(mode_of_payment, amount, customer=None, references=None, shift=None):
+	"""Take money from a customer, using ERPNext's own Payment Entry builder.
+
+	The POS used to assemble the whole Payment Entry in the browser and post it
+	through `savedocs`: accounts, currencies, exchange rates and reference rows
+	were all the client's guess, and every ERPNext fix in that area passed
+	antPOS by. `get_payment_entry` does the work here instead.
+
+	`references` settle invoices ([{"invoice": name, "allocated_amount": x}]);
+	without them the money sits on the customer's account as an advance.
+	"""
+	frappe.has_permission("Payment Entry", "create", throw=True)
+
+	amount = flt(amount)
+	if amount <= 0:
+		frappe.throw(_("Enter an amount to record."))
+
+	references = frappe.parse_json(references) if isinstance(references, str) else (references or [])
+	shift = _shift_for_payment(shift)
+
+	if references:
+		entry = _entry_for_invoices(references, amount)
+	else:
+		if not customer:
+			frappe.throw(_("Select a customer."))
+		entry = frappe.new_doc("Payment Entry")
+		entry.update(
+			{
+				"payment_type": "Receive",
+				"party_type": "Customer",
+				"party": customer,
+				"paid_amount": amount,
+				"received_amount": amount,
+			}
+		)
+
+	entry.mode_of_payment = mode_of_payment
+	# get_payment_entry defaults to the company's bank account; money taken in
+	# the POS belongs to the account behind the payment method used.
+	mode_account = get_mode_of_payment_account(mode_of_payment, entry.company)
+	if mode_account:
+		entry.paid_to = mode_account
+		entry.paid_to_account_currency = frappe.db.get_value("Account", mode_account, "account_currency")
+	entry.posting_date = frappe.utils.today()
+	# Ant Closing Shift reads payments by reference_no, so the money is counted
+	# in the shift it was taken in.
+	entry.reference_no = shift
+	entry.reference_date = frappe.utils.today()
+	entry.insert()
+	entry.submit()
+	return entry.name
+
+
+def _entry_for_invoices(references, amount):
+	from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
+
+	rows = [
+		frappe._dict(invoice=row.get("invoice"), allocated_amount=flt(row.get("allocated_amount")))
+		for row in references
+		if row.get("invoice") and flt(row.get("allocated_amount")) > 0
+	]
+	if not rows:
+		frappe.throw(_("Nothing to settle."))
+	if abs(sum(row.allocated_amount for row in rows) - amount) > 0.005:
+		frappe.throw(_("The amounts allocated to invoices must add up to the amount paid."))
+
+	# Built from the first invoice, which gives ERPNext the party and accounts.
+	entry = get_payment_entry("Sales Invoice", rows[0].invoice, party_amount=amount)
+	entry.set("references", [])
+	for row in rows:
+		invoice = frappe.db.get_value(
+			"Sales Invoice", row.invoice, ["customer", "due_date", "outstanding_amount"], as_dict=True
+		)
+		if invoice.customer != entry.party:
+			frappe.throw(_("Settle one customer's invoices at a time."))
+		entry.append(
+			"references",
+			{
+				"reference_doctype": "Sales Invoice",
+				"reference_name": row.invoice,
+				"due_date": invoice.due_date,
+				"allocated_amount": row.allocated_amount,
+			},
+		)
+	entry.paid_amount = amount
+	entry.received_amount = amount
+	return entry
+
+
+def _shift_for_payment(shift):
+	"""Payments belong to the shift taking them, which must be the user's."""
+	from ant_pos.ant_pos.api.pos_invoice_rules import _open_shift_for
+	from ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift import is_shift_manager
+
+	open_shift = _open_shift_for(frappe.session.user)
+	if not shift:
+		return open_shift
+	if shift == open_shift or is_shift_manager():
+		return shift
+
+	frappe.throw(_("Shift {0} is not your open shift.").format(frappe.bold(shift)), frappe.PermissionError)
