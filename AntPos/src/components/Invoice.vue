@@ -170,7 +170,7 @@
         <button
           type="button"
           class="inline-flex h-10 items-center justify-center rounded-md bg-surface-green-3 px-4 text-lg font-semibold text-ink-white transition-colors hover:bg-green-700 active:bg-green-800 focus:outline-none focus-visible:ring focus-visible:ring-outline-green-2 disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="submitting"
+          :disabled="submitting || Boolean(paymentFailed)"
           @click="run(() => submitInvoice())"
         >
           Submit
@@ -179,7 +179,7 @@
           variant="solid"
           theme="gray"
           size="lg"
-          :disabled="submitting"
+          :disabled="submitting || Boolean(paymentFailed)"
           @click="run(() => submitInvoice('print'))"
         >
           <template #prefix
@@ -318,6 +318,8 @@ const summary = computed(() => {
 
 // Guard against double submission while the save/submit round trips run.
 const submitting = ref(false)
+// Set when the invoice went through but its payment did not.
+const paymentFailed = ref('')
 const run = async (action) => {
   if (submitting.value) return
   submitting.value = true
@@ -387,11 +389,13 @@ const changePaymentAmount = () => {
 // `modified` is refused with "Document has been modified after you have opened
 // it", so a sale whose Submit failed (not enough stock, no change account, a
 // serial problem) could not be retried at all: the cashier had to cancel it.
+// `docstatus` is deliberately not here: the POS uses it as its own "this sale
+// is on the payment screen" flag, so writing the saved draft's 0 back would
+// drop the cashier out of payment in the middle of submitting.
 const SERVER_FIELDS = [
   'name',
   'modified',
   'modified_by',
-  'docstatus',
   'creation',
   'owner',
   'naming_series',
@@ -446,17 +450,25 @@ const submitInvoice = async (action = null) => {
         naming_series: '',
       }
 
-      // A retry after a failed invoice must not submit a second order.
-      let orderName = invoiceStore.invoice._sales_order
-      if (!orderName) {
+      // A retry after a failed invoice must not submit a second order, so the
+      // order is remembered as soon as it exists — a Submit that fails after
+      // the Save would otherwise leave a draft order behind and make another.
+      let order = invoiceStore.invoice._sales_order
+      if (!order) {
         doc.value = { doc: salesOrder }
-        if (!(await saveAndSubmit(doc))) return
-        orderName = doc.value.doc.name
-        invoiceStore.invoice._sales_order = orderName
+        await createSaveResource.fetch({ action: 'Save', doc: doc.value.doc })
+        const saved = doc.value.doc
+        if (!saved?.name || saved.name.startsWith('new-')) return
+        order = {
+          name: saved.name,
+          items: (saved.items || []).map((i) => i.name),
+        }
+        invoiceStore.invoice._sales_order = order
+        await createSaveResource.fetch({ action: 'Submit', doc: doc.value.doc })
       }
-      const orderItems = doc.value.doc?.items || []
+      const orderName = order.name
       invoiceStore.invoice.items.forEach((item, index) => {
-        item.so_detail = orderItems[index]?.name || item.so_detail || ''
+        item.so_detail = order.items[index] || item.so_detail || ''
         item.sales_order = orderName
       })
     }
@@ -477,9 +489,13 @@ const submitInvoice = async (action = null) => {
     try {
       await createPayments(invoice)
     } catch (error) {
+      // The invoice is submitted; only the payment is missing. Submitting
+      // again cannot help ("not allowed to change docstatus"), so Submit is
+      // closed off and the cashier is pointed at the screen that can record it.
+      paymentFailed.value = `Invoice ${saved.name} is submitted, but the payment was not recorded: ${errorMessage(error)}. Record it on the Payments page.`
       showToast(
         'warning',
-        `Invoice ${saved.name} is submitted, but the payment was not recorded: ${errorMessage(error)}`,
+        paymentFailed.value,
         'alert-circle',
         '#ffcc00',
         '#ffffff',

@@ -209,7 +209,10 @@ const scanOptions = {
   },
 }
 
-const searchResource = createResource({ ...scanOptions, debounce: 300 })
+// Not debounced: Enter (a barcode gun) and the camera are deliberate, and a
+// debounced fetch returns nothing to wait on, so the in-flight count could not
+// hold Pay back while the lookup ran.
+const searchResource = createResource(scanOptions)
 const cameraScanResource = createResource(scanOptions)
 
 const addItemsResource = createResource({
@@ -271,8 +274,10 @@ const addItemsResource = createResource({
 })
 
 const fetchSearchResource = () => {
+  if (invoiceStore.adding || invoiceStore.takingPayment) return
   invoiceStore.startAdd()
-  Promise.resolve(searchResource.fetch())
+  searchResource
+    .fetch()
     .catch(() => {})
     .finally(() => invoiceStore.finishAdd())
 }
