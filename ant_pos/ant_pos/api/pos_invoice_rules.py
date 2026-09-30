@@ -19,7 +19,7 @@ SKIPPED below, with the reason and what covers them instead.
 import frappe
 from erpnext.accounts.doctype.pos_invoice.pos_invoice import POSInvoice
 from frappe import _
-from frappe.utils import cint, get_link_to_form
+from frappe.utils import cint, flt, get_link_to_form
 
 from ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift import is_shift_manager
 
@@ -33,6 +33,7 @@ ERPNEXT_CHECKS = (
 	("validate_change_amount", True),
 	("validate_change_account", True),
 	("validate_full_payment", False),
+	("validate_return_line_signs", False),
 	("validate_serialised_or_batched_item", False),
 	("validate_stock_availablility", False),
 )
@@ -40,10 +41,10 @@ ERPNEXT_CHECKS = (
 # POS Invoice checks deliberately not called:
 SKIPPED = {
 	# Queries `tabPOS Invoice Item` for the serials of the original invoice, so
-	# it rejects every antPOS return. ERPNext's own Sales Invoice return
-	# validation (controllers/sales_and_purchase_return.py) covers return
-	# quantities and serials for us.
-	"validate_return_items_qty": "reads POS Invoice Item; Sales Invoice returns are validated by ERPNext already",
+	# it rejects every antPOS return. ERPNext's Sales Invoice return validation
+	# covers the returned quantities; the one part it does not is replaced by
+	# validate_return_line_signs below.
+	"validate_return_items_qty": "reads POS Invoice Item; replaced by validate_return_line_signs",
 	# Looks for a POS Opening Entry. antPOS has its own shift documents.
 	"validate_pos_opening_entry": "antPOS uses Ant Opening Shift",
 	# Loyalty programs are not offered by the POS screens.
@@ -51,19 +52,70 @@ SKIPPED = {
 }
 
 
+# Where ERPNext's rule does not fit a Sales Invoice, ours stands in. Each one
+# says why, and keeps ERPNext's wording where it can.
+def _full_payment_counting_credit(doc):
+	"""ERPNext's "paid in full" rule, with customer credit counted.
+
+	A POS Invoice cannot carry advances, so ERPNext compares the amount paid
+	with the total and nothing else. antPOS settles sales from credit the
+	customer paid in earlier, which arrives as `total_advance`; without this a
+	sale fully covered by credit was refused on every profile that does not
+	allow partial payment.
+	"""
+	invoice_total = flt(doc.rounded_total) or flt(doc.grand_total)
+	covered = flt(doc.paid_amount) + flt(doc.total_advance)
+	if abs(covered) + 0.005 >= abs(invoice_total):
+		return
+	POSInvoice.validate_full_payment(doc)
+
+
+def validate_return_line_signs(doc):
+	"""No positive line on a return.
+
+	ERPNext's `validate_return_items_qty` does this for POS Invoices, but it
+	also reads POS Invoice Item, so it cannot run here. Its Sales Invoice
+	counterpart skips rows with a positive quantity instead of refusing them,
+	so a return with one negative and one positive line would bill the customer
+	inside a refund.
+	"""
+	if not doc.get("is_return"):
+		return
+	for row in doc.get("items") or []:
+		if flt(row.qty) > 0:
+			frappe.throw(
+				_("Row #{0}: {1} cannot be sold on a return. Remove it and sell it separately.").format(
+					row.idx, frappe.bold(row.item_code)
+				),
+				title=_("Invalid Item"),
+			)
+
+
+OURS = {
+	"validate_full_payment": _full_payment_counting_credit,
+	"validate_return_line_signs": validate_return_line_signs,
+}
+
+
 def validate(doc, method=None):
 	"""Run ERPNext's POS checks on a POS sale, and tie it to a shift."""
 	if not doc.get("pos_profile"):
 		return
+	# A back-office Sales Invoice may name a POS Profile without being a POS
+	# sale; those are not part of a shift and are left alone.
+	if not doc.get("is_pos") and not doc.get("custom_ant_opening"):
+		return
 
 	validate_shift(doc)
+	validate_customer_group(doc)
 	_prepare_tracked_rows(doc)
 	has_payments = bool(doc.get("payments"))
 
 	for name, needs_payments in ERPNEXT_CHECKS:
 		if needs_payments and not has_payments:
 			continue
-		getattr(POSInvoice, name)(doc)
+		check = OURS.get(name) or getattr(POSInvoice, name)
+		check(doc)
 
 
 def _prepare_tracked_rows(doc):
@@ -156,6 +208,41 @@ def validate_shift(doc):
 				frappe.bold(shift), frappe.bold(details.company), frappe.bold(doc.company)
 			)
 		)
+
+
+def validate_customer_group(doc):
+	"""The POS Profile's customer groups decide who can be sold to.
+
+	The customer picker filters on them, but only in the browser, so the rule
+	was advisory: anything talking to the API could invoice any customer.
+	An empty list on the profile means every customer, as ERPNext reads it.
+	"""
+	groups = frappe.get_all("POS Customer Group", filters={"parent": doc.pos_profile}, pluck="customer_group")
+	if not groups or not doc.customer:
+		return
+
+	group = frappe.db.get_value("Customer", doc.customer, "customer_group")
+	allowed = set()
+	for name in groups:
+		allowed.add(name)
+		allowed.update(
+			frappe.get_all("Customer Group", filters={"parent_customer_group": name}, pluck="name")
+		)
+	if group in allowed:
+		return
+
+	# Nested groups: walk the tree the way ERPNext does.
+	from frappe.utils.nestedset import get_descendants_of
+
+	for name in groups:
+		if group in get_descendants_of("Customer Group", name):
+			return
+
+	frappe.throw(
+		_("{0} is in customer group {1}, which POS Profile {2} does not sell to.").format(
+			frappe.bold(doc.customer), frappe.bold(group), frappe.bold(doc.pos_profile)
+		)
+	)
 
 
 def _open_shift_for(user):

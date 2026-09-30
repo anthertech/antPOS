@@ -18,7 +18,14 @@ class TestErpnextChecksExist(FrappeTestCase):
 
 	def test_every_check_is_an_erpnext_method(self):
 		for name, _needs_payments in pos_invoice_rules.ERPNEXT_CHECKS:
+			if name in pos_invoice_rules.OURS:
+				self.assertTrue(callable(pos_invoice_rules.OURS[name]), name)
+				continue
 			self.assertTrue(callable(getattr(POSInvoice, name, None)), name)
+
+	def test_our_replacements_say_why_they_exist(self):
+		for name, replacement in pos_invoice_rules.OURS.items():
+			self.assertTrue((replacement.__doc__ or "").strip(), name)
 
 	def test_skipped_checks_are_named_and_still_exist(self):
 		for name, reason in pos_invoice_rules.SKIPPED.items():
@@ -43,7 +50,7 @@ class TestErpnextChecksExist(FrappeTestCase):
 class TestRulesApplyToPosSalesOnly(FrappeTestCase):
 	def invoice(self, **values):
 		doc = frappe.new_doc("Sales Invoice")
-		doc.update({"pos_profile": "Till 1", "company": "Company A", **values})
+		doc.update({"pos_profile": "Till 1", "company": "Company A", "is_pos": 1, **values})
 		return doc
 
 	def test_invoices_without_a_pos_profile_are_untouched(self):
@@ -60,11 +67,19 @@ class TestRulesApplyToPosSalesOnly(FrappeTestCase):
 		doc = self.invoice()
 		doc.append("payments", {"mode_of_payment": "Cash", "amount": 100})
 		called = []
-		with patch(f"{MODULE}._prepare_tracked_rows"), patch(f"{MODULE}.validate_shift"):
+		with (
+			patch(f"{MODULE}._prepare_tracked_rows"),
+			patch(f"{MODULE}.validate_shift"),
+			patch(f"{MODULE}.validate_customer_group"),
+		):
 			for name, _needs in pos_invoice_rules.ERPNEXT_CHECKS:
-				patcher = patch.object(POSInvoice, name, lambda d, n=name: called.append(n))
-				patcher.start()
-				self.addCleanup(patcher.stop)
+				target = (
+					patch.dict(pos_invoice_rules.OURS, {name: lambda d, n=name: called.append(n)})
+					if name in pos_invoice_rules.OURS
+					else patch.object(POSInvoice, name, lambda d, n=name: called.append(n))
+				)
+				target.start()
+				self.addCleanup(target.stop)
 			pos_invoice_rules.validate(doc)
 
 		self.assertEqual(called, [name for name, _needs in pos_invoice_rules.ERPNEXT_CHECKS])
@@ -74,11 +89,19 @@ class TestRulesApplyToPosSalesOnly(FrappeTestCase):
 		payment rows; ERPNext would refuse it for having no mode of payment."""
 		doc = self.invoice()
 		called = []
-		with patch(f"{MODULE}._prepare_tracked_rows"), patch(f"{MODULE}.validate_shift"):
+		with (
+			patch(f"{MODULE}._prepare_tracked_rows"),
+			patch(f"{MODULE}.validate_shift"),
+			patch(f"{MODULE}.validate_customer_group"),
+		):
 			for name, _needs in pos_invoice_rules.ERPNEXT_CHECKS:
-				patcher = patch.object(POSInvoice, name, lambda d, n=name: called.append(n))
-				patcher.start()
-				self.addCleanup(patcher.stop)
+				target = (
+					patch.dict(pos_invoice_rules.OURS, {name: lambda d, n=name: called.append(n)})
+					if name in pos_invoice_rules.OURS
+					else patch.object(POSInvoice, name, lambda d, n=name: called.append(n))
+				)
+				target.start()
+				self.addCleanup(target.stop)
 			pos_invoice_rules.validate(doc)
 
 		self.assertNotIn("validate_mode_of_payment", called)
@@ -379,3 +402,60 @@ class TestCancelGuard(FrappeTestCase):
 			f"{MODULE}.before_cancel_payment_entry",
 			events["Payment Entry"].get("before_cancel", []),
 		)
+
+
+class TestOurReplacements(FrappeTestCase):
+	"""Where ERPNext's rule cannot run on a Sales Invoice, ours stands in."""
+
+	def invoice(self, **values):
+		doc = frappe.new_doc("Sales Invoice")
+		doc.update({"pos_profile": "Till 1", "company": "Company A", **values})
+		return doc
+
+	def test_credit_counts_towards_paying_in_full(self):
+		"""A POS Invoice cannot hold advances, so ERPNext's check ignores them."""
+		doc = self.invoice(grand_total=100, rounded_total=100, paid_amount=0, total_advance=100, docstatus=1)
+		with patch.object(POSInvoice, "validate_full_payment") as erpnext_check:
+			pos_invoice_rules._full_payment_counting_credit(doc)
+		erpnext_check.assert_not_called()
+
+	def test_a_shortfall_still_goes_to_erpnext(self):
+		doc = self.invoice(grand_total=100, rounded_total=100, paid_amount=20, total_advance=30, docstatus=1)
+		with patch.object(POSInvoice, "validate_full_payment") as erpnext_check:
+			pos_invoice_rules._full_payment_counting_credit(doc)
+		erpnext_check.assert_called_once()
+
+	def test_a_positive_line_on_a_return_is_refused(self):
+		"""ERPNext's Sales Invoice return check skips such rows instead."""
+		doc = self.invoice(is_return=1)
+		doc.append("items", {"item_code": "ITEM-A", "qty": -1})
+		doc.append("items", {"item_code": "ITEM-B", "qty": 1})
+		with self.assertRaises(frappe.ValidationError):
+			pos_invoice_rules.validate_return_line_signs(doc)
+
+	def test_an_ordinary_return_passes(self):
+		doc = self.invoice(is_return=1)
+		doc.append("items", {"item_code": "ITEM-A", "qty": -2})
+		pos_invoice_rules.validate_return_line_signs(doc)
+
+	def test_a_back_office_invoice_is_left_alone(self):
+		"""A desk invoice may name a POS Profile without being a shift sale."""
+		doc = self.invoice(is_pos=0)
+		with patch(f"{MODULE}.validate_shift") as shift_check:
+			pos_invoice_rules.validate(doc)
+		shift_check.assert_not_called()
+
+	def test_customers_outside_the_profiles_groups_are_refused(self):
+		doc = self.invoice(is_pos=1, customer="Someone")
+		with (
+			patch("frappe.get_all", return_value=["Retail"]),
+			patch("frappe.db.get_value", return_value="Wholesale"),
+			patch("frappe.utils.nestedset.get_descendants_of", return_value=[]),
+		):
+			with self.assertRaises(frappe.ValidationError):
+				pos_invoice_rules.validate_customer_group(doc)
+
+	def test_a_profile_with_no_groups_sells_to_anyone(self):
+		doc = self.invoice(is_pos=1, customer="Someone")
+		with patch("frappe.get_all", return_value=[]):
+			pos_invoice_rules.validate_customer_group(doc)
