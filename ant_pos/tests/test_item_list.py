@@ -177,3 +177,22 @@ class TestItemListEndpoint(FrappeTestCase):
 				item_list.get_item_list(self.profile_name)
 		finally:
 			frappe.set_user("Administrator")
+
+
+class TestListPrices(FrappeTestCase):
+	"""The grid shows list prices; a price agreed with one customer is not one."""
+
+	def test_party_and_batch_prices_are_excluded(self):
+		import inspect
+
+		source = inspect.getsource(item_list._attach_prices_and_stock)
+		for field in ("customer", "supplier", "batch_no"):
+			self.assertIn(f'"{field}": ["in", ["", None]]', source)
+
+	def test_the_price_list_falls_back_to_selling_settings(self):
+		from unittest.mock import patch
+
+		profile = frappe._dict(selling_price_list=None)
+		with patch("frappe.db.get_single_value", return_value="Standard Selling"):
+			self.assertEqual(item_list._price_list(profile), "Standard Selling")
+		self.assertEqual(item_list._price_list(frappe._dict(selling_price_list="Shop")), "Shop")

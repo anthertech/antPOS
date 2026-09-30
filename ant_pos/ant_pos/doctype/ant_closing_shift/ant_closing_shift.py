@@ -146,13 +146,14 @@ class AntClosingShift(Document):
 		)
 
 	def get_pos_taxes(self):
-		"""Tax totals for this shift, grouped by account head and effective rate.
+		"""Tax totals for this shift, grouped by account head and rate.
 
-		This used to ride along on the invoice query as a LEFT JOIN, fanning out
-		to one row per (invoice x tax line) and then being de-duplicated in
-		Python. The grouping is unchanged: the rate is still derived per invoice
-		and rows are still keyed on (account_head, rate), so a shift containing
-		both 5% and 18% lines on one account head still yields two rows.
+		The rate comes from the tax row, as ERPNext's own POS Closing Entry
+		takes it (`make_closing_entry_from_opening` groups on `t.rate`). It used
+		to be derived as tax_amount / net_total, which is only right for a
+		single tax applied to the whole invoice: item-wise taxes, "Actual"
+		charges and taxes on a previous row's total all came out as rates that
+		were never charged.
 		"""
 		return frappe.db.sql(
 			"""
@@ -163,7 +164,7 @@ class AntClosingShift(Document):
             FROM (
                 SELECT
                     st.account_head AS account_head,
-                    ROUND(st.tax_amount / NULLIF(si.net_total, 0) * 100, 2) AS rate,
+                    st.rate AS rate,
                     st.tax_amount AS amount
                 FROM
                     `tabSales Taxes and Charges` st

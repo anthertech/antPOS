@@ -225,6 +225,11 @@ def _query_items(profile, settings, search_text=None, item_codes=None, limit=Non
 	return rows
 
 
+def _price_list(profile):
+	"""The profile's price list, or the site default, as the cart does."""
+	return profile.selling_price_list or frappe.db.get_single_value("Selling Settings", "selling_price_list")
+
+
 def _attach_prices_and_stock(rows, profile, settings):
 	"""Price and stock for all rows in two queries (ERPNext does two per item)."""
 	if not rows:
@@ -237,9 +242,15 @@ def _attach_prices_and_stock(rows, profile, settings):
 	for price in frappe.get_all(
 		"Item Price",
 		filters={
-			"price_list": profile.selling_price_list,
+			"price_list": _price_list(profile),
 			"selling": 1,
 			"item_code": ["in", codes],
+			# The list shows list prices. A price agreed with one customer, a
+			# supplier price or a price for one batch is not one, and showing
+			# it here meant the grid could disagree with the cart.
+			"customer": ["in", ["", None]],
+			"supplier": ["in", ["", None]],
+			"batch_no": ["in", ["", None]],
 		},
 		fields=["item_code", "price_list_rate", "currency", "uom", "valid_from", "valid_upto"],
 		order_by="valid_from desc",
