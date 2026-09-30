@@ -31,8 +31,10 @@ PERMISSIONS = [
 		"POS Cash",
 		{R, S, "write", "create", "submit", "cancel", "amend", "print", "report", "if_owner"},
 	),
-	("Sales Order", "POS Cash", {R, S, "write", "create", "submit", "print", "report"}),
-	("Payment Entry", "POS Cash", {R, S, "write", "create", "submit"}),
+	# Own documents only: a cashier has no business reading the company's
+	# supplier payments or every sales order.
+	("Sales Order", "POS Cash", {R, S, "write", "create", "submit", "print", "report", "if_owner"}),
+	("Payment Entry", "POS Cash", {R, S, "write", "create", "submit", "if_owner"}),
 	("Customer", "POS Cash", {R, S, "write", "create"}),
 	("Item", "POS Cash", {R, S}),
 	("Batch", "POS Cash", {R, S}),

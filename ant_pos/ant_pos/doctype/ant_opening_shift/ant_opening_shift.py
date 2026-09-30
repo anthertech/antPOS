@@ -86,6 +86,12 @@ class AntOpeningShift(Document):
 			)
 
 	def validate_no_open_shift(self):
+		# Two quick taps on Confirm used to open two shifts: both checked before
+		# either was written. Locking the cashier's own record makes the second
+		# one wait for the first.
+		if self.is_new() and self.cashier:
+			frappe.db.get_value("User", self.cashier, "name", for_update=True)
+
 		if self.get_openingshift_for_user(self.cashier):
 			frappe.throw(
 				_("{0} already has an open shift. Close it before opening another.").format(

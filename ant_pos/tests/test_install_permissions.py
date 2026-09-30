@@ -97,3 +97,25 @@ class TestInstallPermissions(FrappeTestCase):
 		for doctype, role, _rights in install.PERMISSIONS:
 			self.assertTrue(frappe.db.exists("DocType", doctype), doctype)
 			self.assertIn(role, install.POS_ROLES)
+
+
+class TestCashierSeesOwnDocumentsOnly(FrappeTestCase):
+	"""POS Cash could read every Payment Entry and Sales Order in the company,
+	supplier payments included."""
+
+	def rights(self, doctype):
+		from ant_pos.install import PERMISSIONS
+
+		for entry_doctype, role, rights in PERMISSIONS:
+			if entry_doctype == doctype and role == "POS Cash":
+				return rights
+		return set()
+
+	def test_payments_and_orders_are_limited_to_the_cashier(self):
+		for doctype in ("Payment Entry", "Sales Order", "Sales Invoice"):
+			self.assertIn("if_owner", self.rights(doctype), doctype)
+
+	def test_master_data_is_not_owner_restricted(self):
+		"""Items and customers are shared; if_owner there would hide them."""
+		for doctype in ("Item", "Customer", "Batch", "Warehouse"):
+			self.assertNotIn("if_owner", self.rights(doctype), doctype)

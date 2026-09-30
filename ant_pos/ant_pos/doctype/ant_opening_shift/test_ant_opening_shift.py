@@ -225,3 +225,21 @@ class TestShiftOwnership(FrappeTestCase):
 						"opening_balance_details": [{"mode_of_payment": "Bank", "opening_amount": 5}],
 					}
 				)
+
+
+class TestOneShiftAtATime(FrappeTestCase):
+	def test_the_cashier_record_is_locked_before_the_check(self):
+		"""Two quick taps on Confirm each checked before either was written,
+		so both opened a shift."""
+		import inspect
+
+		source = inspect.getsource(AntOpeningShift.validate_no_open_shift)
+		self.assertIn("for_update=True", source)
+
+	def test_a_shift_can_be_cancelled_by_a_manager(self):
+		"""A shift opened by mistake could only be undone by Administrator."""
+		roles = {p.role: p for p in frappe.get_meta("Ant Opening Shift").permissions}
+		for role in ("System Manager", "Sales Manager"):
+			self.assertTrue(roles[role].cancel, role)
+		for role in ("POS Cash", "POS Billing"):
+			self.assertFalse(roles[role].cancel, role)
