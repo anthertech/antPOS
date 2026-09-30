@@ -1,7 +1,7 @@
 {
   "name": "antpos-frontend",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build --base=/assets/ant_pos/AntPos/ && yarn copy-html-entry",
