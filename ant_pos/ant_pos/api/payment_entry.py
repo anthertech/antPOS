@@ -49,12 +49,31 @@ def validate(doc, method=None):
 @frappe.whitelist()
 def get_payments(shift):
 	"""What one shift took, per mode of payment, for the Close Shift screen."""
-	frappe.has_permission("Ant Opening Shift", "read", doc=shift, throw=True)
+	_check_shift_access(shift)
 
 	totals = shift_payment_totals(shift)
 	rows = [{"mode_of_payment": mode, "total": total} for mode, total in totals.items()]
 	rows.append({"mode_of_payment": "Total", "total": sum(totals.values())})
 	return rows
+
+
+def _check_shift_access(shift):
+	"""The shift's cashier, or a manager, may see its totals.
+
+	Not `has_permission` on the document: the POS roles are limited to records
+	they own, and `owner` is whoever created the shift, so a shift opened for a
+	cashier by a manager would be hidden from the cashier closing it.
+	"""
+	from ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift import is_shift_manager
+
+	cashier = frappe.db.get_value("Ant Opening Shift", shift, "cashier")
+	if not cashier:
+		frappe.throw(_("Shift {0} does not exist.").format(frappe.bold(shift)))
+	if cashier != frappe.session.user and not is_shift_manager():
+		frappe.throw(
+			_("Shift {0} belongs to {1}.").format(frappe.bold(shift), frappe.bold(cashier)),
+			frappe.PermissionError,
+		)
 
 
 def shift_payment_totals(shift) -> dict:
@@ -221,9 +240,11 @@ def _entry_for_invoices(references, amount):
 	entry = get_payment_entry("Sales Invoice", rows[0].invoice, party_amount=amount)
 	entry.set("references", [])
 	for row in rows:
-		invoice = frappe.db.get_value(
-			"Sales Invoice", row.invoice, ["customer", "due_date", "outstanding_amount"], as_dict=True
-		)
+		# get_payment_entry only checks Payment Entry create, so each invoice is
+		# checked here: a cashier limited to their own invoices must not be able
+		# to settle, or read the customer of, anyone else's.
+		frappe.has_permission("Sales Invoice", "read", doc=row.invoice, throw=True)
+		invoice = frappe.db.get_value("Sales Invoice", row.invoice, ["customer", "due_date"], as_dict=True)
 		if invoice.customer != entry.party:
 			frappe.throw(_("Settle one customer's invoices at a time."))
 		entry.append(
@@ -241,14 +262,28 @@ def _entry_for_invoices(references, amount):
 
 
 def _shift_for_payment(shift):
-	"""Payments belong to the shift taking them, which must be the user's."""
+	"""Payments belong to the shift taking them, which must be open.
+
+	Without a shift the money would be counted in nobody's drawer, and a closed
+	shift's totals are already submitted, so both are refused.
+	"""
 	from ant_pos.ant_pos.api.pos_invoice_rules import _open_shift_for
 	from ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift import is_shift_manager
 
-	open_shift = _open_shift_for(frappe.session.user)
+	shift = shift or _open_shift_for(frappe.session.user)
 	if not shift:
-		return open_shift
-	if shift == open_shift or is_shift_manager():
-		return shift
+		frappe.throw(_("Open a shift before taking payments."), title=_("No Open Shift"))
 
-	frappe.throw(_("Shift {0} is not your open shift.").format(frappe.bold(shift)), frappe.PermissionError)
+	details = frappe.db.get_value(
+		"Ant Opening Shift", shift, ["status", "docstatus", "cashier"], as_dict=True
+	)
+	if not details:
+		frappe.throw(_("Shift {0} does not exist.").format(frappe.bold(shift)))
+	if details.docstatus != 1 or details.status != "Open":
+		frappe.throw(_("Shift {0} is not open.").format(frappe.bold(shift)), title=_("Shift Not Open"))
+	if details.cashier != frappe.session.user and not is_shift_manager():
+		frappe.throw(
+			_("Shift {0} belongs to {1}.").format(frappe.bold(shift), frappe.bold(details.cashier)),
+			frappe.PermissionError,
+		)
+	return shift

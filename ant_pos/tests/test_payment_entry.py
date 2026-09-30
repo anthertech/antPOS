@@ -70,7 +70,7 @@ class TestShiftPaymentTotals(FrappeTestCase):
 
 		tendered = [frappe._dict(mode_of_payment="Cash", total=120)]
 		with (
-			patch("frappe.has_permission", return_value=True),
+			patch("ant_pos.ant_pos.api.payment_entry._check_shift_access"),
 			patch("frappe.db.sql", side_effect=[[], tendered]),
 			patch.object(payment_entry, "_change_given", return_value={"Cash": 20.0}),
 		):
@@ -162,8 +162,12 @@ class TestRecordPayment(FrappeTestCase):
 
 		from ant_pos.ant_pos.api import payment_entry
 
+		mine = frappe._dict(status="Open", docstatus=1, cashier=frappe.session.user)
+		theirs = frappe._dict(status="Open", docstatus=1, cashier="someone-else@example.com")
+		shifts = {"SHIFT-A": mine, "SHIFT-B": theirs}
 		with (
 			patch("ant_pos.ant_pos.api.pos_invoice_rules._open_shift_for", return_value="SHIFT-A"),
+			patch("frappe.db.get_value", side_effect=lambda dt, name, *a, **kw: shifts[name]),
 			patch(
 				"ant_pos.ant_pos.doctype.ant_opening_shift.ant_opening_shift.is_shift_manager",
 				return_value=False,
@@ -186,3 +190,43 @@ class TestRecordPayment(FrappeTestCase):
 				text = source.read()
 			self.assertIn("record_payment", text, screen)
 			self.assertNotIn("doctype: 'Payment Entry'", text, screen)
+
+
+class TestPaymentShiftRules(FrappeTestCase):
+	def test_a_payment_needs_an_open_shift(self):
+		from unittest.mock import patch
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		with patch("ant_pos.ant_pos.api.pos_invoice_rules._open_shift_for", return_value=None):
+			with self.assertRaises(frappe.ValidationError):
+				payment_entry._shift_for_payment(None)
+
+	def test_a_closed_shift_is_refused(self):
+		from unittest.mock import patch
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		closed = frappe._dict(status="Closed", docstatus=1, cashier=frappe.session.user)
+		with patch("frappe.db.get_value", return_value=closed):
+			with self.assertRaises(frappe.ValidationError):
+				payment_entry._shift_for_payment("SHIFT-A")
+
+	def test_the_close_shift_screen_checks_the_cashier_not_the_owner(self):
+		"""POS roles are limited to records they own, and a shift opened for a
+		cashier by a manager is owned by the manager."""
+		import inspect
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		source = inspect.getsource(payment_entry._check_shift_access)
+		self.assertIn("cashier", source)
+		self.assertIn("is_shift_manager", source)
+
+	def test_each_invoice_settled_is_permission_checked(self):
+		import inspect
+
+		from ant_pos.ant_pos.api import payment_entry
+
+		source = inspect.getsource(payment_entry._entry_for_invoices)
+		self.assertIn('has_permission("Sales Invoice"', source)

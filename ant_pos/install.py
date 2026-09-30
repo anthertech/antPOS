@@ -34,7 +34,9 @@ PERMISSIONS = [
 	# Own documents only: a cashier has no business reading the company's
 	# supplier payments or every sales order.
 	("Sales Order", "POS Cash", {R, S, "write", "create", "submit", "print", "report", "if_owner"}),
-	("Payment Entry", "POS Cash", {R, S, "write", "create", "submit", "if_owner"}),
+	# cancel: a mistaken payment can be undone while the shift is open; the
+	# before_cancel hook still refuses once the shift is closed.
+	("Payment Entry", "POS Cash", {R, S, "write", "create", "submit", "cancel", "if_owner"}),
 	("Customer", "POS Cash", {R, S, "write", "create"}),
 	("Item", "POS Cash", {R, S}),
 	("Batch", "POS Cash", {R, S}),
