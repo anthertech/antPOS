@@ -71,7 +71,7 @@
 import { createResource, Button, Dialog, FormControl } from 'frappe-ui'
 import { ref, watch, reactive, onMounted } from 'vue'
 import { usePosProfileStore } from '@/stores/posProfile'
-import { createToast } from '@/utils'
+import { createToast, errorMessage } from '@/utils'
 
 const store = usePosProfileStore()
 const options = reactive({ company: [], profile: {} })
@@ -91,6 +91,14 @@ const openDialog = () => {
         options.company = Object.keys(data)
         options.profile = data
       }
+    },
+    onError(error) {
+      createToast({
+        title: 'Could not load your POS profiles',
+        message: errorMessage(error),
+        type: 'error',
+        timeout: 10,
+      })
     },
   })
 

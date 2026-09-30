@@ -96,7 +96,7 @@ import {
   debounce,
   Spinner,
 } from 'frappe-ui'
-import { createToast } from '@/utils'
+import { createToast, errorMessage } from '@/utils'
 import { usePosProfileStore } from '@/stores/posProfile'
 import emitter from '@/utils/emitter'
 
@@ -130,6 +130,14 @@ let mode = createResource({
   auto: true,
   onSuccess(closingData) {
     createClosingShift(closingData)
+  },
+  onError(error) {
+    createToast({
+      title: 'Could not load the shift totals',
+      message: errorMessage(error),
+      type: 'error',
+      timeout: 10,
+    })
   },
 })
 

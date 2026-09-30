@@ -443,6 +443,9 @@ const planCreditPayments = () => {
       .map((inv) => [inv.name, Number(inv.outstanding_amount) || 0]),
   )
   const plan = []
+  // Anything that cannot be allocated to the selected invoices; recording it
+  // would quietly take less money than was entered.
+  let overpaid = 0
   for (const mode of [...modes.value].sort((a, b) => b.amount - a.amount)) {
     let left = Number(mode.amount) || 0
     const references = []
@@ -453,6 +456,9 @@ const planCreditPayments = () => {
       remaining.set(name, outstanding - allocated)
       left -= allocated
       references.push({ invoice: name, allocated_amount: allocated })
+    }
+    if (left > 0.005) {
+      overpaid += left
     }
     const amount = (Number(mode.amount) || 0) - left
     if (amount > 0 && references.length) {
@@ -465,6 +471,7 @@ const planCreditPayments = () => {
       })
     }
   }
+  plan.unallocated = overpaid
   return plan
 }
 
@@ -490,6 +497,13 @@ const createpayment = async () => {
       currentTab.value === 'credit'
         ? 'Enter an amount and select at least one invoice with an outstanding balance.'
         : 'Please enter a valid amount for the payment method.',
+    )
+  }
+
+  if (plan.unallocated > 0.005) {
+    return recordError(
+      `${plan.unallocated.toFixed(2)} more was entered than the selected invoices owe. ` +
+        'Lower the amount, select more invoices, or use Advance payment.',
     )
   }
 

@@ -15,7 +15,8 @@
       <template #target="{ togglePopover, isOpen }">
         <button
           type="button"
-          class="flex h-8 w-full items-center justify-between gap-2 rounded border border-transparent bg-surface-gray-2 px-2.5 text-base transition-colors hover:bg-surface-gray-3 focus:border-outline-gray-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3"
+          :disabled="disabled"
+          class="flex h-8 w-full items-center justify-between gap-2 rounded border border-transparent bg-surface-gray-2 px-2.5 text-base transition-colors hover:bg-surface-gray-3 focus:border-outline-gray-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 disabled:cursor-not-allowed disabled:opacity-60"
           :class="{ 'bg-surface-gray-3': isOpen }"
           :aria-expanded="isOpen"
           aria-haspopup="listbox"
@@ -64,6 +65,7 @@ const props = defineProps({
     type: Object,
     default: () => ({}),
   },
+  disabled: { type: Boolean, default: false },
 })
 
 const posProfileStore = usePosProfileStore()

@@ -88,5 +88,13 @@ export function createDoctypeResource(doctype, onSuccessCallback) {
         onSuccessCallback(data)
       }
     },
+    onError(error) {
+      createToast({
+        title: `Could not start a new ${doctype.toLowerCase()}`,
+        message: errorMessage(error),
+        type: 'error',
+        timeout: 10,
+      })
+    },
   })
 }

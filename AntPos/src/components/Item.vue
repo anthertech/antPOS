@@ -208,7 +208,7 @@ import { usePermissionStore } from '@/stores/permission'
 import { useBreakpoint } from '@/composables/useBreakpoint'
 import { LOCKED_LINE_FIELDS, useFormLayout } from '@/utils/formLayout'
 import { watch, defineProps, onMounted, onUnmounted, computed, ref } from 'vue'
-import { showToast } from '@/utils'
+import { createToast, errorMessage, showToast } from '@/utils'
 import emitter from '@/utils/emitter'
 import { usePosProfileStore } from '@/stores/posProfile'
 import { useInvoiceStore } from '@/stores/pos'
@@ -306,6 +306,14 @@ const step = (delta) => {
   props.items.qty = next
 }
 
+const lookupFailed = (what) => (error) =>
+  createToast({
+    title: `Could not load ${what}`,
+    message: errorMessage(error),
+    type: 'error',
+    timeout: 10,
+  })
+
 const get_batch = createResource({
   url: 'ant_pos.ant_pos.api.item.get_batches_list',
   method: 'POST',
@@ -315,6 +323,7 @@ const get_batch = createResource({
       ...params,
     }
   },
+  onError: lookupFailed('the batches for this item'),
 })
 
 const get_serial_no = createListResource({
@@ -337,6 +346,7 @@ const get_serial_no = createListResource({
       batch_no: serial_no.batch_no,
     }))
   },
+  onError: lookupFailed('the serial numbers for this item'),
 })
 
 const get_serial_no_options = () => {
@@ -422,9 +432,12 @@ const validateitems = () => {
           !invoiceStore.items[props.index].is_return) ||
           !invoiceStore.items[props.index].has_batch_no)
       ) {
-        invoiceStore.items.selected_serial_no = mergeSerial_no(
-          invoiceStore.items[props.index].selected_serial_no,
-          invoiceStore.items[index].selected_serial_no,
+        // The merged serials belong on the line that stays. They used to be
+        // assigned to the array itself, so they vanished with the removed row.
+        const kept = invoiceStore.items[index]
+        kept.selected_serial_no = mergeSerial_no(
+          kept.selected_serial_no || [],
+          invoiceStore.items[props.index].selected_serial_no || [],
         )
         invoiceStore.items.splice(props.index, 1)
         find = true
@@ -533,12 +546,15 @@ const adjustSerialNumbers = (newQty) => {
   if (options.length < 0) return
   const selected = props.items.selected_serial_no
   const selectedLength = selected.length
-  if (Math.abs(selectedLength) === Math.abs(newQty)) return
-  if (Math.abs(selectedLength) > Math.abs(newQty)) {
-    props.items.selected_serial_no = selected.slice(0, newQty)
-  } else if (Math.abs(selectedLength) < Math.abs(newQty)) {
+  // A return counts down (-3, -2, -1), so compare and cut by size: slicing to
+  // a negative length dropped serials from the end of the list instead.
+  const wanted = Math.abs(newQty)
+  if (selectedLength === wanted) return
+  if (selectedLength > wanted) {
+    props.items.selected_serial_no = selected.slice(0, wanted)
+  } else {
     const selectedValues = new Set(selected.map((sn) => sn.value))
-    const needed = newQty - selectedLength
+    const needed = wanted - selectedLength
     const additional = []
     for (let i = 0; i < options.length && additional.length < needed; i++) {
       const opt = options[i]

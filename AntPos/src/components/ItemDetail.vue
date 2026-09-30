@@ -9,6 +9,7 @@
   >
     <CustomerBar
       v-model:customer="invoiceStore.invoiceCustomer"
+      :locked="Boolean(paying)"
       @create="loadComponent('CustomerForm')"
     />
 

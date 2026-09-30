@@ -31,6 +31,23 @@ export function withLoginRedirect(fetcher) {
         redirecting = true
         redirectToLogin()
       }
+      warnAboutStaleToken(error)
       throw error
     })
+}
+
+let warnedAboutToken = false
+
+// Signing in again in another tab gives that session a new security token, and
+// every save from this page then fails with a bare "Invalid Request".
+function warnAboutStaleToken(error) {
+  if (warnedAboutToken || error?.exc_type !== 'CSRFTokenError') return
+  warnedAboutToken = true
+  createToast({
+    title: 'Reload the page',
+    message:
+      'You signed in again somewhere else, so this page is out of date. Reload it before carrying on.',
+    type: 'error',
+    timeout: 20,
+  })
 }
