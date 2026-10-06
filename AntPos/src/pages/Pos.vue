@@ -1,37 +1,26 @@
 <template>
-  <div class="flex select-none w-full h-full gap-2 p-2">
-    <component :is="currentComponent" />
-    <ItemDetail />
-  </div>
+  <!-- Issue #19: the two-pane split only works with room for both panes. Below
+       1024px the scan box stacks above the cart instead of being squeezed. -->
+  <component :is="isDesktop ? DesktopLayout : MobileLayout" />
 </template>
 
 <script setup>
-import { computed, onBeforeMount,onUnmounted } from 'vue';
-import ItemSelector from '@/components/ItemSelector.vue';
-import Invoice from '@/components/Invoice.vue';
-import ItemDetail from '@/components/ItemDetail.vue';
-import { useInvoiceStore } from '@/stores/pos';
+import { onBeforeMount, onUnmounted } from 'vue'
+import { useInvoiceStore } from '@/stores/pos'
+import { useBreakpoint } from '@/composables/useBreakpoint'
+import { useInvoiceRecalc } from '@/composables/useInvoiceRecalc'
+import DesktopLayout from '@/layouts/DesktopLayout.vue'
+import MobileLayout from '@/layouts/MobileLayout.vue'
 
-const invoiceStore = useInvoiceStore();
-
-const componentMap = {
-  Invoice,
-  ItemSelector,
-};
-
-const currentComponent = computed(() =>
-  invoiceStore.invoice.docstatus ? componentMap.Invoice : componentMap.ItemSelector
-);
-
-
+const invoiceStore = useInvoiceStore()
+const { isDesktop } = useBreakpoint()
+useInvoiceRecalc()
 
 onBeforeMount(() => {
-
   invoiceStore.invoiceResource.fetch()
-  
-});
-onUnmounted(()=>{
-    invoiceStore.unmount()
 })
 
+onUnmounted(() => {
+  invoiceStore.unmount()
+})
 </script>

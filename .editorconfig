@@ -1,0 +1,27 @@
+# Frappe's conventions for Python and doctype JSON; the AntPos frontend uses
+# prettier (two spaces, no semicolons, single quotes).
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+
+[*.py]
+indent_style = tab
+indent_size = 4
+max_line_length = 110
+
+[*.json]
+insert_final_newline = false
+indent_style = space
+indent_size = 2
+
+[AntPos/**.{js,mjs,vue,css,html,json}]
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+
+[*.md]
+trim_trailing_whitespace = false

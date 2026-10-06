@@ -1,1 +1,0 @@
-if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/assets/ant_pos/antPOS/sw.js', { scope: '/assets/ant_pos/antPOS/' })})}

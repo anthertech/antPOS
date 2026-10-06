@@ -1,2 +1,80 @@
-@import './assets/Inter/inter.css';
-@import 'frappe-ui/src/style.css';
+/* frappe-ui ships Inter (variable + static fallbacks) via its own style.css, so
+   the app must not import a second copy: doing so duplicated all 18 @font-face
+   declarations and deployed 5.2 MB of redundant font files. */
+@import 'frappe-ui/style.css';
+
+/* frappe-ui 0.1.278 no longer sets a base text colour, so anything without its
+   own colour class inherited the browser's black -- invisible in dark mode. */
+@layer base {
+  body {
+    @apply bg-surface-gray-1 text-ink-gray-9;
+  }
+}
+
+/* frappe-ui anchors toasts bottom-right, which is exactly where the POS keeps
+   Pay and the other sale actions; a toast there blocks them for several
+   seconds. Pin the viewport under the 48px navbar instead. The region label
+   comes from reka-ui's ToastViewport. */
+[role='region'][aria-label^='Notifications'] > ol {
+  top: 3rem;
+  bottom: auto;
+}
+
+/* Money and identifiers use tabular lining figures so columns align and digits
+   stop shifting as totals recalculate on every keystroke. */
+.num {
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings:
+    'tnum' 1,
+    'lnum' 1;
+}
+
+/* Plain input styled like frappe-ui's subtle TextInput, for places where a bare
+   <input> is simpler than the component (number fields bound to invoice keys). */
+.pos-input {
+  @apply h-8 rounded border border-[--surface-gray-2] bg-surface-gray-2 px-2.5 text-base text-ink-gray-8
+    placeholder-ink-gray-4 hover:border-outline-gray-modals hover:bg-surface-gray-3
+    focus:border-outline-gray-4 focus:bg-surface-white focus:shadow-sm focus:outline-none focus:ring-0
+    focus-visible:ring-2 focus-visible:ring-outline-gray-3;
+}
+
+/* Quiet scrollbars: the cart scrolls constantly during a sale. */
+.pos-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--outline-gray-2) transparent;
+}
+.pos-scroll::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.pos-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.pos-scroll::-webkit-scrollbar-thumb {
+  background: var(--outline-gray-2);
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+/* Cart badge nudge when an item is added from the list on a phone. */
+@keyframes pos-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

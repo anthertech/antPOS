@@ -1,107 +1,139 @@
-# 💼 antPOS
+<div align="center">
 
-**antPOS** is a modern, efficient, and flexible Point of Sale (POS) system built on **Frappe** and **ERPNext**. Designed to work seamlessly across all Frappe versions, it leverages Frappe's built-in APIs and validation mechanisms to ensure smooth performance, accurate error handling, and a superior user experience.
+<img src="ant_pos/public/antPOS.png" alt="antPOS logo" width="96" />
 
----
+# antPOS
 
-## 🚀 Features
+**A fast, modern point of sale for ERPNext**
 
-- ✅ **Supports All Frappe Versions**  
-  Developed to be compatible with all Frappe and ERPNext versions.
+Built on Frappe and Frappe UI. Works on desktop, tablet and phone, and installs as an app.
 
-- 🧩 **Built with Frappe UI**  
-  Uses vanilla Frappe UI components for a seamless and efficient interface.
+[![Frappe](https://img.shields.io/badge/Frappe-v15-0089FF?style=flat-square)](https://frappe.io/framework)
+[![ERPNext](https://img.shields.io/badge/ERPNext-v15-0089FF?style=flat-square)](https://frappe.io/erpnext)
+[![Vue](https://img.shields.io/badge/Vue-3-42b883?style=flat-square&logo=vuedotjs&logoColor=white)](https://vuejs.org)
+[![PWA](https://img.shields.io/badge/PWA-ready-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](#features)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat-square)](license.txt)
 
-- 🧾 **Direct Sales Invoice Creation**  
-  Creates standard **Sales Invoices** instead of POS Invoices, avoiding dependency on POS Closing.
+[Features](#features) · [Screenshots](#screenshots) · [Installation](#installation) · [Setup](#setup) · [Contributing](#contributing) · [License](#license)
 
-- ⚙️ **Dynamic Field Configuration**  
-  Configure fields dynamically and display them directly in the POS interface.
+<br />
 
-- 🔌 **Frappe API Integration**  
-  Utilizes built-in Frappe APIs for real-time updates, validation, and error handling.
+<img src="screenshots/pos-desktop.png" alt="antPOS on desktop" width="100%" />
 
-- 📱 **Mobile Compatibility (Upcoming)**  
-  Future updates will include **Ionic integration** for a mobile-friendly experience.
+</div>
 
----
+<br />
 
-## 🛠️ Installation
+## Features
 
-Follow these steps to install Ant-POS on your ERPNext setup:
+| | |
+|---|---|
+| 🛒 **Fast checkout** | Scan barcodes, serial and batch numbers, or tap items from a list with the most moving items first. |
+| 📷 **Camera scanning** | Scan barcodes and QR codes with the phone camera. |
+| 💳 **Flexible payments** | Split across payment methods, give change, sell on credit and use customer advances. |
+| 🏷️ **Discounts and rates** | Per line or for the whole sale, as the POS Profile allows. |
+| ⏸️ **Held sales and returns** | Park a sale and pick it up later, or return items from a past invoice. |
+| 📦 **Sales orders** | Create a Sales Order together with the invoice when needed. |
+| 🕒 **Shifts** | Open and close cashier shifts with a cash count per payment method. |
+| 🧾 **Standard ERPNext documents** | Sales, returns and payments are normal Sales Invoices and Payment Entries. |
+| 🧩 **Customisable forms** | Admins change the New customer form and cart line details right from the POS. |
+| 🌗 **Themes** | Light, dark and automatic, shared with the Frappe desk. |
+| 📱 **Installable app** | Install as a PWA on desktop, Android and iOS. |
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="screenshots/payment.png" alt="Payment" /></td>
+    <td width="50%"><img src="screenshots/held.png" alt="Held sales" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Payment</b></td>
+    <td align="center"><b>Held sales</b></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="screenshots/pos-desktop-dark.png" alt="Dark mode" /></td>
+    <td width="50%"><img src="screenshots/settings.png" alt="Settings" /></td>
+  </tr>
+  <tr>
+    <td align="center"><b>Dark mode</b></td>
+    <td align="center"><b>Settings</b></td>
+  </tr>
+</table>
+
+<p align="center"><b>On the phone</b></p>
+
+<p align="center">
+  <img src="screenshots/mobile-items.png" alt="Items on mobile" width="30%" />
+  &nbsp;
+  <img src="screenshots/mobile-cart.png" alt="Cart on mobile" width="30%" />
+  &nbsp;
+  <img src="screenshots/mobile-scanner.png" alt="Camera scanning" width="30%" />
+</p>
+
+## Installation
+
+> **Requirements:** Frappe and ERPNext **v15**
 
 ```bash
-# Step 1: Navigate to your Frappe bench directory
 cd ~/frappe-bench
-```
-
-```bash
-# Step 2: Clone the Ant-POS app from GitHub
 bench get-app ant_pos https://github.com/anthertech/antPOS.git
-```
-
-```bash
-# Step 3: Install the Ant-POS app on your site (replace 'yoursite.com' with your actual site name)
 bench --site yoursite.com install-app ant_pos
+bench --site yoursite.com migrate
+bench build --app ant_pos
 ```
 
-```bash
-# Step 4: Migrate your site (replace 'yoursite.com' with your actual site name)
-bench --site yoursite.com migrate 
-```
+Then open **`https://yoursite.com/antPOS`**.
 
-```bash
-# Step 5: Build site assets (recommended after installing a new app)
-bench --site yoursite.com build
-```
+## Setup
 
----
+1. **Mode of Payment:** add an account for your company to each payment method you want to use.
+2. **POS Profile:** set the company, warehouse, price list and payment methods, and add your cashiers under *Applicable for Users*.
+3. **Users:** give cashiers the **POS Cash** or **POS Billing** role.
+4. **Start selling:** open `/antPOS`, start a shift, pick a customer and add items.
 
-## 📦 Usage
+> [!NOTE]
+> The camera and the installable app need the site to be served over **HTTPS**.
 
-1. Open the **POS module** from your ERPNext dashboard.  
-2. Configure your POS settings and dynamic fields as needed.  
-3. Start creating **Sales Invoices** instantly — no need for POS Closing.  
-4. Keep your app updated to enjoy the latest features and fixes.
+### Roles
 
----
+| Role | Can do |
+|---|---|
+| **POS Cash** | Open and close their shift, sell, take payments, return and print |
+| **POS Billing** | Prepare and hold sales for a cashier |
+| **System Manager** | Everything above, plus POS settings, brand and form layouts |
 
-## 🔮 Future Enhancements
+## Contributing
 
-- 📱 **Mobile-Friendly Interface**  
-  Integration with **Ionic** to deliver a sleek mobile experience.
+Contributions are welcome! 🙌
 
-- 🛠 **Advanced Customization**  
-  More settings for deeper customization of the POS workflow.
+1. Fork the repository and create a branch from `develop`.
+2. Install the app on a local bench (see [Installation](#installation)).
+3. Set up the checks once with `pre-commit install`. They run ruff for Python and prettier and eslint for the frontend on every commit.
+4. Make your change and run the tests:
 
-- ⚡ **Performance Improvements**  
-  Optimized database queries and background processes for faster checkouts.
+   ```bash
+   bench --site yoursite.localhost run-tests --app ant_pos
+   ```
 
----
+5. Open a pull request against `develop` with a short description of the change.
 
-## 🤝 Contributions
+Found a bug or have an idea? [Open an issue](https://github.com/anthertech/antPOS/issues).
 
-We welcome contributions from the community!  
-Feel free to:
+## Support
 
-- Submit issues  
-- Open pull requests  
-- Suggest improvements
+- 🐞 **Issues:** [github.com/anthertech/antPOS/issues](https://github.com/anthertech/antPOS/issues)
+- ✉️ **Email:** [support@anthertech.com](mailto:support@anthertech.com)
 
-👉 [Contribute on GitHub](https://github.com/anthertech/antPOS)
+## Built with
 
----
+[Frappe Framework](https://frappe.io/framework) · [ERPNext](https://frappe.io/erpnext) · [Frappe UI](https://ui.frappe.io) · [Vue 3](https://vuejs.org)
 
-## 📄 License
+## License
 
-Ant-POS is released under the **MIT License** — free for personal and commercial use.
+antPOS is released under the [MIT License](license.txt).
 
----
-
-## 📬 Contact & Support
-
-Have questions or need help? Visit our [GitHub repository](https://github.com/anthertech/antPOS) or [contact us](mailto:support@anthertech.com).
-
----
-
-> 💡 *Ant-POS — built to simplify sales, powered by Frappe.*
+<div align="center">
+<br />
+<sub>Made with ❤️ by <b>Anther Technologies Pvt Ltd</b></sub>
+</div>

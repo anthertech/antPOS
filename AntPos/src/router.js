@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useSessionStore } from './stores/session'
 import { userResource } from './stores/user'
+import { loginUrl } from './utils/login'
+import { usePermissionStore } from './stores/permission'
 
 const routes = [
   {
@@ -12,11 +14,12 @@ const routes = [
     path: '/payments',
     name: 'Payments',
     component: () => import('@/pages/Payments.vue'),
-  },
-  {
-    name: 'Login',
-    path: '/account/login',
-    component: () => import('@/pages/Login.vue'),
+    meta: {
+      allowed: (p) =>
+        p.paymentEntryCanSubmit ||
+        p.paymentEntryCanCreate ||
+        p.paymentEntryCanPrint,
+    },
   },
 ]
 
@@ -25,22 +28,28 @@ let router = createRouter({
   routes,
 })
 
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, from) => {
   const session = useSessionStore()
   let isLoggedIn = session.isLoggedIn
   try {
     await userResource.promise
-  } catch (error) {
+  } catch {
     isLoggedIn = false
   }
 
-  if (to.name === 'Login' && isLoggedIn) {
-    next({ name: 'Pos' })
-  } else if (to.name !== 'Login' && !isLoggedIn) {
-    // window.location.href = '/login?redirect-to=/antPOS'
-    next({ name: 'Login' })
-  } else {
-    next()
+  if (!isLoggedIn) {
+    window.location.href = loginUrl(router.resolve(to).href)
+    return false
+  }
+
+  if (to.meta.allowed) {
+    const permissions = usePermissionStore()
+    try {
+      await permissions.ready()
+    } catch {
+      return from.matched.length ? false : { name: 'Pos' }
+    }
+    if (!to.meta.allowed(permissions)) return { name: 'Pos' }
   }
 })
 

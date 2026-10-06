@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Python (ruff)
+        run: |
+          pip install ruff
+          ruff check .
+          ruff format --check .
+      - name: Frontend (eslint, prettier)
+        run: |
+          cd AntPos
+          yarn install --frozen-lockfile
+          yarn lint
+          yarn format:check
+
+  test:
+    runs-on: ubuntu-22.04
+
+    services:
+      mariadb:
+        image: mariadb:10.6
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s --health-timeout=5s --health-retries=20
+
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=5s --health-retries=20
+
+    steps:
+      # Test the code in this ref, not whatever happens to be on GitHub. The
+      # previous workflow ran `bench get-app ... https://github.com/...`, so it
+      # never actually validated the pull request.
+      - name: Checkout ant_pos
+        uses: actions/checkout@v4
+        with:
+          path: ant_pos
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmysqlclient-dev wkhtmltopdf
+          npm install -g yarn
+
+      - name: Configure MariaDB
+        run: |
+          mysql -h 127.0.0.1 -u root -proot -e \
+            "SET GLOBAL character_set_server = 'utf8mb4';
+             SET GLOBAL collation_server = 'utf8mb4_unicode_ci';"
+
+      - name: Set up bench
+        run: |
+          pip install frappe-bench
+          bench init --skip-redis-config-generation --frappe-branch version-15 --python "$(which python)" frappe-bench
+          cd frappe-bench
+          bench set-config -g db_host 127.0.0.1
+          bench set-config -g redis_cache redis://127.0.0.1:6379
+          bench set-config -g redis_queue redis://127.0.0.1:6379
+          bench set-config -g redis_socketio redis://127.0.0.1:6379
+          bench set-config -g developer_mode 1
+
+      - name: Install erpnext and ant_pos
+        run: |
+          cd frappe-bench
+          bench get-app --branch version-15 erpnext
+          bench get-app ../ant_pos
+          bench new-site ci.localhost \
+            --mariadb-root-password root \
+            --admin-password admin \
+            --mariadb-user-host-login-scope='%' \
+            --install-app erpnext
+          bench --site ci.localhost install-app ant_pos
+
+      # Catches schema faults the JSON alone will not, e.g. the duplicate
+      # `amended_from` this app shipped in Ant Closing Shift.
+      - name: Migrate
+        run: |
+          cd frappe-bench
+          bench --site ci.localhost migrate
+
+      - name: Run tests
+        run: |
+          cd frappe-bench
+          bench --site ci.localhost set-config allow_tests true
+          bench --site ci.localhost run-tests --app ant_pos
+
+      - name: Build assets
+        run: |
+          cd frappe-bench
+          bench build --app ant_pos
+
+      - name: Check bundle budget
+        run: |
+          cd frappe-bench/apps/ant_pos
+          python3 - <<'PY'
+          import pathlib, sys
+
+          # Budgets are uncompressed bytes. Raise deliberately, never casually.
+          BUDGETS = {"js": 2_600_000, "css": 200_000, "fonts": 5_000_000}
+
+          assets = pathlib.Path("ant_pos/public/antPOS/assets")
+          if not assets.is_dir():
+              sys.exit("build output missing")
+
+          actual = {
+              "js": sum(f.stat().st_size for f in assets.glob("*.js")),
+              "css": sum(f.stat().st_size for f in assets.glob("*.css")),
+              "fonts": sum(f.stat().st_size for f in assets.glob("*.woff*")),
+          }
+
+          failed = False
+          for key, budget in BUDGETS.items():
+              size = actual[key]
+              status = "OK " if size <= budget else "OVER"
+              if size > budget:
+                  failed = True
+              print(f"{status} {key:6} {size/1024:9.1f} KiB  (budget {budget/1024:.1f} KiB)")
+
+          maps = list(assets.glob("*.map"))
+          if maps:
+              failed = True
+              print(f"FAIL {len(maps)} sourcemap(s) in build output; these are served publicly")
+
+          sys.exit(1 if failed else 0)
+          PY

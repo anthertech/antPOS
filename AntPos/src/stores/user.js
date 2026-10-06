@@ -1,4 +1,4 @@
-import router from '@/router'
+import { redirectToLogin } from '@/utils/login'
 import { createResource } from 'frappe-ui'
 
 export const userResource = createResource({
@@ -6,7 +6,7 @@ export const userResource = createResource({
   cache: 'User',
   onError(error) {
     if (error && error.exc_type === 'AuthenticationError') {
-      router.push({ name: 'LoginPage' })
+      redirectToLogin()
     }
   },
 })

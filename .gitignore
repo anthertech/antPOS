@@ -1,15 +1,30 @@
-AntPos/dev-dist/
-
-.DS_Store
+# Python
 *.pyc
+__pycache__/
 *.egg-info
+
+# Node: dependencies are installed per machine, never committed.
+# The trailing slash only matches directories, so the bench-generated
+# ant_pos/public/node_modules SYMLINK needs its own rule below.
+node_modules/
+ant_pos/public/node_modules
+
+# Lockfiles are intentionally NOT ignored: yarn.lock and AntPos/yarn.lock are
+# committed so every machine and CI run resolves identical dependency versions.
+
+# Vite dev-server dependency cache (regenerated on every `vite dev`)
+AntPos/.vite/
+AntPos/dev-dist/
+dev-dist/
+
+# Sourcemaps are never shipped: ant_pos/public/antPOS is served publicly.
+# See AntPos/vite.config.mjs (buildConfig.sourcemap).
+*.map
+
+# Editor / OS
+.DS_Store
 *.swp
 tags
-dev-dist
-AntPos/dev-dist/sw.js
-AntPos/dev-dist/sw.js.map
-tags
+
+# Generated docs
 ant_pos/docs/current
-node_modules/
-AntPos/public/
-AntPos/yarn.lock

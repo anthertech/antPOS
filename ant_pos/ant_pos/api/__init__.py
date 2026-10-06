@@ -1,99 +1,100 @@
 import frappe
+from frappe import _
 from frappe.translate import get_all_translations
 
 
 def user_has_posprofile(user=None):
-    user = user or frappe.session.user
+	"""Whether antPOS appears for this user on /apps (add_to_apps_screen).
 
-    child_records = frappe.get_all(
-        'POS Profile User',  
-        filters={'user': user},
-        fields=['parent']
-    )
+	Cashiers see it when they are listed on an enabled POS Profile. System
+	Managers always see it, since they are the ones who set the profiles up.
+	"""
+	user = user or frappe.session.user
+	if user == "Guest":
+		return False
+	if "System Manager" in frappe.get_roles(user):
+		return True
 
-    pos_profiles = [record['parent'] for record in child_records]
-
-    return len(pos_profiles) > 0
-
+	profile_user = frappe.qb.DocType("POS Profile User")
+	profile = frappe.qb.DocType("POS Profile")
+	match = (
+		frappe.qb.from_(profile_user)
+		.join(profile)
+		.on(profile.name == profile_user.parent)
+		.select(profile_user.name)
+		.where(profile_user.user == user)
+		.where(profile_user.parenttype == "POS Profile")
+		.where(profile.disabled == 0)
+		.limit(1)
+		.run()
+	)
+	return bool(match)
 
 
 def posprofile_user_query_conditions(user=None):
-    """
-    Returns SQL condition to restrict POS Profiles list to those
-    where the given user exists in the 'Applicable for Users' child table.
-    System Managers and Administrators get access to all POS Profiles.
-    """
-    if not user:
-        user = frappe.session.user
+	"""
+	Returns SQL condition to restrict POS Profiles list to those
+	where the given user exists in the 'Applicable for Users' child table.
+	System Managers and Administrators get access to all POS Profiles.
+	"""
+	if not user:
+		user = frappe.session.user
 
-    if user == "Guest":
-        return "FALSE"
+	if user == "Guest":
+		return "FALSE"
 
-    roles = frappe.get_roles(user)
-    if "System Manager" in roles or "Administrator" in roles:
-        return "1=1"  # full access
+	roles = frappe.get_roles(user)
+	if "System Manager" in roles or "Administrator" in roles:
+		return "1=1"  # full access
 
-    return f"""
+	return f"""
         name IN (
             SELECT parent FROM `tabPOS Profile User`
             WHERE user = {frappe.db.escape(user)}
         )
     """
 
+
 @frappe.whitelist()
 def get_user_permissions():
-    user = frappe.session.user
-    permissions = {}
-    user_roles = frappe.get_roles(user)
+	"""What the POS may offer this user on the documents it creates.
 
-    def check_perm(doctype, permtype):
-        # Check Custom DocPerm first
-        custom_perms = frappe.get_all(
-            "Custom DocPerm",
-            filters={"parent": doctype, "role": ["in", user_roles], permtype: 1},
-            fields=["if_owner"]
-        )
-        if custom_perms:
-            return custom_perms[0]["if_owner"] == 1
+	A right counts if any of the user's rules grants it, including rules
+	limited to the user's own documents ("if owner"): the POS only submits and
+	prints invoices the cashier created. Checking without a document treated
+	those rules as no permission, so a new POS Cash user never saw Pay.
+	"""
+	from frappe.permissions import get_valid_perms
 
-        # Fallback: check DocPerm entries
-        std_perms = frappe.get_all(
-            "DocPerm",
-            filters={"parent": doctype, "role": ["in", user_roles], permtype: 1},
-            fields=["if_owner"]
-        )
-        if std_perms:
-            return std_perms[0]["if_owner"] == 1
+	user = frappe.session.user
+	user_roles = frappe.get_roles(user)
+	permissions = {}
 
-        return False
+	for doctype in ("Sales Invoice", "Payment Entry", "Sales Order"):
+		# Standard or custom rules, whichever applies to this doctype.
+		rules = [p for p in get_valid_perms(doctype, user) if not p.permlevel]
 
-    for doctype in ["Sales Invoice", "Payment Entry", "Sales Order"]:
-        submit_owner_restricted = check_perm(doctype, "submit")
-        
-        can_submit_global = frappe.has_permission(doctype, doc=None, ptype="submit", user=user)
-        can_create_global = frappe.has_permission(doctype, doc=None, ptype="create", user=user)
-        can_print_global = frappe.has_permission(doctype, doc=None, ptype="print", user=user)
+		def allowed(ptype):
+			return bool(frappe.has_permission(doctype, ptype=ptype, user=user)) or any(
+				p.get(ptype) for p in rules
+			)
 
-        # If submit is owner restricted, check if user owns any docs
-        has_own_docs = False
-        if submit_owner_restricted:
-            has_own_docs = frappe.db.exists({
-                "doctype": doctype,
-                "owner": user,
-                "docstatus": 0
-            }) is not None
+		readers = [p for p in rules if p.get("read")]
+		permissions[doctype.lower().replace(" ", "_")] = {
+			"can_submit": allowed("submit"),
+			"can_create": allowed("create"),
+			"can_print": allowed("print"),
+			# Lists (Held, Return) show only the user's own documents.
+			"only_own": bool(readers) and all(p.if_owner for p in readers),
+		}
 
-        can_submit = can_submit_global or (submit_owner_restricted and has_own_docs)
+	# Form layouts decide what every cashier sees (api/form_layout.py).
+	permissions["can_manage_layouts"] = "System Manager" in user_roles
+	# Brand settings and other site-wide options.
+	permissions["is_system_manager"] = "System Manager" in user_roles
 
-        permissions[doctype.lower().replace(" ", "_")] = {
-            "can_submit": can_submit,
-            "can_submit_owner_restricted": submit_owner_restricted,
-            "has_own_docs": has_own_docs,
-            "can_create": can_create_global,
-            "can_print": can_print_global,
-        }
+	return permissions
 
-    return permissions
 
 @frappe.whitelist(allow_guest=True)
 def get_translations():
@@ -104,16 +105,21 @@ def get_translations():
 
 	return get_all_translations(language)
 
+
 @frappe.whitelist()
 def get_doc_field():
-    doctype = frappe.form_dict.get('doctype')
-    
-    if not doctype:
-        frappe.throw("Missing 'doctype' parameter")
-    
-    try:
-        doc = frappe.new_doc(doctype)
-        return doc.as_dict()
-    except Exception as e:
-        frappe.log_error(frappe.get_traceback(), "get_doc_field error")
-        frappe.throw(f"Unable to create doc for {doctype}: {str(e)}")
+	"""Return a blank document (with defaults applied) for the given doctype."""
+	doctype = frappe.form_dict.get("doctype")
+
+	if not doctype:
+		frappe.throw(_("Missing 'doctype' parameter"))
+
+	# Returns server-side defaults, so require the same permission as actually
+	# creating the document.
+	frappe.has_permission(doctype, "create", throw=True)
+
+	try:
+		return frappe.new_doc(doctype).as_dict()
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "get_doc_field error")
+		frappe.throw(_("Unable to create doc for {0}").format(doctype))

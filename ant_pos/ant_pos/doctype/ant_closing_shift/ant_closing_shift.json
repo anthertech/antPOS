@@ -141,15 +141,6 @@
    "read_only": 1
   },
   {
-   "fieldname": "amended_from",
-   "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Ant Closing Shift",
-   "print_hide": 1,
-   "read_only": 1
-  },
-  {
    "fieldname": "ant_opening_shift",
    "fieldtype": "Link",
    "label": "Ant Opening Shift",

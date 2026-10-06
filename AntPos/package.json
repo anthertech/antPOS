@@ -1,26 +1,41 @@
 {
-  "name": "frappe-ui-frontend",
+  "name": "antpos-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.3.0",
   "scripts": {
     "dev": "vite",
     "build": "vite build --base=/assets/ant_pos/AntPos/ && yarn copy-html-entry",
     "preview": "vite preview",
-    "copy-html-entry": "cp ../ant_pos/public/antPOS/index.html ../ant_pos/www/antPOS.html"
+    "copy-html-entry": "cp ../ant_pos/public/antPOS/index.html ../ant_pos/www/antPOS.html",
+    "lint": "eslint src",
+    "format": "prettier --write src vite.config.mjs eslint.config.mjs",
+    "format:check": "prettier --check src vite.config.mjs eslint.config.mjs"
   },
   "dependencies": {
+    "@zxing/browser": "^0.1.5",
+    "@zxing/library": "^0.21.3",
     "feather-icons": "^4.29.1",
-    "frappe-ui": "^0.1.146",
+    "frappe-ui": "0.1.278",
+    "mitt": "^3.0.1",
+    "pinia": "^3.0.2",
     "vue": "^3.5.13",
-    "vue-router": "^4.3.0"
+    "vue-router": "^4.3.0",
+    "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vitejs/plugin-vue-jsx": "^4.1.2",
     "autoprefixer": "^10.4.16",
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.8.0",
+    "globals": "^17.3.0",
     "postcss": "^8.4.38",
+    "prettier": "3.2.5",
     "tailwindcss": "^3.4.4",
     "vite": "^5",
-    "vite-plugin-pwa": "^1.0.0"
+    "vite-plugin-pwa": "^1.0.0",
+    "vue-eslint-parser": "^10.4.0"
   }
 }

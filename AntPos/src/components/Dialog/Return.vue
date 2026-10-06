@@ -1,277 +1,261 @@
 <template>
-    <Dialog :options="{ size: '3xl' }" v-model="dialogVisible" class="rounded-b">
-        <template #body-title>
-            <p class="text-3xl">Select Invoice</p>
-        </template>
-        <template #body-content>
-            <div class="w-full h-[60vh] bg-white-overlay-100 rounded-2xl p-3 shadow-2xl flex flex-col gap-4">
-                <TextInput type="text" v-model="searchQuery" placeholder="Search">
-                    <template #prefix>
-                        <FeatherIcon class="w-4" name="search" />
-                    </template>
-                </TextInput>
-                <div class="flex justify-evenly bg-black-overlay-800 text-white rounded-md p-3 h-[8%]">
-                    <div class="w-[10%]"></div>
-                    <p class="w-[30%]">Name</p>
-                    <p class="w-[30%]">Customer</p>
-                    <p class="w-[30%]">Amount</p>
-                </div>
-                <div class="h-[82%] overflow-y-scroll scrollbar-hide">
-                    <div v-for="invoice in filteredInvoices" :key="invoice.name" class="flex flex-col">
-                        <div class="flex justify-evenly rounded bg-blue-200 p-2.5 my-2">
-                            <div class="w-[10%]">
-                                <input type="radio" name="selectedInvoice" :value="invoice.name"
-                                    class="text-black hover:text-black" v-model="selectedInvoice" />
-                            </div>
-                            <p class="w-[30%]">{{ invoice.name }}</p>
-                            <p class="w-[30%]">{{ invoice.customer }}</p>
-                            <p class="w-[30%]">{{ invoice.grand_total }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex justify-between items-center mt-4">
-                    <div class="flex gap-2">
-                        <Button
-                            v-for="size in [20, 100, 500, 2500]"
-                            :key="size"
-                            :variant="selectedPageLength === size ? 'solid' : 'ghost'"
-                            @click="setPageLength(size)"
-                            :ref_for="true"
-                            :loading="invoices.loading"
-                            :disabled="invoices.loading"
-                            :link="null"
-                        >
-                            {{ size }}
-                        </Button>
-
-                    </div>
-                    <Button 
-                        @click="invoices.next()" 
-                        variant="solid"
-                        :loading="invoices.loading"
-                        :disabled="invoices.loading"
-                    
-                    >
-                        Load more
-                    </Button>
-                </div>
-            </div>
-        </template>
-        <template #actions>
-            <div class="">
-                <Button variant="solid" @click="submitInvoice">Select</Button>
-                <Button class="ml-2" @click="handleDialogClose">Close</Button>
-            </div>
-        </template>
-    </Dialog>
+  <InvoicePicker
+    v-model="dialogVisible"
+    v-model:search="searchQuery"
+    title="Return an invoice"
+    description="Pick the sale the customer is bringing back."
+    action-label="Return"
+    empty-title="No invoices to return"
+    empty-text="Submitted sales from this POS profile appear here."
+    :invoices="invoices.data || []"
+    :loading="invoices.loading"
+    :has-more="invoices.hasNextPage"
+    :opening="loadingSelection ? selectedInvoice : null"
+    :show-status="true"
+    @select="
+      (name) => {
+        selectedInvoice = name
+        submitInvoice()
+      }
+    "
+    @load-more="invoices.next()"
+  />
 </template>
 
 <script setup>
-import { Dialog, Button, createListResource, createResource, TextInput, debounce, FeatherIcon } from 'frappe-ui';
-import { ref, computed, watch } from 'vue';
-import { createToast } from '@/utils';
-import { usePosProfileStore } from '@/stores/posProfile';
-import { usePermissionStore } from '@/stores/permission';
-import { usersStore } from '@/stores/users';
-import { useInvoiceStore } from '@/stores/pos';
+import { createListResource, createResource, debounce } from 'frappe-ui'
+import InvoicePicker from '@/components/pos/InvoicePicker.vue'
+import { ref, computed, watch } from 'vue'
+import { createToast } from '@/utils'
+import { usePosProfileStore } from '@/stores/posProfile'
+import { usePermissionStore } from '@/stores/permission'
+import { usersStore } from '@/stores/users'
+import { useInvoiceStore } from '@/stores/pos'
+import { useMobileView } from '@/stores/mobile'
+import { generateTempName } from '@/utils'
 
-const store = usePosProfileStore();
-const dialogVisible = ref(true);
-const selectedInvoice = ref(null);
-const searchQuery = ref("");
-const selectedPageLength = ref(20);
-const handleDialogClose = () => { dialogVisible.value = false; };
-const permissionStore = usePermissionStore();
+const store = usePosProfileStore()
+const dialogVisible = ref(true)
+const selectedInvoice = ref(null)
+const searchQuery = ref('')
+const handleDialogClose = () => {
+  dialogVisible.value = false
+}
+const permissionStore = usePermissionStore()
 const invoiceStore = useInvoiceStore()
-const user = usersStore().getUser();
-
-const setPageLength = (size) => {
-    if (selectedPageLength.value !== size) {
-        selectedPageLength.value = size;
-        invoices.update({ pageLength: size, start: 0 }); 
-        invoices.reload();
-    }
-};
+const mobile = useMobileView()
+const user = usersStore().getUser()
 
 const submitInvoice = () => {
-    salesInvoice.fetch({ name: selectedInvoice.value });
-};
-
-const runDoCMethod = createResource({
-    url: 'run_doc_method',
-    makeParams(params) {
-        return {...params}
-    },
-    transform(data){
-        if (data.docs[0] && data.docs[0].items && data.docs[0].items.length > 0) {
-            data.docs[0].items.forEach(item => {
-                if (item.serial_no) {
-                    item.selected_serial_no = item.serial_no.trim().split('\n').map(serial => ({
-                        label: serial,
-                        value: serial
-                    }));
-                    
-                }
-                if (item.serial_no){
-                    item._serial=item.serial_no.trim().split('\n');
-                }
-                if (item.batch_no) {
-                    
-                    item.selected_batch_no = {
-                        label: item.batch_no,
-                        value: item.batch_no
-                    };
-                } else {
-                    item.selected_batch_no = null;
-                }
-                if (!item.custom_id) {
-                    item.custom_id = Date.now() + Math.random();
-                }
-            });    
-        }
-        return data
-    },
-    onSuccess(data){
-        addvalues();    
-    },
-    onError(error) {
-        createToast({
-            title: 'error',
-            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x-circle',
-            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-            position: 'top-center',
-            timeout: 5,
-        });
-    }
-});
-
-let salesInvoice = createResource({
-    url: 'frappe.model.mapper.make_mapped_doc',
-    makeParams(params) {
-        return {
-            method: "erpnext.accounts.doctype.sales_invoice.sales_invoice.make_sales_return",
-            source_name: params.name,
-            selected_children:{},
-            args:""
-        };
-    },
-    onSuccess: async (data) => {
-        await runDoCMethod.fetch({ for_validate: true, docs: data, method: 'set_missing_values', args: { "for_validate": true } });
-    },
-    onError(error) {
-        createToast({
-            title: 'error',
-            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x-circle',
-            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-            position: 'top-center',
-            timeout: 5,
-        });
-    }
-});
-
-const invoices = createListResource({
-    doctype: 'Sales Invoice',
-    fields: ['name', 'customer', 'grand_total'],
-    orderBy: 'creation desc',
-    filters: {
-        docstatus: 1,
-        pos_profile: store.posProfileData.name,
-        is_return: 0,
-        status: ['!=', 'Credit Note Issued'],
-        owner: permissionStore.salesInvoiceCanOnlyOwn ? user.name : undefined,
-
-    },
-    orFilters: [],
-    pageLength: 20,
-    auto: true
-});
-
-const filteredInvoices = computed(() => {
-    if (!searchQuery.value) return invoices.data || [];
-        return (invoices.data || []).filter(invoice =>
-            invoice.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-        invoice.customer.toLowerCase().includes(searchQuery.value.toLowerCase())
-    );
-});
-
-async function splitSerialNumbers(serialString = "") {
-    if (typeof serialString !== "string" || !serialString.trim()) return [];
-    
-    return serialString
-        .trim()
-        .split("\n")
-        .map(line => line.trim())
-        .filter(line => line !== "")
-        .map(serial => ({
-            label: serial,
-            value: serial
-        }));
+  salesInvoice.fetch({ name: selectedInvoice.value })
 }
 
-const  addvalues = async ()=>{
-    invoiceStore.invoice =  { ...runDoCMethod.data.docs[0], status: null ,name:"new-sales-invoice-jpodtuhocv" }
-    invoiceStore.items = runDoCMethod.data.docs[0].items || [];
-    invoiceStore.invoice._discount_amount =  runDoCMethod.data.docs[0].discount_amount;
-    invoiceStore.invoice._additional_discount_percentage =  runDoCMethod.data.docs[0].additional_discount_percentage;
-    invoiceStore.invoice._total =  runDoCMethod.data.docs[0].net_total;
-    await get_value.fetch({
-        doctype: "Customer",
-        filters: { "name": runDoCMethod.data.docs[0].customer },
-        fieldname: ['name', 'mobile_no', 'customer_group', 'territory', 'is_internal_customer'],
-    });
-    invoiceStore.invoiceCustomer = get_value.data || {};
-    searchQuery.value='';
-    handleDialogClose()
+const runDoCMethod = createResource({
+  url: 'run_doc_method',
+  makeParams(params) {
+    return { ...params }
+  },
+  transform(data) {
+    if (data.docs[0] && data.docs[0].items && data.docs[0].items.length > 0) {
+      data.docs[0].items.forEach((item) => {
+        if (item.serial_no) {
+          item.selected_serial_no = item.serial_no
+            .trim()
+            .split('\n')
+            .map((serial) => ({
+              label: serial,
+              value: serial,
+            }))
+        }
+        if (item.serial_no) {
+          item._serial = item.serial_no.trim().split('\n')
+        }
+        if (item.batch_no) {
+          item.selected_batch_no = {
+            label: item.batch_no,
+            value: item.batch_no,
+          }
+        } else {
+          item.selected_batch_no = null
+        }
+        if (!item.custom_id) {
+          item.custom_id = Date.now() + Math.random()
+        }
+      })
+    }
+    return data
+  },
+  onSuccess() {
+    addvalues()
+  },
+  onError(error) {
+    createToast({
+      title: 'error',
+      message: Array.isArray(error?.messages)
+        ? error.messages[0]
+        : error?.messages || 'An error occurred',
+      icon: 'x-circle',
+      iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+      position: 'top-center',
+      timeout: 5,
+    })
+  },
+})
+
+let salesInvoice = createResource({
+  url: 'frappe.model.mapper.make_mapped_doc',
+  makeParams(params) {
+    return {
+      method:
+        'erpnext.accounts.doctype.sales_invoice.sales_invoice.make_sales_return',
+      source_name: params.name,
+      // selected_children and args are typed `str | None` in Frappe, which
+      // now validates argument types: sending `{}` failed every return
+      // with FrappeTypeError. Both are optional, so leave them out.
+    }
+  },
+  onSuccess: async (data) => {
+    await runDoCMethod.fetch({
+      for_validate: true,
+      docs: data,
+      method: 'set_missing_values',
+      args: { for_validate: true },
+    })
+  },
+  onError(error) {
+    createToast({
+      title: 'error',
+      message: Array.isArray(error?.messages)
+        ? error.messages[0]
+        : error?.messages || 'An error occurred',
+      icon: 'x-circle',
+      iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+      position: 'top-center',
+      timeout: 5,
+    })
+  },
+})
+
+function returnFilters() {
+  const filters = {
+    docstatus: 1,
+    pos_profile: store.posProfileData.name,
+    is_return: 0,
+    status: ['!=', 'Credit Note Issued'],
+  }
+  if (permissionStore.salesInvoiceCanOnlyOwn) filters.owner = user.name
+  return filters
+}
+
+const loadingSelection = computed(() =>
+  Boolean(salesInvoice.loading || runDoCMethod.loading || get_value.loading),
+)
+
+const invoices = createListResource({
+  doctype: 'Sales Invoice',
+  fields: [
+    'name',
+    'customer',
+    'customer_name',
+    'grand_total',
+    'posting_date',
+    'posting_time',
+    'total_qty',
+    'status',
+  ],
+  orderBy: 'posting_date desc, creation desc',
+  filters: returnFilters(),
+  orFilters: [],
+  pageLength: 20,
+  auto: true,
+})
+
+const addvalues = async () => {
+  invoiceStore.invoice = {
+    ...runDoCMethod.data.docs[0],
+    status: null,
+    name: generateTempName('Sales Invoice'),
+  }
+  // ERPNext copies the original sale's payment rows onto the return. When the
+  // customer had overpaid, that copy is the change they were given (a positive
+  // amount on a refund), which ERPNext itself then refuses. The refund is
+  // entered on the payment screen, so start the rows empty.
+  invoiceStore.invoice.payments = (invoiceStore.invoice.payments || []).map(
+    (payment) => ({ ...payment, amount: 0, base_amount: 0 }),
+  )
+  invoiceStore.invoice.paid_amount = 0
+
+  // A loaded sale starts from the profile's sales-order default.
+  invoiceStore.salesOrderChoice = null
+  invoiceStore.items = runDoCMethod.data.docs[0].items || []
+  invoiceStore.invoice._discount_amount =
+    runDoCMethod.data.docs[0].discount_amount
+  invoiceStore.invoice._additional_discount_percentage =
+    runDoCMethod.data.docs[0].additional_discount_percentage
+  invoiceStore.invoice._total = runDoCMethod.data.docs[0].net_total
+  await get_value.fetch({
+    doctype: 'Customer',
+    filters: { name: runDoCMethod.data.docs[0].customer },
+    fieldname: [
+      'name',
+      'mobile_no',
+      'customer_group',
+      'territory',
+      'is_internal_customer',
+    ],
+  })
+  invoiceStore.invoiceCustomer = get_value.data || {}
+  searchQuery.value = ''
+  // On phones, go straight to the cart so the loaded sale is visible.
+  mobile.showCart()
+  handleDialogClose()
 }
 
 const get_value = createResource({
-    url:'frappe.client.get_value',
-    makeParams(params) {
-        return { ...params }
-    },
-    transform: (data) => {        
-        return {
-            label: data.name,
-            value: data.name,
-            mobile_no: data.mobile_no,
-            name: data.name,
-            customer_group: data.customer_group,
-            territory: data.territory,
-            is_internal_customer: data.is_internal_customer,
-        }
-    },
-    onError(error) {
-        createToast({
-            title: 'error',
-            message: Array.isArray(error?.messages) ? error.messages[0] : error?.messages || 'An error occurred',
-            icon: 'x-circle',
-            iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
-            position: 'top-center',
-            timeout: 5,
-        });
+  url: 'frappe.client.get_value',
+  makeParams(params) {
+    return { ...params }
+  },
+  transform: (data) => {
+    return {
+      label: data.name,
+      value: data.name,
+      mobile_no: data.mobile_no,
+      name: data.name,
+      customer_group: data.customer_group,
+      territory: data.territory,
+      is_internal_customer: data.is_internal_customer,
     }
-
+  },
+  onError(error) {
+    createToast({
+      title: 'error',
+      message: Array.isArray(error?.messages)
+        ? error.messages[0]
+        : error?.messages || 'An error occurred',
+      icon: 'x-circle',
+      iconClasses: 'bg-surface-red-5 text-ink-white rounded-md p-px',
+      position: 'top-center',
+      timeout: 5,
+    })
+  },
 })
 
 const updateInvoices = debounce((newQuery) => {
   invoices.update({
-    filters: {
-      docstatus: 1,
-      pos_profile: store.posProfileData.name,
-      is_return: 0
-    },
+    // Must keep every base filter: this used to drop `owner` and the
+    // "not already returned" condition as soon as the cashier searched.
+    filters: returnFilters(),
     orFilters: newQuery
       ? [
           ['name', 'like', `%${newQuery}%`],
-          ['customer', 'like', `%${newQuery}%`]
+          ['customer', 'like', `%${newQuery}%`],
+          ['customer_name', 'like', `%${newQuery}%`],
         ]
-      : []
-  });
-  invoices.reload();
-}, 300); 
+      : [],
+  })
+  invoices.reload()
+}, 300)
 
-watch(searchQuery, updateInvoices);
-
+watch(searchQuery, updateInvoices)
 </script>

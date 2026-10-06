@@ -1,6 +1,6 @@
 {
   "name": "ant_pos",
-  "version": "1.0.0",
+  "version": "0.3.0",
   "description": "pos application",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@vueuse/core": "^13.7.0",
-    "frappe-ui": "0.1.177",
+    "frappe-ui": "0.1.278",
     "mitt": "^3.0.1",
     "pinia": "^3.0.2"
   },

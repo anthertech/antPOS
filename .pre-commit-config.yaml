@@ -1,0 +1,42 @@
+# ruff for Python, and the AntPos frontend's own prettier and eslint (installed with `yarn --cwd AntPos install`).
+exclude: "node_modules|.git|ant_pos/public/antPOS|ant_pos/www/antPOS.html"
+default_stages: [pre-commit]
+fail_fast: false
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        files: "ant_pos.*"
+        exclude: ".*json$|.*txt$|.*csv|.*md|.*svg"
+      - id: check-merge-conflict
+      - id: check-ast
+      - id: check-json
+      - id: check-toml
+      - id: check-yaml
+      - id: debug-statements
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.8.1
+    hooks:
+      - id: ruff
+        name: "Run ruff linter and apply fixes"
+        args: ["--fix"]
+      - id: ruff-format
+        name: "Run ruff formatter"
+
+  - repo: local
+    hooks:
+      - id: prettier
+        name: prettier
+        entry: bash -c 'cd AntPos && yarn -s format'
+        language: system
+        files: ^AntPos/.*\.(js|mjs|vue|css)$
+        pass_filenames: false
+      - id: eslint
+        name: eslint
+        entry: bash -c 'cd AntPos && yarn -s lint --fix'
+        language: system
+        files: ^AntPos/.*\.(js|mjs|vue)$
+        pass_filenames: false

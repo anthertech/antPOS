@@ -1,141 +1,150 @@
 <template>
-    <Dialog :options="{size :'6xl'}"  v-model="dialogVisible" class="my-custom-dialog-height"  >
-        <template #body-main >
-            <div class="flex h-[calc(100vh_-_8rem)]">
-                
-                <div class="flex flex-col p-2 w-52 shrink-0 bg-surface-gray-2">
-                    <h1 class="px-2 pt-2 mb-3 text-lg font-semibold text-ink-gray-9">
-                        {{ 'Settings' }}
-                    </h1>
-                    <ul class="flex flex-col gap-2 mt-3 hover:cursor-pointer">
-                        <li class=" flex items-center  gap-2 hover:bg-surface-gray-3 px-2 py-1 rounded-md">
-                            <FeatherIcon
-                                name="settings"
-                                class="w-4 h-4 text-ink-gray-9 "
-                            />
-                            <h1 class=""
-                            >
-                                {{ 'General' }}
-                            </h1>
-                        </li>
-                    </ul>
-                </div>
-                <div class="flex h-full flex-col gap-8 p-8 text-ink-gray-9">
-                    <h2 class="flex gap-2 text-xl font-semibold leading-none h-5">
-                        {{ 'General' }}
-                        <Badge
-                        v-if="settings.isDirty"
-                        :label="'Not Saved'"
-                        variant="subtle"
-                        theme="orange"
-                        />
-                    </h2>
-                    <div v-if="settings.doc" class="flex-1 flex flex-col gap-8 overflow-y-auto">
-                        <div class="flex w-full">
-                        <FormControl
-                            type="text"
-                            class="w-1/2"
-                            v-model="settings.doc.brand_name"
-                            :label="'Brand Name'"
-                        />
-                        </div>
-                        <div class="flex flex-col justify-between gap-4">
-                        <span class="text-base font-semibold text-ink-gray-9">
-                            {{ 'Logo' }}
-                        </span>
-                        <div class="flex flex-1 gap-5">
-                            <div
-                            class="flex items-center justify-center rounded border border-outline-gray-modals px-10 py-2"
-                            >
-                            <img
-                                :src="settings.doc?.brand_logo || '/assets/ant_pos/antPOS.png'"
-                                alt="Logo"
-                                class="size-8 rounded"
-                            />
-                            </div>
-                            <div class="flex flex-1 flex-col gap-2">
-                            <ImageUploader
-                                label="Favicon"
-                                image_type="image/ico"
-                                :image_url="settings.doc?.brand_logo"
-                                @upload="(url) => (settings.doc.brand_logo = url)"
-                                @remove="() => (settings.doc.brand_logo = '')"
-                            />
-                            <span class="text-p-sm text-ink-gray-6">
-                                Appears in the left sidebar. Recommended size is 32x32 px in PNG or SVG'
-                            </span>
-                            </div>
-                        </div>
-                        </div>
-                        <div class="flex flex-col justify-between gap-4">
-                        <span class="text-base font-semibold text-ink-gray-9">
-                            {{'Favicon' }}
-                        </span>
-                        <div class="flex flex-1 gap-5">
-                            <div
-                            class="flex items-center justify-center rounded border border-outline-gray-modals px-10 py-2"
-                            >
-                            <img
-                                :src="settings.doc?.favicon || '/assets/ant_pos/antPOS.png'"
-                                alt="Favicon"
-                                class="size-8 rounded"
-                            />
-                            </div>
-                            <div class="flex flex-1 flex-col gap-2">
-                            <ImageUploader
-                                label="Favicon"
-                                image_type="image/ico"
-                                :image_url="settings.doc?.favicon"
-                                @upload="(url) => (settings.doc.favicon = url)"
-                                @remove="() => (settings.doc.favicon = '')"
-                            />
-                            <span class="text-p-sm text-ink-gray-6">
-                                Appears next to the title in your browser tab. Recommended size is 32x32 px in PNG or ICO',
-                                
-                            </span>
-                            </div>
-                        </div>
-                        </div>                         
-                    </div>
-                
-                    <div class="flex justify-between flex-row-reverse">
-                        <Button
-                        variant="solid"
-                        :label="'Update'"
-                        @click="updateSettings"
-                        />
-                        
-                        <ErrorMessage :message="settings.save.error" />
-                    </div>
-                    </div>
-                <div>
-                    <Button
-                        variant="ghost"
-                        class="absolute top-4 right-4"
-                        @click="dialogVisible = false"
-                    >
-                        <FeatherIcon name="x" class="w-5 h-5 text-ink-gray-9" />
-                    </Button>
-                </div>
-            </div>
-        </template>
-    </Dialog>
+  <!-- Settings: grouped pages on the left, the page on the right.
+       On a phone the pages are tabs across the top. -->
+  <Dialog v-model="open" :options="{ size: '5xl' }">
+    <template #body>
+      <div
+        class="flex h-[calc(100dvh_-_4rem)] max-h-[44rem] flex-col bg-surface-menu-bar sm:h-[calc(100vh_-_8rem)] sm:flex-row"
+      >
+        <nav
+          class="flex shrink-0 flex-col sm:m-1 sm:w-56 sm:overflow-y-auto sm:rounded-l-lg"
+          aria-label="Settings"
+        >
+          <div class="flex items-center justify-between px-3 pb-1 pt-3 sm:px-2">
+            <h2 class="text-lg font-semibold text-ink-gray-9">Settings</h2>
+            <button
+              type="button"
+              class="grid h-7 w-7 place-items-center rounded text-ink-gray-6 hover:bg-surface-gray-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 sm:hidden"
+              aria-label="Close settings"
+              @click="open = false"
+            >
+              <LucideX class="h-4 w-4" />
+            </button>
+          </div>
+          <div
+            class="flex gap-1 overflow-x-auto px-2 pb-2 sm:flex-col sm:gap-0 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:h-0"
+          >
+            <template v-for="group in groups" :key="group.label">
+              <div
+                class="hidden h-7 items-center px-2 pt-3 text-xs font-medium text-ink-gray-5 sm:flex"
+              >
+                {{ group.label }}
+              </div>
+              <SidebarLink
+                v-for="item in group.items"
+                :key="item.key"
+                class="shrink-0 !w-auto sm:!w-full"
+                :label="item.label"
+                :icon="item.icon"
+                :is-active="active === item.key"
+                @click="settingsPage = item.key"
+              />
+            </template>
+          </div>
+        </nav>
+        <div
+          class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-modal sm:m-1 sm:ml-0 sm:rounded-r-lg"
+        >
+          <button
+            type="button"
+            class="absolute right-3 top-3 z-10 hidden h-7 w-7 place-items-center rounded text-ink-gray-6 hover:bg-surface-gray-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-outline-gray-3 sm:grid"
+            aria-label="Close settings"
+            @click="open = false"
+          >
+            <LucideX class="h-4 w-4" />
+          </button>
+          <component :is="current.component" @close="open = false" />
+        </div>
+      </div>
+    </template>
+  </Dialog>
 </template>
+
 <script setup>
-import { Dialog, Button, FeatherIcon ,FormControl, Badge, ErrorMessage } from 'frappe-ui';
-import ImageUploader from '@/components/Controls/ImageUploader.vue'
-import {ref} from 'vue';
-import { getSettings } from '@/stores/settings'
+import { computed, h, markRaw, ref } from 'vue'
+import { Dialog } from 'frappe-ui'
+import LucideX from '~icons/lucide/x'
+import LucideSlidersHorizontal from '~icons/lucide/sliders-horizontal'
+import LucideStore from '~icons/lucide/store'
+import LucideSparkles from '~icons/lucide/sparkles'
+import SidebarLink from '@/components/SidebarLink.vue'
+import PreferencesPage from '@/components/settings/PreferencesPage.vue'
+import ProfilePage from '@/components/settings/ProfilePage.vue'
+import PosProfilePage from '@/components/settings/PosProfilePage.vue'
+import BrandPage from '@/components/settings/BrandPage.vue'
+import { usePermissionStore } from '@/stores/permission'
+import { settingsPage } from '@/stores/settings'
+import { usersStore } from '@/stores/users'
+import { Avatar } from 'frappe-ui'
 
-const dialogVisible = ref(true);
-const { setting: settings, setupBrand } = getSettings()
+const open = ref(true)
+const users = usersStore()
 
-function updateSettings() {
-    settings.save.submit(null, {
-        onSuccess: () => {
-            setupBrand()
-        },
+// The user's own avatar as the Profile icon.
+const UserAvatarIcon = {
+  render: () => {
+    const user = users.getUser() || {}
+    return h(Avatar, {
+      size: 'xs',
+      image: user.user_image,
+      label: user.full_name || user.name,
     })
+  },
 }
+const permissions = usePermissionStore()
 
+const groups = computed(() => {
+  const list = [
+    {
+      label: 'User configuration',
+      items: [
+        {
+          key: 'profile',
+          label: 'Profile',
+          icon: markRaw(UserAvatarIcon),
+          component: markRaw(ProfilePage),
+        },
+        {
+          key: 'preferences',
+          label: 'Preferences',
+          icon: markRaw(LucideSlidersHorizontal),
+          component: markRaw(PreferencesPage),
+        },
+      ],
+    },
+    {
+      label: 'Point of sale',
+      items: [
+        {
+          key: 'pos-profile',
+          label: 'POS profile',
+          icon: markRaw(LucideStore),
+          component: markRaw(PosProfilePage),
+        },
+      ],
+    },
+  ]
+  if (permissions.isSystemManager) {
+    list.push({
+      label: 'System configuration',
+      items: [
+        {
+          key: 'brand',
+          label: 'Brand',
+          icon: markRaw(LucideSparkles),
+          component: markRaw(BrandPage),
+        },
+      ],
+    })
+  }
+  return list
+})
+
+const allItems = computed(() => groups.value.flatMap((g) => g.items))
+const current = computed(
+  () =>
+    allItems.value.find((i) => i.key === settingsPage.value) ||
+    allItems.value[0],
+)
+const active = computed(() => current.value.key)
 </script>

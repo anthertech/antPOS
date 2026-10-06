@@ -76,13 +76,14 @@ add_to_apps_screen = [
 # Installation
 # ------------
 
-before_install = "ant_pos.install.before_install"
-# after_install = "ant_pos.install.after_install"
+# Roles and POS permissions (see install.py for why grants copy the standard
+# rules first).
+after_install = "ant_pos.install.after_install"
 
 # Uninstallation
 # ------------
 
-# before_uninstall = "ant_pos.uninstall.before_uninstall"
+before_uninstall = "ant_pos.install.before_uninstall"
 # after_uninstall = "ant_pos.uninstall.after_uninstall"
 
 # Integration Setup
@@ -111,9 +112,7 @@ before_install = "ant_pos.install.before_install"
 # -----------
 # Permissions evaluated in scripted ways
 
-permission_query_conditions = {
-	"POS Profile": "ant_pos.ant_pos.api.posprofile_user_query_conditions"
-}
+permission_query_conditions = {"POS Profile": "ant_pos.ant_pos.api.posprofile_user_query_conditions"}
 #
 # has_permission = {
 # 	"Event": "frappe.desk.doctype.event.event.has_permission",
@@ -133,11 +132,30 @@ permission_query_conditions = {
 
 doc_events = {
 	"Payment Entry": {
-		"validate": "ant_pos.ant_pos.api.payment_entry.validate",
+		# Before ERPNext's validate, which works out exchange rates from the
+		# accounts this fills in.
+		"before_validate": "ant_pos.ant_pos.api.payment_entry.validate",
+		"before_cancel": "ant_pos.ant_pos.api.pos_invoice_rules.before_cancel_payment_entry",
 	},
-    "Sales Invoice":{
-        "before_save":"ant_pos.ant_pos.api.sales_invoice.before_save_sales_invoice",
-	}
+	# ERPNext's own POS checks, run on the Sales Invoices antPOS writes.
+	"Sales Invoice": {
+		"validate": "ant_pos.ant_pos.api.pos_invoice_rules.validate",
+		"before_cancel": "ant_pos.ant_pos.api.pos_invoice_rules.before_cancel",
+	},
+	# The POS item list is cached per POS Profile; drop it when anything it shows
+	# changes. Stock levels are deliberately not hooked (every sale would clear
+	# it), so quantities can be up to the profile's cache duration old.
+	"Item": {
+		"on_update": "ant_pos.ant_pos.api.item_list.clear_item_list_cache",
+		"on_trash": "ant_pos.ant_pos.api.item_list.clear_item_list_cache",
+	},
+	"Item Price": {
+		"on_update": "ant_pos.ant_pos.api.item_list.clear_item_list_cache",
+		"on_trash": "ant_pos.ant_pos.api.item_list.clear_item_list_cache",
+	},
+	"POS Profile": {
+		"on_update": "ant_pos.ant_pos.api.item_list.clear_item_list_cache",
+	},
 }
 
 # Scheduled Tasks
@@ -230,8 +248,15 @@ doc_events = {
 # 	"ant_pos.auth.validate"
 # ]
 
-website_route_rules = [{'from_route': '/antPOS/<path:app_path>', 'to_route': 'antPOS'},]
+website_route_rules = [
+	# More specific than the catch-all below, so werkzeug matches it first.
+	{"from_route": "/antPOS/sw.js", "to_route": "antpos-service-worker"},
+	{"from_route": "/antPOS/<path:app_path>", "to_route": "antPOS"},
+]
+
+# Serves the PWA service worker at /antPOS/sw.js (see ant_pos/pwa.py).
+page_renderer = ["ant_pos.pwa.ServiceWorkerPage"]
 
 fixtures = [
-       {"dt": "Custom Field", "filters": [["module", "=", "Ant-Pos"]], "prefix": "Ant-Pos_custom_fields"},
+	{"dt": "Custom Field", "filters": [["module", "=", "Ant-Pos"]], "prefix": "Ant-Pos_custom_fields"},
 ]

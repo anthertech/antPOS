@@ -2,13 +2,12 @@ import { defineStore } from 'pinia'
 import { createResource } from 'frappe-ui'
 import { useSessionStore } from '@/stores/session'
 import { reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { redirectToLogin } from '@/utils/login'
 
 export const usersStore = defineStore('antpos-users', () => {
   const session = useSessionStore()
 
   let usersByName = reactive({})
-  const router = useRouter()
 
   const users = createResource({
     url: 'ant_pos.ant_pos.api.session.get_users',
@@ -26,7 +25,7 @@ export const usersStore = defineStore('antpos-users', () => {
     },
     onError(error) {
       if (error && error.exc_type === 'AuthenticationError') {
-        router.push('/login')
+        redirectToLogin()
       }
     },
   })
